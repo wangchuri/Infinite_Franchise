@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>无限企划 · 概念设计预览</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --ink: #14212b;
+      --ink-soft: #2a3a47;
+      --paper: #f3efe6;
+      --paper-2: #e8e2d4;
+      --mist: #c5d0c8;
+      --sea: #1f5c5a;
+      --sea-bright: #2f8a86;
+      --ember: #c45c26;
+      --line: rgba(20, 33, 43, 0.12);
+      --shadow: 0 18px 50px rgba(20, 33, 43, 0.12);
+      --radius: 4px;
+      --font-display: "Fraunces", "Songti SC", serif;
+      --font-body: "Outfit", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: var(--font-body);
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(47, 138, 134, 0.18), transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, rgba(196, 92, 38, 0.10), transparent 50%),
+        linear-gradient(180deg, #efe9dc 0%, var(--paper) 40%, #ebe6db 100%);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button {
+      font: inherit;
+      cursor: pointer;
+      border: none;
+      background: none;
+      color: inherit;
+    }
+
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* Top nav */
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+      padding: 0.9rem 4vw;
+      backdrop-filter: blur(14px);
+      background: rgba(243, 239, 230, 0.82);
+      border-bottom: 1px solid var(--line);
+    }
+    .brand {
+      display: flex;
+      align-items: baseline;
+      gap: 0.65rem;
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+    }
+    .brand span {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      font-weight: 400;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      opacity: 0.7;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+    }
+    .nav-links button,
+    .nav-links a {
+      padding: 0.45rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+      transition: background 0.2s ease, color 0.2s ease;
+    }
+    .nav-links button:hover,
+    .nav-links a:hover,
+    .nav-links button.active {
+      background: rgba(31, 92, 90, 0.12);
+      color: var(--sea);
+    }
+    .nav-cta {
+      background: var(--ink) !important;
+      color: var(--paper) !important;
+      padding: 0.5rem 1rem !important;
+      border-radius: 999px !important;
+    }
+    .nav-cta:hover { background: var(--sea) !important; color: #fff !important; }
+
+    main { flex: 1; }
+    .page { display: none; animation: rise 0.45s ease; }
+    .page.active { display: block; }
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: none; }
+    }
+
+    .wrap { width: min(1120px, 92vw); margin: 0 auto; }
+    .wrap-wide { width: min(1200px, 94vw); margin: 0 auto; }
+    .section { padding: 2.5rem 0 3.5rem; }
+    .page-head { margin-bottom: 1.75rem; }
+    .page-head .display { font-size: clamp(1.75rem, 3vw, 2.25rem); margin-bottom: 0.35rem; }
+    .eyebrow {
+      font-size: 0.75rem;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: var(--sea);
+      margin-bottom: 0.75rem;
+    }
+    .display {
+      font-family: var(--font-display);
+      font-weight: 700;
+      line-height: 1.15;
+      letter-spacing: -0.02em;
+    }
+    .muted { color: var(--ink-soft); opacity: 0.82; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      padding: 0.75rem 1.2rem;
+      border-radius: 999px;
+      font-weight: 500;
+      transition: transform 0.2s ease, background 0.2s ease, color 0.2s ease;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary { background: var(--ink); color: var(--paper); }
+    .btn-primary:hover { background: var(--sea); color: #fff; }
+    .btn-ghost {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.35);
+    }
+    .btn-ghost:hover { border-color: var(--sea); color: var(--sea); }
+
+    /* Plaza hero — full bleed */
+    .plaza-hero {
+      position: relative;
+      min-height: min(78vh, 720px);
+      display: grid;
+      align-items: end;
+      overflow: hidden;
+      color: #f7f3ea;
+      background:
+        linear-gradient(180deg, rgba(12, 24, 32, 0.15) 0%, rgba(12, 24, 32, 0.72) 55%, rgba(12, 24, 32, 0.92) 100%),
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cg fill='none' stroke='%23c5d0c8' stroke-opacity='0.18'%3E%3Cpath d='M0 80h160M80 0v160'/%3E%3Ccircle cx='80' cy='80' r='48'/%3E%3Ccircle cx='80' cy='80' r='78'/%3E%3C/g%3E%3C/svg%3E"),
+        radial-gradient(ellipse at 30% 20%, #2f8a86 0%, transparent 45%),
+        radial-gradient(ellipse at 80% 60%, #c45c26 0%, transparent 40%),
+        linear-gradient(135deg, #0f1c24, #1a3a3a 50%, #14212b);
+      background-size: auto, 160px 160px, auto, auto, auto;
+    }
+    .plaza-hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, rgba(15,28,36,0.55), transparent 55%);
+      pointer-events: none;
+    }
+    .plaza-hero .wrap {
+      position: relative;
+      z-index: 1;
+      padding: 5rem 0 4rem;
+    }
+    .plaza-hero .brand-mark {
+      font-family: var(--font-display);
+      font-size: clamp(2.8rem, 7vw, 5.2rem);
+      margin-bottom: 0.6rem;
+    }
+    .plaza-hero h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.35rem, 2.6vw, 1.85rem);
+      font-weight: 500;
+      max-width: 18em;
+      margin-bottom: 0.85rem;
+      opacity: 0.95;
+    }
+    .plaza-hero p {
+      max-width: 32rem;
+      font-weight: 300;
+      opacity: 0.82;
+      margin-bottom: 1.6rem;
+    }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+    .plaza-hero .btn-primary { background: #f3efe6; color: var(--ink); }
+    .plaza-hero .btn-primary:hover { background: #fff; }
+    .plaza-hero .btn-ghost {
+      border-color: rgba(243,239,230,0.35);
+      background: transparent;
+      color: #f3efe6;
+    }
+
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin: 0 0 1.75rem;
+    }
+    .chip {
+      padding: 0.4rem 0.85rem;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      font-size: 0.88rem;
+      color: var(--ink-soft);
+      background: rgba(255,255,255,0.4);
+    }
+    .chip.on {
+      background: var(--sea);
+      border-color: var(--sea);
+      color: #fff;
+    }
+
+    .world-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1.25rem;
+    }
+    .world-card {
+      text-align: left;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.55);
+      overflow: hidden;
+      transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
+      box-shadow: 0 1px 0 rgba(255,255,255,0.6) inset;
+    }
+    .world-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow);
+      border-color: rgba(31, 92, 90, 0.35);
+    }
+    .world-cover {
+      height: 148px;
+      background-size: cover;
+      background-position: center;
+    }
+    .c1 { background: linear-gradient(145deg, #1f5c5a, #0f2a32 60%, #c45c26); }
+    .c2 { background: linear-gradient(145deg, #2a3a47, #5b6e7a, #c5d0c8); }
+    .c3 { background: linear-gradient(145deg, #3d2a1f, #8a5a3a, #e8d5b5); }
+    .c4 { background: linear-gradient(145deg, #1a2f4a, #3d6b8a, #a8c4d4); }
+    .world-body { padding: 1.1rem 1.15rem 1.25rem; }
+    .world-body h3 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      margin-bottom: 0.35rem;
+    }
+    .world-meta {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+      margin-top: 0.9rem;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+      opacity: 0.85;
+    }
+    .tag {
+      display: inline-block;
+      margin-right: 0.35rem;
+      font-size: 0.75rem;
+      color: var(--sea);
+    }
+
+    /* Entry page */
+    .entry-banner {
+      padding: 3.5rem 0 2rem;
+      border-bottom: 1px solid var(--line);
+      background:
+        linear-gradient(180deg, rgba(31,92,90,0.08), transparent),
+        rgba(255,255,255,0.25);
+    }
+    .entry-banner .display { font-size: clamp(2rem, 4vw, 3rem); margin-bottom: 0.5rem; }
+    .crumbs {
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      margin-bottom: 1rem;
+    }
+    .crumbs button { color: var(--sea); }
+    .welcome-block {
+      margin-top: 1.5rem;
+      max-width: 42rem;
+      padding: 1.35rem 0 0;
+      border-top: 1px solid var(--line);
+    }
+    .welcome-block h2 {
+      font-family: var(--font-display);
+      font-size: 1.15rem;
+      margin-bottom: 0.65rem;
+    }
+    .entry-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 1.4rem;
+    }
+
+    .feed-list { display: flex; flex-direction: column; gap: 0.85rem; }
+    .work-item {
+      display: grid;
+      grid-template-columns: 72px 1fr;
+      gap: 1rem;
+      align-items: start;
+      padding: 1rem 1.05rem;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.5);
+      text-align: left;
+      transition: border-color 0.2s ease, background 0.2s ease;
+      width: 100%;
+    }
+    .work-item:hover {
+      border-color: rgba(31, 92, 90, 0.4);
+      background: rgba(255,255,255,0.78);
+    }
+    .work-thumb {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, var(--mist), var(--sea-bright));
+      opacity: 0.9;
+    }
+    .work-item h3 { font-size: 1.05rem; margin-bottom: 0.2rem; font-weight: 600; }
+    .work-item .type {
+      font-size: 0.72rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 0.15rem;
+    }
+    .work-meta-row {
+      margin-top: 0.35rem;
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.35rem 0.5rem;
+      align-items: center;
+    }
+    .work-meta-row .when { margin-left: auto; font-size: 0.8rem; opacity: 0.85; }
+    @media (max-width: 560px) {
+      .work-meta-row .when { margin-left: 0; width: 100%; }
+    }
+
+    /* Wiki */
+    .wiki-layout {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 2rem;
+      padding: 2.5rem 0 4rem;
+    }
+    @media (max-width: 800px) {
+      .wiki-layout { grid-template-columns: 1fr; }
+    }
+    .wiki-side {
+      padding: 1rem 0;
+      border-right: 1px solid var(--line);
+    }
+    @media (max-width: 800px) {
+      .wiki-side { border-right: none; border-bottom: 1px solid var(--line); padding-bottom: 1rem; }
+    }
+    .wiki-side h4 {
+      font-size: 0.75rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin: 1rem 0 0.5rem;
+    }
+    .wiki-side button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.4rem 0.55rem;
+      border-radius: var(--radius);
+      font-size: 0.92rem;
+      color: var(--ink-soft);
+    }
+    .wiki-side button:hover,
+    .wiki-side button.on {
+      background: rgba(31, 92, 90, 0.12);
+      color: var(--sea);
+    }
+    .wiki-main .display { font-size: clamp(1.8rem, 3vw, 2.4rem); margin-bottom: 0.75rem; }
+    .wiki-prose {
+      max-width: 40rem;
+      font-size: 1.02rem;
+    }
+    .wiki-prose p + p { margin-top: 0.9rem; }
+    .wiki-prose a.linkish {
+      color: var(--sea);
+      border-bottom: 1px solid rgba(31, 92, 90, 0.35);
+    }
+    .entry-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.85rem;
+      margin-top: 1.75rem;
+    }
+    .entry-tile {
+      padding: 1rem;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.45);
+      text-align: left;
+      transition: border-color 0.2s ease;
+    }
+    .entry-tile:hover { border-color: var(--sea); }
+    .entry-tile .cat {
+      font-size: 0.72rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ember);
+      margin-bottom: 0.35rem;
+    }
+    .timeline {
+      margin-top: 2rem;
+      border-left: 2px solid rgba(31, 92, 90, 0.25);
+      padding-left: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+    }
+    .tl-item .year {
+      font-size: 0.8rem;
+      color: var(--sea);
+      letter-spacing: 0.06em;
+    }
+    .tl-item h3 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      margin: 0.15rem 0 0.25rem;
+    }
+
+    /* Console */
+    .console-grid {
+      display: grid;
+      grid-template-columns: 200px 1fr;
+      gap: 1.5rem;
+      padding: 2.5rem 0 4rem;
+    }
+    @media (max-width: 800px) { .console-grid { grid-template-columns: 1fr; } }
+    .console-nav {
+      display: flex;
+      flex-direction: column;
+      gap: 0.25rem;
+      padding-top: 0.5rem;
+    }
+    .console-nav button {
+      text-align: left;
+      padding: 0.55rem 0.75rem;
+      border-radius: var(--radius);
+      color: var(--ink-soft);
+    }
+    .console-nav button.on,
+    .console-nav button:hover {
+      background: rgba(20, 33, 43, 0.08);
+      color: var(--ink);
+    }
+    .panel {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.55);
+      padding: 1.5rem;
+    }
+    .panel h2 {
+      font-family: var(--font-display);
+      font-size: 1.5rem;
+      margin-bottom: 0.35rem;
+    }
+    .stat-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.75rem;
+      margin: 1.25rem 0 1.5rem;
+    }
+    @media (max-width: 600px) { .stat-row { grid-template-columns: 1fr; } }
+    .stat {
+      padding: 1rem;
+      background: rgba(31, 92, 90, 0.08);
+      border: 1px solid rgba(31, 92, 90, 0.12);
+    }
+    .stat strong {
+      display: block;
+      font-family: var(--font-display);
+      font-size: 1.6rem;
+    }
+    .stat span { font-size: 0.82rem; color: var(--ink-soft); }
+    .form-row { margin-bottom: 1rem; }
+    .form-row label {
+      display: block;
+      font-size: 0.82rem;
+      margin-bottom: 0.35rem;
+      color: var(--ink-soft);
+    }
+    .form-row input,
+    .form-row textarea,
+    .form-row select {
+      width: 100%;
+      padding: 0.65rem 0.75rem;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.7);
+      font: inherit;
+      color: var(--ink);
+      border-radius: var(--radius);
+    }
+    .form-row textarea { min-height: 110px; resize: vertical; }
+    .perm-list { display: flex; flex-direction: column; gap: 0.75rem; margin-top: 1rem; }
+    .perm-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.85rem 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 0.95rem;
+    }
+
+    /* Writing */
+    .editor {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.65);
+      min-height: 420px;
+      padding: 1.5rem;
+    }
+    .editor input.title {
+      width: 100%;
+      border: none;
+      background: transparent;
+      font-family: var(--font-display);
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+      outline: none;
+      color: var(--ink);
+    }
+    .editor .body {
+      width: 100%;
+      min-height: 280px;
+      border: none;
+      background: transparent;
+      font: inherit;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      outline: none;
+      resize: vertical;
+      color: var(--ink);
+    }
+    .editor .hint {
+      margin-top: 0.75rem;
+      font-size: 0.85rem;
+      color: var(--sea);
+    }
+    .side-box {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.5);
+      padding: 1rem;
+    }
+    .side-box h3 {
+      font-size: 0.78rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 0.75rem;
+    }
+    .suggest {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 0.45rem 0.5rem;
+      margin-bottom: 0.25rem;
+      border-radius: var(--radius);
+      font-size: 0.9rem;
+    }
+    .suggest:hover { background: rgba(31, 92, 90, 0.1); color: var(--sea); }
+
+    footer.site {
+      padding: 1.5rem 4vw 2rem;
+      border-top: 1px solid var(--line);
+      font-size: 0.85rem;
+      color: var(--ink-soft);
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    /* Plaza three columns */
+    .plaza-shell {
+      width: min(1200px, 94vw);
+      margin: 0 auto;
+      padding: 1.75rem 0 3.5rem;
+      display: grid;
+      grid-template-columns: 200px minmax(0, 1fr) 210px;
+      grid-template-areas: "left feed right";
+      gap: 1.75rem;
+      align-items: start;
+    }
+    .plaza-left { grid-area: left; }
+    .plaza-feed { grid-area: feed; min-width: 0; }
+    .plaza-right { grid-area: right; }
+
+    @media (max-width: 1024px) {
+      .plaza-shell {
+        grid-template-columns: 1fr 1fr;
+        grid-template-areas:
+          "feed feed"
+          "left right";
+        gap: 1.25rem;
+      }
+    }
+    @media (max-width: 640px) {
+      .plaza-shell {
+        grid-template-columns: 1fr;
+        grid-template-areas:
+          "feed"
+          "left"
+          "right";
+      }
+    }
+
+    .rail {
+      border-right: 1px solid var(--line);
+      padding-right: 0.25rem;
+    }
+    .plaza-right .rail {
+      border-right: none;
+      border-left: 1px solid var(--line);
+      padding-right: 0;
+      padding-left: 1rem;
+    }
+    @media (max-width: 1024px) {
+      .rail,
+      .plaza-right .rail {
+        border: 1px solid var(--line);
+        background: rgba(255,255,255,0.4);
+        padding: 1rem;
+      }
+    }
+
+    .rail-title {
+      font-size: 0.72rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--ink-soft);
+      margin-bottom: 1rem;
+    }
+    .follow-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.65rem;
+      width: 100%;
+      text-align: left;
+      padding: 0.55rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .follow-item:last-of-type { border-bottom: none; }
+    .follow-item:hover strong { color: var(--sea); }
+    .follow-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      margin-top: 0.45rem;
+    }
+    .follow-item strong {
+      display: block;
+      font-size: 0.95rem;
+      font-weight: 500;
+      font-family: var(--font-display);
+    }
+    .follow-item .sub {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      margin-top: 0.1rem;
+    }
+    .rail-more {
+      display: inline-block;
+      margin-top: 0.85rem;
+      font-size: 0.88rem;
+      color: var(--sea);
+    }
+    .rail-more:hover { text-decoration: underline; }
+
+    .author-item {
+      display: flex;
+      gap: 0.7rem;
+      align-items: flex-start;
+      width: 100%;
+      text-align: left;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--line);
+    }
+    .author-item:last-child { border-bottom: none; }
+    .author-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: linear-gradient(135deg, var(--sea), var(--mist));
+    }
+    .author-item strong { display: block; font-size: 0.9rem; font-weight: 500; }
+    .author-item .sub {
+      display: block;
+      font-size: 0.75rem;
+      color: var(--ink-soft);
+      line-height: 1.4;
+      margin-top: 0.15rem;
+    }
+
+    .plaza-feed-head { margin-bottom: 1.25rem; padding-bottom: 1rem; border-bottom: 1px solid var(--line); }
+    .plaza-feed-head h1 {
+      font-family: var(--font-display);
+      font-size: clamp(1.55rem, 2.4vw, 1.9rem);
+      margin-bottom: 0.3rem;
+    }
+    .plaza-feed-head p { font-size: 0.92rem; max-width: 36em; }
+
+    .world-link {
+      color: var(--sea);
+      border-bottom: 1px solid rgba(31, 92, 90, 0.35);
+      cursor: pointer;
+      font: inherit;
+      padding: 0;
+      background: none;
+    }
+    .world-link:hover { color: var(--sea-bright); }
+
+    .world-section {
+      margin-bottom: 2.75rem;
+    }
+    .world-section:last-child { margin-bottom: 0; }
+    .world-section-label {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 1rem;
+      margin: 0 0 1.1rem;
+      padding-bottom: 0.65rem;
+      border-bottom: 1px solid var(--line);
+    }
+    .world-section-label h2 {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+    }
+
+    .entry-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+      gap: 2.5rem;
+      align-items: start;
+      padding: 2.5rem 0 3.5rem;
+    }
+    @media (max-width: 860px) {
+      .entry-layout { grid-template-columns: 1fr; gap: 2rem; }
+    }
+    .entry-intro .display { font-size: clamp(2rem, 4vw, 2.75rem); margin: 0.35rem 0 0.5rem; }
+    .entry-intro .welcome-block {
+      margin-top: 1.25rem;
+      padding-top: 1.25rem;
+      border-top: 1px solid var(--line);
+    }
+    .entry-intro .welcome-block h2 {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      margin-bottom: 0.55rem;
+    }
+    .entry-actions { display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.25rem; }
+    .entry-works h2 {
+      font-family: var(--font-display);
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .write-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 240px;
+      gap: 1.5rem;
+      padding: 2rem 0 3.5rem;
+    }
+    @media (max-width: 860px) {
+      .write-layout { grid-template-columns: 1fr; }
+    }
+
+    .new-concept {
+      margin-top: 0.85rem;
+      padding: 0.85rem 0.9rem;
+      border: 1px dashed rgba(196, 92, 38, 0.4);
+      background: rgba(196, 92, 38, 0.05);
+      font-size: 0.85rem;
+    }
+    .new-concept strong { color: var(--ember); }
+
+    .note-bar {
+      position: fixed;
+      left: 50%;
+      bottom: 1rem;
+      transform: translateX(-50%);
+      z-index: 50;
+      max-width: min(520px, 92vw);
+      padding: 0.55rem 1rem;
+      background: rgba(20, 33, 43, 0.88);
+      color: var(--paper);
+      font-size: 0.78rem;
+      line-height: 1.4;
+      border-radius: 999px;
+      text-align: center;
+      pointer-events: none;
+    }
+    .note-bar strong { color: #9fd4d0; }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <button class="brand" data-go="plaza" type="button" title="回广场">
+        无限企划 <span>Infinite Franchise</span>
+      </button>
+      <nav class="nav-links" aria-label="主导航">
+        <button type="button" data-go="plaza" class="active" id="nav-plaza">广场</button>
+        <button type="button" data-go="worlds" id="nav-worlds">世界观</button>
+        <button type="button" data-go="write" id="nav-write">写作</button>
+        <button type="button" data-go="console" class="nav-cta" id="nav-console">控制台</button>
+      </nav>
+    </header>
+
+    <main>
+      <!-- 1. 广场 · 三栏 -->
+      <section id="page-plaza" class="page active">
+        <div class="plaza-shell">
+          <aside class="plaza-left">
+            <div class="rail">
+              <p class="rail-title">关注的世界观</p>
+              <button class="follow-item" type="button" data-go="entry">
+                <span class="follow-dot" style="background:#1f5c5a;"></span>
+                <span>
+                  <strong>银轨纪元</strong>
+                  <span class="sub">2 小时前有更新</span>
+                </span>
+              </button>
+              <button class="follow-item" type="button" data-go="entry">
+                <span class="follow-dot" style="background:#5b6e7a;"></span>
+                <span>
+                  <strong>雾港编年</strong>
+                  <span class="sub">昨天</span>
+                </span>
+              </button>
+              <button class="follow-item" type="button" data-go="entry">
+                <span class="follow-dot" style="background:#8a5a3a;"></span>
+                <span>
+                  <strong>赤砂王朝</strong>
+                  <span class="sub">3 天前</span>
+                </span>
+              </button>
+              <button class="rail-more" type="button" data-go="worlds">发现更多 →</button>
+            </div>
+          </aside>
+
+          <div class="plaza-feed">
+            <div class="plaza-feed-head">
+              <p class="eyebrow">Plaza</p>
+              <h1>最新作品</h1>
+              <p class="muted">先刷内容流。作品带来自哪个世界的标注，不按世界观分区。</p>
+            </div>
+            <div class="feed-list">
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#1f5c5a,#c45c26);"></div>
+                <div>
+                  <div class="type">小说 · 章节</div>
+                  <h3>离港通知书 · 第三航次</h3>
+                  <div class="work-meta-row">
+                    <button type="button" class="world-link" data-go="entry">银轨纪元</button>
+                    <span>· 夜航员</span>
+                    <span class="when">2 小时前</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#2a3a47,#c5d0c8);"></div>
+                <div>
+                  <div class="type">小说</div>
+                  <h3>雨夜档案 · 卷三</h3>
+                  <div class="work-meta-row">
+                    <button type="button" class="world-link" data-go="entry">雾港编年</button>
+                    <span>· 灰潮</span>
+                    <span class="when">5 小时前</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#3d2a1f,#e8d5b5);"></div>
+                <div>
+                  <div class="type">美术</div>
+                  <h3>沙海停战 · 仪式场写生</h3>
+                  <div class="work-meta-row">
+                    <button type="button" class="world-link" data-go="entry">赤砂王朝</button>
+                    <span>· 赤笔</span>
+                    <span class="when">昨天</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#1a2f4a,#a8c4d4);"></div>
+                <div>
+                  <div class="type">音频</div>
+                  <h3>未播出的节目单 #08</h3>
+                  <div class="work-meta-row">
+                    <button type="button" class="world-link" data-go="entry">低空电台</button>
+                    <span>· 调频员</span>
+                    <span class="when">昨天</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#1f5c5a,#2f8a86);"></div>
+                <div>
+                  <div class="type">剧情片段</div>
+                  <h3>灯塔值班手记 #17</h3>
+                  <div class="work-meta-row">
+                    <button type="button" class="world-link" data-go="entry">银轨纪元</button>
+                    <span>· 守夜人甲</span>
+                    <span class="when">3 天前</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+
+          <aside class="plaza-right">
+            <div class="rail">
+              <p class="rail-title">活跃作者</p>
+              <div class="author-item">
+                <span class="author-avatar"></span>
+                <span>
+                  <strong>夜航员</strong>
+                  <span class="sub">银轨纪元 · 更新了章节</span>
+                </span>
+              </div>
+              <div class="author-item">
+                <span class="author-avatar" style="background:linear-gradient(135deg,#5b6e7a,#c5d0c8);"></span>
+                <span>
+                  <strong>灰潮</strong>
+                  <span class="sub">雾港编年 · 连载中</span>
+                </span>
+              </div>
+              <div class="author-item">
+                <span class="author-avatar" style="background:linear-gradient(135deg,#8a5a3a,#e8d5b5);"></span>
+                <span>
+                  <strong>赤笔</strong>
+                  <span class="sub">赤砂王朝 · 投稿插画</span>
+                </span>
+              </div>
+              <div class="author-item">
+                <span class="author-avatar" style="background:linear-gradient(135deg,#1f5c5a,#c45c26);"></span>
+                <span>
+                  <strong>守夜人甲</strong>
+                  <span class="sub">银轨纪元 · 写了短篇</span>
+                </span>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 世界观浏览 -->
+      <section id="page-worlds" class="page">
+        <div class="section wrap-wide">
+          <div class="page-head">
+            <p class="crumbs"><button type="button" data-go="plaza">← 广场</button></p>
+            <p class="eyebrow" style="margin-top:0.85rem;">Worlds</p>
+            <h1 class="display">世界观</h1>
+            <p class="muted">上面是关注的，下面是推荐的。点卡片进入介绍与作品。</p>
+          </div>
+
+          <div class="world-section">
+            <div class="world-section-label">
+              <h2>我关注的</h2>
+              <span class="muted" style="font-size:0.85rem;">3</span>
+            </div>
+            <div class="world-grid">
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c1"></div>
+                <div class="world-body">
+                  <h3>银轨纪元</h3>
+                  <p class="muted">轨道城邦与深空航线交织的近未来。</p>
+                  <div><span class="tag">#科幻</span></div>
+                  <div class="world-meta"><span>词条 128</span><span>2 小时前</span></div>
+                </div>
+              </button>
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c2"></div>
+                <div class="world-body">
+                  <h3>雾港编年</h3>
+                  <p class="muted">永远下着细雨的港口城市。</p>
+                  <div><span class="tag">#都市奇幻</span></div>
+                  <div class="world-meta"><span>词条 86</span><span>昨天</span></div>
+                </div>
+              </button>
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c3"></div>
+                <div class="world-body">
+                  <h3>赤砂王朝</h3>
+                  <p class="muted">沙漠帝国的王位更迭与商队传说。</p>
+                  <div><span class="tag">#奇幻</span></div>
+                  <div class="world-meta"><span>词条 210</span><span>3 天前</span></div>
+                </div>
+              </button>
+            </div>
+          </div>
+
+          <div class="world-section">
+            <div class="world-section-label">
+              <h2>推荐</h2>
+              <span class="muted" style="font-size:0.85rem;">发现新世界</span>
+            </div>
+            <div class="filter-row">
+              <button class="chip on" type="button">全部</button>
+              <button class="chip" type="button">科幻</button>
+              <button class="chip" type="button">奇幻</button>
+              <button class="chip" type="button">都市</button>
+            </div>
+            <div class="world-grid">
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c4"></div>
+                <div class="world-body">
+                  <h3>低空电台</h3>
+                  <p class="muted">只在午夜播出的虚构广播网。</p>
+                  <div><span class="tag">#现代</span></div>
+                  <div class="world-meta"><span>词条 40</span><span>本周</span></div>
+                </div>
+              </button>
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c1" style="filter:hue-rotate(40deg);"></div>
+                <div class="world-body">
+                  <h3>深海档案馆</h3>
+                  <p class="muted">沉没图书馆里，每本书都会改写读者的记忆。</p>
+                  <div><span class="tag">#奇幻</span></div>
+                  <div class="world-meta"><span>词条 67</span></div>
+                </div>
+              </button>
+              <button class="world-card" type="button" data-go="entry">
+                <div class="world-cover c2" style="filter:hue-rotate(-20deg);"></div>
+                <div class="world-body">
+                  <h3>边境驿站</h3>
+                  <p class="muted">列车只停三分钟。旅客留下的物件会变成新的传说。</p>
+                  <div><span class="tag">#公路</span></div>
+                  <div class="world-meta"><span>词条 29</span></div>
+                </div>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 入口页：左介绍，右本世界作品 -->
+      <section id="page-entry" class="page">
+        <div class="wrap-wide entry-layout">
+          <div class="entry-intro">
+            <p class="crumbs">
+              <button type="button" data-go="plaza">广场</button>
+              /
+              <button type="button" data-go="worlds">世界观</button>
+              / 银轨纪元
+            </p>
+            <p class="eyebrow">World</p>
+            <h1 class="display">银轨纪元</h1>
+            <p class="muted">创建者 · 夜航员 · 投稿需审核 · 允许 Fork</p>
+            <div class="welcome-block">
+              <h2>介绍</h2>
+              <p class="muted">
+                欢迎来到银轨。这里没有「官方完结」——只有不断延长的航线表。
+                先读作品感受氛围；查设定请进 Wiki；想一起写，点参与写作（自动归属本世界）。
+              </p>
+              <div class="entry-actions">
+                <button class="btn btn-primary" type="button" data-go="wiki">查看 Wiki</button>
+                <button class="btn btn-primary" type="button" data-go="write" style="background:var(--sea);">参与写作</button>
+                <button class="btn btn-ghost" type="button" data-go="console">Fork</button>
+              </div>
+            </div>
+          </div>
+          <div class="entry-works">
+            <p class="eyebrow">In this world</p>
+            <h2>最新作品</h2>
+            <div class="feed-list">
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#1f5c5a,#c45c26);"></div>
+                <div>
+                  <div class="type">小说 · 章节</div>
+                  <h3>离港通知书 · 第三航次</h3>
+                  <div class="work-meta-row">
+                    <span>夜航员</span>
+                    <span class="when">2 小时前</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#2a3a47,#c5d0c8);"></div>
+                <div>
+                  <div class="type">美术</div>
+                  <h3>轨道城剖面图（修订）</h3>
+                  <div class="work-meta-row">
+                    <span>测绘组</span>
+                    <span class="when">昨天</span>
+                  </div>
+                </div>
+              </article>
+              <article class="work-item">
+                <div class="work-thumb" style="background:linear-gradient(135deg,#3d2a1f,#e8d5b5);"></div>
+                <div>
+                  <div class="type">剧情片段</div>
+                  <h3>灯塔值班手记 #17</h3>
+                  <div class="work-meta-row">
+                    <span>守夜人甲</span>
+                    <span class="when">3 天前</span>
+                  </div>
+                </div>
+              </article>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Wiki -->
+      <section id="page-wiki" class="page">
+        <div class="wrap-wide wiki-layout">
+          <aside class="wiki-side">
+            <p class="crumbs"><button type="button" data-go="entry">← 返回入口</button></p>
+            <h4>目录</h4>
+            <button type="button" class="on">世界介绍</button>
+            <button type="button">人物</button>
+            <button type="button">地点</button>
+            <button type="button">物品</button>
+            <button type="button">组织</button>
+            <h4>结构</h4>
+            <button type="button">时间轴</button>
+            <button type="button">发展史</button>
+          </aside>
+          <div class="wiki-main">
+            <p class="eyebrow">银轨纪元 · 本世界 Wiki 式主页</p>
+            <h1 class="display">世界介绍</h1>
+            <div class="wiki-prose">
+              <p>
+                <strong>银轨纪元</strong>发生在人类已能沿「银轨」进行近恒星航行的时代。
+                城市建在巨大的轨道环上，港口灯塔负责校准航线，也负责记录那些不该被记录的离港。
+              </p>
+              <p>
+                核心冲突来自两套历法：官方的「港务历」与地下流传的「静默历」。
+                写作时请优先链接词条
+                <a class="linkish" href="#">灯塔守夜人</a>、
+                <a class="linkish" href="#">静默区</a>、
+                <a class="linkish" href="#">第三航次</a>。
+              </p>
+            </div>
+            <div class="entry-grid">
+              <button class="entry-tile" type="button">
+                <div class="cat">人物</div>
+                <strong>灯塔守夜人</strong>
+                <p class="muted" style="margin-top:0.35rem;font-size:0.9rem;">匿名职务。真正的名字写在被烧毁的名册里。</p>
+              </button>
+              <button class="entry-tile" type="button">
+                <div class="cat">地点</div>
+                <strong>静默区</strong>
+                <p class="muted" style="margin-top:0.35rem;font-size:0.9rem;">信号无法抵达的货舱夹层，传闻可听到旧广播。</p>
+              </button>
+              <button class="entry-tile" type="button">
+                <div class="cat">物品</div>
+                <strong>无票根通行证</strong>
+                <p class="muted" style="margin-top:0.35rem;font-size:0.9rem;">只有灯塔能核验。持有者不会出现在乘客名单上。</p>
+              </button>
+              <button class="entry-tile" type="button">
+                <div class="cat">组织</div>
+                <strong>港务历委员会</strong>
+                <p class="muted" style="margin-top:0.35rem;font-size:0.9rem;">维护官方时间。否认静默历的存在。</p>
+              </button>
+            </div>
+            <div class="timeline">
+              <div class="tl-item">
+                <div class="year">港务历 0</div>
+                <h3>银轨首次贯通</h3>
+                <p class="muted">第一座轨道城点亮灯塔。此后所有航线以灯塔为原点。</p>
+              </div>
+              <div class="tl-item">
+                <div class="year">港务历 47</div>
+                <h3>静默区事件</h3>
+                <p class="muted">一次集体失联。官方档案仅留下「校准失败」四字。</p>
+              </div>
+              <div class="tl-item">
+                <div class="year">港务历 112 · 现在</div>
+                <h3>第三航次异常</h3>
+                <p class="muted">乘客名单多出一人。共创作品多从此节点展开。</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. 写作 · 自动绑定 + Wiki 快链 + 新概念入库 -->
+      <section id="page-write" class="page">
+        <div class="wrap-wide write-layout">
+          <div>
+            <p class="crumbs"><button type="button" data-go="entry">← 银轨纪元</button></p>
+            <p class="eyebrow" style="margin-top:0.85rem;">Writing</p>
+            <h1 class="display" style="font-size:clamp(1.6rem,2.5vw,1.9rem);margin-bottom:0.35rem;">参与写作</h1>
+            <p class="muted" style="margin-bottom:1rem;">已自动归属「银轨纪元」。用快链插入词条；新概念可写入本世界 Wiki。</p>
+            <div class="editor">
+              <input class="title" type="text" value="离港通知书 · 第四航次（草稿）" />
+              <textarea class="body">雨还在下。守夜人把[[无票根通行证]]按在玻璃上，灯塔的校准光扫过姓名栏——空白。
+
+他本该报告[[港务历委员会]]，却打开了通往[[静默区]]的侧门。
+
+走廊尽头多了一扇从未登记的门牌：「回声闸」。——这是本世界 Wiki 里还没有的概念。</textarea>
+              <p class="hint">已快链 3 个词条 · 检测到 1 个可能的新概念</p>
+              <div class="new-concept">
+                <strong>新概念待写入 Wiki：</strong>「回声闸」
+                <span class="muted"> · 建议分类：地点 / 物品</span>
+                <div style="margin-top:0.55rem;display:flex;gap:0.5rem;flex-wrap:wrap;">
+                  <button class="btn btn-primary" type="button" style="padding:0.4rem 0.85rem;font-size:0.85rem;">添加为词条草稿</button>
+                  <button class="btn btn-ghost" type="button" style="padding:0.4rem 0.85rem;font-size:0.85rem;">忽略</button>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:1rem;display:flex;gap:0.65rem;flex-wrap:wrap;">
+              <button class="btn btn-primary" type="button">提交审核</button>
+              <button class="btn btn-ghost" type="button">存草稿</button>
+              <button class="btn btn-ghost" type="button" data-go="wiki">打开本世界 Wiki</button>
+            </div>
+          </div>
+          <aside>
+            <div class="side-box" style="margin-bottom:1rem;">
+              <h3>自动归属</h3>
+              <p style="font-family:var(--font-display);font-size:1.15rem;">银轨纪元</p>
+              <p class="muted" style="font-size:0.85rem;margin-top:0.35rem;">从入口页「参与写作」进入，无需再选手动选择世界</p>
+            </div>
+            <div class="side-box" style="margin-bottom:1rem;">
+              <h3>Wiki 快速链接</h3>
+              <button class="suggest" type="button">灯塔守夜人</button>
+              <button class="suggest" type="button">静默区</button>
+              <button class="suggest" type="button">无票根通行证</button>
+              <button class="suggest" type="button">第三航次</button>
+              <button class="suggest" type="button">港务历委员会</button>
+            </div>
+            <div class="side-box">
+              <h3>实时添加词条</h3>
+              <p class="muted" style="font-size:0.82rem;margin-bottom:0.5rem;">为作品中的新概念补一句介绍，写入本世界 Wiki。</p>
+              <button class="suggest" type="button">+ 新建词条「回声闸」</button>
+              <button class="suggest" type="button">+ 手动新建词条</button>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- 5. 控制台 -->
+      <section id="page-console" class="page">
+        <div class="wrap-wide console-grid">
+          <nav class="console-nav" aria-label="控制台">
+            <button type="button" class="on">概览</button>
+            <button type="button">我的世界观</button>
+            <button type="button">创建世界观</button>
+            <button type="button">主页设计</button>
+            <button type="button">权限设置</button>
+            <button type="button">审核队列</button>
+          </nav>
+          <div class="panel">
+            <h2>控制台 · 概览</h2>
+            <p class="muted">创建、Fork、设计主页与配置权限都在这里。手机端只负责浏览。</p>
+            <div class="stat-row">
+              <div class="stat"><strong>2</strong><span>我创建的世界</span></div>
+              <div class="stat"><strong>5</strong><span>待审核投稿</span></div>
+              <div class="stat"><strong>1</strong><span>我 Fork 的分支</span></div>
+            </div>
+            <h3 style="font-family:var(--font-display);margin-bottom:0.75rem;">快速创建</h3>
+            <div class="form-row">
+              <label>世界观名称</label>
+              <input type="text" placeholder="例如：深海档案馆" />
+            </div>
+            <div class="form-row">
+              <label>一句话简介</label>
+              <textarea placeholder="这个世界最吸引人的冲突或氛围是什么？"></textarea>
+            </div>
+            <div class="form-row">
+              <label>默认投稿权限</label>
+              <select>
+                <option>开放投稿（直接公开）</option>
+                <option selected>审核后公开</option>
+                <option>仅邀请成员</option>
+              </select>
+            </div>
+            <div class="perm-list">
+              <div class="perm-item">
+                <span>Wiki 编辑</span>
+                <strong style="font-weight:500;font-size:0.9rem;">创建者 + 编辑</strong>
+              </div>
+              <div class="perm-item">
+                <span>允许被 Fork</span>
+                <strong style="font-weight:500;font-size:0.9rem;">是</strong>
+              </div>
+            </div>
+            <div style="margin-top:1.25rem;">
+              <button class="btn btn-primary" type="button">创建并进入主页设计</button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site">
+      <span>无限企划 · 概念设计预览（基于灵感草案）</span>
+      <span>对照 docs/inspiration/ · 非最终 UI</span>
+    </footer>
+  </div>
+
+  <div class="note-bar">
+    <strong>布局：</strong>广场三栏 · 世界观关注/推荐 · 入口左右分栏 · 顶栏只留主入口
+  </div>
+
+  <script>
+    const pages = ["plaza", "worlds", "entry", "wiki", "write", "console"];
+
+    function go(name) {
+      if (!pages.includes(name)) return;
+      document.querySelectorAll(".page").forEach((el) => el.classList.remove("active"));
+      document.getElementById("page-" + name).classList.add("active");
+      document.querySelectorAll(".nav-links > button[data-go]").forEach((btn) => {
+        btn.classList.toggle("active", btn.dataset.go === name);
+      });
+      // 入口 / Wiki 不算顶栏主项，不高亮错误项
+      if (name === "entry" || name === "wiki") {
+        document.querySelectorAll(".nav-links > button[data-go]").forEach((btn) => btn.classList.remove("active"));
+        document.getElementById("nav-worlds")?.classList.add("active");
+      }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      history.replaceState(null, "", "#" + name);
+    }
+
+    document.querySelectorAll("[data-go]").forEach((el) => {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        go(el.dataset.go);
+      });
+    });
+
+    const hash = location.hash.replace("#", "");
+    if (pages.includes(hash)) go(hash);
+  </script>
+</body>
+</html>

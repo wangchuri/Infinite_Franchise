@@ -1,0 +1,120 @@
+:root {
+  --ink: #14212b;
+  --ink-soft: #2a3a47;
+  --paper: #f3efe6;
+  --paper-2: #e8e2d4;
+  --sea: #1f5c5a;
+  --sea-bright: #2f8a86;
+  --ember: #c45c26;
+  --line: rgba(20, 33, 43, 0.12);
+  --danger: #8f2f2f;
+  --font-display: Georgia, "Songti SC", "Noto Serif SC", serif;
+  --font-body: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* Scrollbar · paper rail + soft ink pill */
+  --scroll-track: #fffcf5;
+  --scroll-thumb: #8a8680;
+  --scroll-thumb-hover: #6e6a64;
+  --scroll-size: 10px;
+}
+
+* {
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+}
+
+html,
+body {
+  max-width: 100vw;
+  min-height: 100%;
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+/* Chromium / Safari */
+*::-webkit-scrollbar {
+  width: var(--scroll-size);
+  height: var(--scroll-size);
+}
+
+*::-webkit-scrollbar-track {
+  background: var(--scroll-track);
+  border-radius: 999px;
+  border: 1px solid rgba(20, 33, 43, 0.04);
+}
+
+*::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid var(--scroll-track);
+  background-clip: padding-box;
+  min-height: 2.5rem;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: var(--scroll-thumb-hover);
+  border: 2px solid var(--scroll-track);
+  background-clip: padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Top / bottom arrow buttons (WebKit) */
+*::-webkit-scrollbar-button:single-button {
+  display: block;
+  background-color: var(--scroll-track);
+  background-repeat: no-repeat;
+  background-position: center;
+  height: 12px;
+  width: var(--scroll-size);
+}
+
+*::-webkit-scrollbar-button:single-button:vertical:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%238a8680' d='M4 0L8 6H0z'/%3E%3C/svg%3E");
+}
+
+*::-webkit-scrollbar-button:single-button:vertical:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%238a8680' d='M4 6L0 0h8z'/%3E%3C/svg%3E");
+}
+
+*::-webkit-scrollbar-button:single-button:horizontal:decrement {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8' viewBox='0 0 6 8'%3E%3Cpath fill='%238a8680' d='M0 4l6-4v8z'/%3E%3C/svg%3E");
+}
+
+*::-webkit-scrollbar-button:single-button:horizontal:increment {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8' viewBox='0 0 6 8'%3E%3Cpath fill='%238a8680' d='M6 4L0 0v8z'/%3E%3C/svg%3E");
+}
+
+body {
+  color: var(--ink);
+  background:
+    radial-gradient(900px 500px at 10% -10%, rgba(47, 138, 134, 0.16), transparent 55%),
+    radial-gradient(700px 400px at 100% 0%, rgba(196, 92, 38, 0.08), transparent 50%),
+    linear-gradient(180deg, #efe9dc 0%, var(--paper) 45%, #ebe6db 100%);
+  font-family: var(--font-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--sea);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--sea-bright);
+  text-decoration: underline;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+  color: inherit;
+}

@@ -1,0 +1,169 @@
+.panel {
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 249, 0.55);
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.95rem 1.15rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+}
+
+.toggle:hover .toggleHint {
+  color: var(--sea);
+}
+
+.heading {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.toggleHint {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  padding: 0 1.15rem 1.25rem;
+  border-top: 1px solid var(--line);
+  padding-top: 1rem;
+}
+
+.hint {
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-top: -0.15rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.field select,
+.field input[type="text"] {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  padding: 0.45rem 0.6rem;
+  font: inherit;
+  color: var(--ink);
+}
+
+.accentRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.accentRow input[type="color"] {
+  width: 2.2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+}
+
+.accentRow input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.accentRow button {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.82rem;
+}
+
+.accentRow button:hover {
+  color: var(--sea);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.modulesLabel {
+  display: block;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.45rem;
+}
+
+.modules ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.modules li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.35rem 0.45rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 249, 0.8);
+}
+
+.modules label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.move {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.move button {
+  width: 1.6rem;
+  height: 1.6rem;
+  border: 1px solid var(--line);
+  background: transparent;
+  cursor: pointer;
+  color: var(--ink-soft);
+  line-height: 1;
+}
+
+.move button:hover:not(:disabled) {
+  color: var(--sea);
+  border-color: var(--sea);
+}
+
+.move button:disabled {
+  opacity: 0.35;
+  cursor: default;
+}

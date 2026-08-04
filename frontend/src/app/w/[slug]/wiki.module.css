@@ -1,0 +1,321 @@
+.page {
+  margin: -2.5rem calc(50% - 50vw) 0;
+  min-height: 70vh;
+  background: var(--wiki-bg, #f3efe6);
+  color: var(--wiki-ink, #14212b);
+}
+
+.hero {
+  position: relative;
+  min-height: 220px;
+  padding: 3.5rem 4vw 2.5rem;
+  background:
+    linear-gradient(180deg, rgba(20, 33, 43, 0.55), rgba(20, 33, 43, 0.72)),
+    var(--wiki-bg-2, #e8e2d4);
+  background-size: cover;
+  background-position: center;
+  color: var(--wiki-hero-fg, #f7f3ea);
+}
+
+.heroCompact {
+  min-height: 120px;
+  padding: 1.75rem 4vw 1.5rem;
+}
+
+.heroNone {
+  display: none;
+}
+
+.heroInner {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  display: flex;
+  gap: 1.25rem;
+  align-items: flex-end;
+}
+
+.logo {
+  width: 88px;
+  height: 88px;
+  object-fit: cover;
+  border: 1px solid rgba(247, 243, 234, 0.35);
+  background: rgba(20, 33, 43, 0.35);
+  flex-shrink: 0;
+}
+
+.heroCompact .logo {
+  width: 64px;
+  height: 64px;
+}
+
+.logoEmpty {
+  width: 88px;
+  height: 88px;
+  border: 1px dashed rgba(247, 243, 234, 0.35);
+  flex-shrink: 0;
+}
+
+.heroText h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.heroCompact .heroText h1 {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+}
+
+.tag {
+  font-size: 0.78rem;
+  color: #cfe8e6;
+  letter-spacing: 0.04em;
+}
+
+.tagMuted {
+  font-size: 0.78rem;
+  color: var(--wiki-accent, #1f5c5a);
+  letter-spacing: 0.04em;
+}
+
+.titleOnly {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  padding: 2rem 0 0.5rem;
+}
+
+.titleOnly h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.4rem);
+  color: var(--wiki-ink);
+}
+
+.shell {
+  width: min(1120px, 92vw);
+  margin: 0 auto;
+  padding: 2.25rem 0 4rem;
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.layout_classic .shell,
+.layout_magazine .shell {
+  display: block;
+}
+
+.layout_magazine .body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.75rem 2rem;
+}
+
+.layout_magazine .body > .meta {
+  grid-column: 1 / -1;
+}
+
+.layout_magazine .section:first-of-type {
+  grid-column: 1 / -1;
+}
+
+.sideNav {
+  width: 160px;
+  flex-shrink: 0;
+  position: sticky;
+  top: 5rem;
+  padding: 0.75rem 0;
+}
+
+.sideNavTitle {
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--wiki-ink-soft);
+  margin-bottom: 0.65rem;
+}
+
+.sideNav ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.sideNav a {
+  color: var(--wiki-ink-soft);
+  font-size: 0.9rem;
+  text-decoration: none;
+}
+
+.sideNav a:hover {
+  color: var(--wiki-accent);
+}
+
+.body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2.25rem;
+}
+
+.layout_classic .body {
+  width: 100%;
+}
+
+.section h2 {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--wiki-line, var(--line));
+  color: var(--wiki-ink);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.1rem;
+}
+
+.card {
+  border: 1px solid var(--wiki-line, var(--line));
+  background: var(--wiki-card, rgba(255, 254, 249, 0.7));
+  overflow: hidden;
+}
+
+.thumb {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+  background: var(--wiki-bg-2);
+}
+
+.thumbEmpty {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  background: var(--wiki-bg-2);
+}
+
+.cardBody {
+  padding: 0.75rem 0.85rem 1rem;
+}
+
+.cardBody strong {
+  font-family: var(--font-display);
+  display: block;
+  margin-bottom: 0.35rem;
+  color: var(--wiki-ink);
+}
+
+.cardBody p {
+  font-size: 0.85rem;
+  color: var(--wiki-ink-soft);
+  line-height: 1.45;
+}
+
+.reactionRow {
+  margin-top: 0.6rem;
+}
+
+.axis {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.25rem;
+  border-left: 2px solid color-mix(in srgb, var(--wiki-accent) 45%, transparent);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.node {
+  position: relative;
+  padding-left: 1.25rem;
+}
+
+.dot {
+  position: absolute;
+  left: -1.35rem;
+  top: 0.35rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--wiki-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--wiki-accent) 20%, transparent);
+}
+
+.date {
+  font-size: 0.8rem;
+  color: var(--wiki-accent);
+}
+
+.node strong {
+  display: block;
+  font-family: var(--font-display);
+  margin: 0.2rem 0 0.4rem;
+  color: var(--wiki-ink);
+}
+
+.meta {
+  font-size: 0.85rem;
+  color: var(--wiki-ink-soft);
+}
+
+.error {
+  color: var(--danger);
+  padding: 2rem 0;
+}
+
+.loading {
+  color: var(--ink-soft);
+  padding: 2rem 0;
+}
+
+.editLink {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: #cfe8e6;
+}
+
+.editLink:hover {
+  color: #fff;
+}
+
+.editLinkInk {
+  display: inline-block;
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--wiki-accent);
+}
+
+@media (max-width: 860px) {
+  .shell {
+    flex-direction: column;
+  }
+
+  .sideNav {
+    position: static;
+    width: 100%;
+  }
+
+  .sideNav ul {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+
+  .layout_magazine .body {
+    grid-template-columns: 1fr;
+  }
+}

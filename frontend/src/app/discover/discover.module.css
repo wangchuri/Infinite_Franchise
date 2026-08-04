@@ -1,0 +1,265 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.hero {
+  max-width: 40rem;
+  margin-bottom: 0.5rem;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sea);
+  margin-bottom: 0.55rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.65rem;
+}
+
+.lead {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  line-height: 1.6;
+  max-width: 36em;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.85rem 1.25rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.search {
+  flex: 1;
+  min-width: min(100%, 16rem);
+}
+
+.search input {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 249, 0.85);
+  padding: 0.65rem 0.9rem;
+  font: inherit;
+  color: var(--ink);
+}
+
+.search input:focus {
+  outline: 2px solid rgba(31, 92, 90, 0.25);
+  border-color: var(--sea);
+}
+
+.search input::placeholder {
+  color: var(--ink-soft);
+  opacity: 0.7;
+}
+
+.sort {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  flex-wrap: wrap;
+}
+
+.sortLabel {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  margin-right: 0.25rem;
+}
+
+.sortBtn,
+.sortOn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.sortOn {
+  border-color: var(--sea);
+  color: var(--sea);
+  background: rgba(31, 92, 90, 0.08);
+}
+
+.sortBtn:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.chip,
+.chipOn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: 999px;
+}
+
+.chip:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.chipOn {
+  border-color: var(--sea);
+  background: var(--sea);
+  color: #f7f3ea;
+}
+
+.resultBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  padding-bottom: 0.25rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.clear {
+  background: none;
+  border: none;
+  color: var(--sea);
+  font-size: 0.88rem;
+  cursor: pointer;
+  padding: 0;
+}
+
+.clear:hover {
+  text-decoration: underline;
+}
+
+.error {
+  color: var(--danger);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.2rem;
+  padding-top: 0.35rem;
+}
+
+.cardWrap {
+  animation: riseIn 0.45s ease both;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.skeletonGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 1.2rem;
+  padding-top: 0.35rem;
+}
+
+.skeleton {
+  height: 280px;
+  border: 1px solid var(--line);
+  background: linear-gradient(
+    90deg,
+    rgba(232, 226, 212, 0.4) 0%,
+    rgba(255, 254, 249, 0.8) 50%,
+    rgba(232, 226, 212, 0.4) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 100% 0;
+  }
+  100% {
+    background-position: -100% 0;
+  }
+}
+
+.empty {
+  padding: 3rem 1rem 4rem;
+  text-align: center;
+  max-width: 28rem;
+  margin: 0 auto;
+}
+
+.empty h2 {
+  font-family: var(--font-display);
+  font-size: 1.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.empty p {
+  color: var(--ink-soft);
+  margin-bottom: 1.25rem;
+  line-height: 1.55;
+}
+
+.emptyCta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.2rem;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  font: inherit;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.emptyCta:hover {
+  background: var(--sea);
+  color: #fff;
+  text-decoration: none;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cardWrap,
+  .skeleton {
+    animation: none;
+  }
+}

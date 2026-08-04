@@ -1,0 +1,97 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+.yarn/
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# Build / output
+dist/
+build/
+out/
+.next/
+.nuxt/
+.turbo/
+.vercel/
+.output/
+coverage/
+*.tsbuildinfo
+next-env.d.ts
+
+# Env & secrets (keep *.example)
+.env
+.env.*
+!.env.example
+!.env.*.example
+
+# Logs & debug
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Test / cache
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+*.lcov
+.nyc_output/
+
+# OS
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# IDE / editors
+.idea/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json.example
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# Cursor (local)
+.cursor/
+
+# Optional local tooling
+*.local
+.local/
+
+# Local dev agent memory (not for public repo)
+.workbuddy/
+
+# Uploads / runtime data (backend)
+uploads/
+tmp/
+temp/
+data/*.db
+data/*.sqlite
+*.sqlite
+*.sqlite3
+
+# Certificates / keys
+*.pem
+*.key
+*.p12
+*.pfx
+!docs/**/*.pem
+
+# Misc
+*.pid
+*.seed
+*.pid.lock
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json

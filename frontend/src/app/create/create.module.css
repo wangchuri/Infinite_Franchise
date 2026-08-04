@@ -1,0 +1,118 @@
+.page {
+  max-width: 560px;
+}
+
+.head {
+  margin-bottom: 1.5rem;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sea);
+  margin-bottom: 0.45rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.lead {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+  max-width: 36em;
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field textarea,
+.field select {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+  color: var(--ink);
+}
+
+.field input:focus,
+.field textarea:focus,
+.field select:focus {
+  outline: 2px solid rgba(31, 92, 90, 0.25);
+  border-color: var(--sea);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.primary,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.65rem 1.1rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  text-decoration: none;
+  border: 1px solid transparent;
+  font: inherit;
+}
+
+.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--sea);
+  color: #fff;
+  text-decoration: none;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ghost {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+.ghost:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+  text-decoration: none;
+}

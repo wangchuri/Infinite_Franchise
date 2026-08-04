@@ -1,0 +1,12 @@
+.page {
+  max-width: 720px;
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+.error {
+  color: var(--danger);
+  margin-bottom: 0.75rem;
+}

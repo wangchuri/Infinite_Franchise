@@ -1,0 +1,348 @@
+.shell {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+  width: 100%;
+}
+
+.withNotes {
+  grid-template-columns: minmax(0, 1fr) 260px;
+}
+
+@media (max-width: 900px) {
+  .withNotes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.main {
+  min-width: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.withNotes .main {
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.85rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.toolbarLeft,
+.toolbarRight {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.back,
+.world {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+  padding: 0.25rem 0.45rem;
+}
+
+.back:hover,
+.world:hover {
+  color: var(--sea);
+  text-decoration: none;
+}
+
+.modeSwitch {
+  display: inline-flex;
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 249, 0.7);
+}
+
+.modeBtn,
+.modeOn {
+  border: none;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+
+.modeOn {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.modeBtn:hover {
+  color: var(--sea);
+}
+
+.reader {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.meta {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+}
+
+.meta a {
+  color: var(--sea);
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.85rem, 4vw, 2.55rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+  color: var(--ink);
+}
+
+.byline {
+  color: var(--ink-soft);
+  font-size: 0.95rem;
+}
+
+.summary {
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  border-left: 2px solid var(--line);
+  padding-left: 0.85rem;
+  max-width: 38em;
+}
+
+.media {
+  width: 100%;
+  max-height: 420px;
+  object-fit: contain;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+  margin: 0.5rem 0;
+}
+
+.body {
+  margin-top: 1rem;
+}
+
+.readerMd {
+  font-size: 1.08rem !important;
+  line-height: 1.85 !important;
+  color: var(--ink) !important;
+}
+
+.pagePane {
+  margin-top: 0.5rem;
+  min-height: 18rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.pageNav,
+.chapterNav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.75rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+}
+
+.pageIndicator {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.navBtn,
+.chapterBtn {
+  border: 1px solid var(--line);
+  background: rgba(255, 254, 249, 0.75);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.55rem 0.9rem;
+  cursor: pointer;
+  max-width: 42%;
+  text-align: left;
+}
+
+.chapterNext {
+  text-align: right;
+  margin-left: auto;
+}
+
+.navBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.navBtn:hover:not(:disabled),
+.chapterBtn:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.chapterPlaceholder {
+  flex: 1;
+  max-width: 42%;
+}
+
+.tocLink {
+  font-size: 0.9rem;
+  color: var(--sea);
+}
+
+.toc {
+  margin-top: 1.25rem;
+}
+
+.toc h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  margin-bottom: 0.85rem;
+}
+
+.tocList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.tocList a {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.45);
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.tocList a:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+  text-decoration: none;
+}
+
+.tocIndex {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  min-width: 1.5rem;
+}
+
+.muted {
+  color: var(--ink-soft);
+  font-size: 0.92rem;
+}
+
+.notes {
+  border-left: 1px solid var(--line);
+  padding-left: 1.1rem;
+  position: sticky;
+  top: 4.5rem;
+  max-height: calc(100vh - 6rem);
+  overflow: auto;
+}
+
+@media (max-width: 900px) {
+  .notes {
+    border-left: none;
+    border-top: 1px solid var(--line);
+    padding-left: 0;
+    padding-top: 1.25rem;
+    position: static;
+    max-height: none;
+  }
+}
+
+.notesTitle {
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-bottom: 0.85rem;
+}
+
+.noteList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.noteItem,
+.noteItemOn {
+  width: 100%;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  padding: 0.55rem 0.45rem;
+  cursor: pointer;
+  font: inherit;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  color: var(--ink);
+}
+
+.noteItem:hover,
+.noteItemOn {
+  background: rgba(255, 255, 255, 0.55);
+  border-color: var(--line);
+}
+
+.noteItem strong,
+.noteItemOn strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.noteSource {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.noteDetail {
+  padding: 0.35rem 0.45rem 0.75rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+.noteDetail a {
+  display: inline-block;
+  margin-top: 0.45rem;
+  color: var(--sea);
+  font-size: 0.84rem;
+}
+
+.noteReactions {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+}
+
+.noteComments {
+  margin-top: 1rem;
+  padding-top: 0.85rem;
+  border-top: 1px dashed var(--line);
+}

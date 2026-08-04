@@ -1,0 +1,136 @@
+.panel {
+  width: min(380px, 100%);
+  flex-shrink: 0;
+  border-left: 1px solid var(--line);
+  background: rgba(243, 239, 230, 0.96);
+  padding: 1.25rem 1.25rem 2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  animation: slideIn 0.28s ease;
+  max-height: calc(100vh - 4rem);
+  overflow: auto;
+  position: sticky;
+  top: 4.5rem;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.header h2 {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  font-weight: 700;
+}
+
+.close {
+  background: none;
+  border: none;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.88rem;
+}
+
+.close:hover {
+  color: var(--sea);
+}
+
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+}
+
+.field input,
+.field textarea {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  padding: 0.55rem 0.7rem;
+  font: inherit;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
+  outline: 2px solid rgba(31, 92, 90, 0.25);
+  border-color: var(--sea);
+}
+
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+}
+
+.primary,
+.ghost {
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem 1rem;
+  font-size: 0.92rem;
+}
+
+.primary {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.primary:hover:not(:disabled) {
+  background: var(--sea);
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.ghost {
+  background: transparent;
+  color: var(--ink-soft);
+  border: 1px solid var(--line);
+}
+
+.ghost:hover {
+  color: var(--sea);
+  border-color: var(--sea);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.88rem;
+}
+
+@media (max-width: 860px) {
+  .panel {
+    width: 100%;
+    position: static;
+    max-height: none;
+    border-left: none;
+    border-top: 1px solid var(--line);
+  }
+}

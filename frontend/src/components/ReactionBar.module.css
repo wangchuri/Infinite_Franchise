@@ -1,0 +1,117 @@
+.bar {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.btn,
+.on {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 999px;
+  background: var(--surface, #fff);
+  color: var(--ink, #1f2937);
+  font: inherit;
+  font-size: 13px;
+  line-height: 1.2;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.1s ease;
+}
+
+.btn:hover {
+  background: var(--surface-2, #f1f5f9);
+}
+
+.btn:active,
+.on:active {
+  transform: scale(0.94);
+}
+
+.btn:disabled,
+.on:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.on {
+  background: var(--accent-soft, #eef2ff);
+  border-color: var(--accent, #6366f1);
+  color: var(--accent, #6366f1);
+}
+
+/* Wiki pages expose --wiki-accent / --wiki-ink / --wiki-bg-2 theme vars. */
+.on {
+  background: var(--wiki-accent-soft, var(--accent-soft, #eef2ff));
+  border-color: var(--wiki-accent, var(--accent, #6366f1));
+  color: var(--wiki-accent, var(--accent, #6366f1));
+}
+
+.icon {
+  font-size: 15px;
+  line-height: 1;
+}
+
+.label {
+  white-space: nowrap;
+}
+
+.count {
+  min-width: 1ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.compact .btn,
+.compact .on {
+  padding: 2px 7px;
+  font-size: 12px;
+}
+
+.error {
+  font-size: 12px;
+  color: var(--danger, #dc2626);
+  margin-left: 6px;
+}
+
+.tip {
+  position: fixed;
+  transform: translate(-50%, calc(-100% - 10px));
+  z-index: 50;
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  background: var(--surface, #fff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 10px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  padding: 0.55rem 0.75rem;
+  max-width: 230px;
+  pointer-events: auto;
+}
+
+.tipRight {
+  transform: translate(calc(-100% + 12px), calc(-100% - 10px));
+}
+
+.tipIcon {
+  font-size: 1.25rem;
+  line-height: 1;
+}
+
+.tip strong {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--ink, #1f2937);
+}
+
+.tip p {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--ink-soft, #64748b);
+  line-height: 1.45;
+}
