@@ -1,0 +1,17 @@
+/* Standalone world wiki shell — all inner UI comes from world-blocks. */
+
+.page {
+  min-height: 100vh;
+  background: var(--wiki-bg, #f4f0e6);
+  color: var(--wiki-ink, #1a232c);
+}
+
+.loading {
+  color: var(--ink-soft);
+  padding: 4rem 4vw;
+}
+
+.error {
+  color: var(--danger);
+  padding: 4rem 4vw;
+}

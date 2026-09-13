@@ -4,39 +4,44 @@ import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import MarkdownView from "@/components/MarkdownView";
-import ReactionBar from "@/components/ReactionBar";
+import { coverGradientFor, worldCoverImage } from "@/lib/world-cover";
+import { fetchWorldBySlug, type World } from "@/lib/worlds";
 import {
-  MODULE_LABELS,
-  normalizeHomepageConfig,
-  themeCssVars,
-  type WikiModule,
-} from "@/lib/homepage-config";
+  WORK_CATEGORIES,
+  WORK_KINDS,
+  categoryLabel,
+  type WorkCategory,
+} from "@/lib/work-taxonomy";
 import {
-  excerpt,
-  fetchWorldBySlug,
-  type TimelineEvent,
-  type WikiEntry,
-  type World,
-} from "@/lib/worlds";
-import styles from "./wiki.module.css";
+  fetchWorldWorks,
+  formatWorkTime,
+  workTypeLabel,
+  type Work,
+} from "@/lib/works";
+import styles from "./world.module.css";
 
-function formatUtc(iso: string): string {
-  const d = new Date(iso);
-  if (Number.isNaN(d.getTime())) return iso;
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+function workThumbStyle(work: Work): CSSProperties {
+  if (work.mediaUrl) {
+    return {
+      backgroundImage: `url(${work.mediaUrl})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+    };
+  }
+  return { background: coverGradientFor(work.id) };
 }
 
-export default function WorldWikiPage() {
+export default function WorldHomePage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
 
   const [world, setWorld] = useState<World | null>(null);
-  const [entries, setEntries] = useState<WikiEntry[]>([]);
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [works, setWorks] = useState<Work[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  const [category, setCategory] = useState<"all" | WorkCategory>("all");
+  const [kind, setKind] = useState<string>("all");
 
   useEffect(() => {
     let cancelled = false;
@@ -45,9 +50,13 @@ export default function WorldWikiPage() {
         const data = await fetchWorldBySlug(slug);
         if (cancelled) return;
         setWorld(data.world);
-        setEntries(data.entries);
-        setTimeline(data.timeline);
         setIsOwner(data.isOwner);
+        try {
+          const list = await fetchWorldWorks(data.world.id, 60);
+          if (!cancelled) setWorks(list);
+        } catch {
+          if (!cancelled) setWorks([]);
+        }
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "加载失败");
@@ -62,233 +71,211 @@ export default function WorldWikiPage() {
     };
   }, [slug]);
 
-  const intro = useMemo(
-    () => entries.find((e) => e.category === "intro"),
-    [entries],
-  );
-  const characters = useMemo(
-    () => entries.filter((e) => e.category === "character"),
-    [entries],
-  );
-  const items = useMemo(
-    () => entries.filter((e) => e.category === "item"),
-    [entries],
+  const catCounts = useMemo(() => {
+    const m: Partial<Record<WorkCategory, number>> = {};
+    for (const w of works) m[w.category] = (m[w.category] ?? 0) + 1;
+    return m;
+  }, [works]);
+
+  const scoped = useMemo(
+    () => (category === "all" ? works : works.filter((w) => w.category === category)),
+    [works, category],
   );
 
-  const config = useMemo(
-    () => normalizeHomepageConfig(world?.homepageConfig),
-    [world?.homepageConfig],
+  const kindCounts = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const w of scoped) {
+      if (w.kind) m[w.kind] = (m[w.kind] ?? 0) + 1;
+    }
+    return m;
+  }, [scoped]);
+
+  const kinds = category === "all" ? [] : WORK_KINDS[category];
+
+  const filtered = useMemo(
+    () => (kind === "all" ? scoped : scoped.filter((w) => w.kind === kind)),
+    [scoped, kind],
   );
 
   if (!ready) {
-    return <p className={styles.loading}>加载 Wiki…</p>;
+    return <p className={styles.loading}>加载世界观…</p>;
   }
-
   if (!world) {
     return <p className={styles.error}>{error ?? "世界观不存在或尚未公开"}</p>;
   }
 
-  const cssVars = themeCssVars(config) as CSSProperties;
-  const pageClass = [
-    styles.page,
-    styles[`theme_${config.theme}`],
-    styles[`layout_${config.layout}`],
-  ].join(" ");
+  const cover = worldCoverImage(world);
+  const coverStyle: CSSProperties = cover
+    ? {
+        backgroundImage: `linear-gradient(180deg, rgba(16,24,32,0.32), rgba(16,24,32,0.82)), url(${cover})`,
+      }
+    : { background: coverGradientFor(world.id || world.slug) };
 
-  const heroClass = [
-    styles.hero,
-    config.heroStyle === "compact" ? styles.heroCompact : "",
-    config.heroStyle === "none" ? styles.heroNone : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
+  const tags = world.tags.filter(Boolean).filter((t, i, a) => a.indexOf(t) === i);
+  const intro = world.welcomeMessage?.trim() || world.description;
 
-  const bg =
-    config.heroStyle !== "none" && world.wikiBackgroundUrl
-      ? {
-          backgroundImage: `linear-gradient(180deg, rgba(20,33,43,0.5), rgba(20,33,43,0.72)), url(${world.wikiBackgroundUrl})`,
-        }
-      : undefined;
-
-  function renderModule(mod: WikiModule) {
-    switch (mod) {
-      case "intro":
-        return (
-          <section key="intro" id="wiki-intro" className={styles.section}>
-            <h2>{MODULE_LABELS.intro}</h2>
-            <MarkdownView content={intro?.content || world!.description} />
-            {intro ? (
-              <div className={styles.reactionRow}>
-                <ReactionBar targetType="entry" targetId={intro.id} compact />
-              </div>
-            ) : null}
-          </section>
-        );
-      case "characters":
-        if (characters.length === 0) return null;
-        return (
-          <section
-            key="characters"
-            id="wiki-characters"
-            className={styles.section}
-          >
-            <h2>{MODULE_LABELS.characters}</h2>
-            <div className={styles.grid}>
-              {characters.map((c) => (
-                <article key={c.id} className={styles.card}>
-                  {c.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={c.imageUrl} alt="" className={styles.thumb} />
-                  ) : (
-                    <div className={styles.thumbEmpty} />
-                  )}
-                  <div className={styles.cardBody}>
-                    <strong>{c.title}</strong>
-                    <p>{excerpt(c.content, 90) || "暂无介绍"}</p>
-                    <div className={styles.reactionRow}>
-                      <ReactionBar targetType="entry" targetId={c.id} compact />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        );
-      case "items":
-        if (items.length === 0) return null;
-        return (
-          <section key="items" id="wiki-items" className={styles.section}>
-            <h2>{MODULE_LABELS.items}</h2>
-            <div className={styles.grid}>
-              {items.map((it) => (
-                <article key={it.id} className={styles.card}>
-                  {it.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={it.imageUrl} alt="" className={styles.thumb} />
-                  ) : (
-                    <div className={styles.thumbEmpty} />
-                  )}
-                  <div className={styles.cardBody}>
-                    <strong>{it.title}</strong>
-                    <p>{excerpt(it.content, 90) || "暂无介绍"}</p>
-                    <div className={styles.reactionRow}>
-                      <ReactionBar targetType="entry" targetId={it.id} compact />
-                    </div>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-        );
-      case "timeline":
-        if (timeline.length === 0) return null;
-        return (
-          <section key="timeline" id="wiki-timeline" className={styles.section}>
-            <h2>{MODULE_LABELS.timeline}</h2>
-            <ol className={styles.axis}>
-              {timeline.map((ev) => (
-                <li key={ev.id} className={styles.node}>
-                  <div className={styles.dot} />
-                  {ev.eventDate ? (
-                    <span className={styles.date}>{ev.eventDate}</span>
-                  ) : null}
-                  <strong>{ev.title}</strong>
-                  <MarkdownView content={ev.description} />
-                  <div className={styles.reactionRow}>
-                    <ReactionBar targetType="timeline" targetId={ev.id} compact />
-                  </div>
-                </li>
-              ))}
-            </ol>
-          </section>
-        );
-      default:
-        return null;
-    }
+  function selectCategory(c: "all" | WorkCategory) {
+    setCategory(c);
+    setKind("all");
   }
 
-  const navItems = config.modules.filter((mod) => {
-    if (mod === "intro") return true;
-    if (mod === "characters") return characters.length > 0;
-    if (mod === "items") return items.length > 0;
-    if (mod === "timeline") return timeline.length > 0;
-    return false;
-  });
-
   return (
-    <div className={pageClass} style={cssVars}>
-      {config.heroStyle !== "none" ? (
-        <header className={heroClass} style={bg}>
-          <div className={styles.heroInner}>
+    <div className={styles.page}>
+      <header className={styles.cover} style={coverStyle}>
+        <div className={styles.coverInner}>
+          <Link href="/discover" className={styles.back}>
+            ← 发现世界
+          </Link>
+          <div className={styles.coverText}>
             {world.logoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img src={world.logoUrl} alt="" className={styles.logo} />
             ) : (
-              <div className={styles.logoEmpty} />
+              <div className={styles.logoEmpty}>{world.name.slice(0, 1)}</div>
             )}
-            <div className={styles.heroText}>
+            <div>
               <h1>{world.name}</h1>
-              {config.showTags && world.tags.length > 0 ? (
+              {world.tagline ? (
+                <p className={styles.tagline}>{world.tagline}</p>
+              ) : null}
+              {tags.length > 0 ? (
                 <div className={styles.tags}>
-                  {world.tags.filter(Boolean).filter((t, i, arr) => arr.indexOf(t) === i).map((t, i) => (
+                  {tags.map((t, i) => (
                     <span key={`${t}-${i}`} className={styles.tag}>
                       #{t}
                     </span>
                   ))}
                 </div>
               ) : null}
-              {isOwner ? (
-                <Link
-                  href={`/worlds/${world.id}/edit`}
-                  className={styles.editLink}
-                >
-                  编辑此世界观
-                </Link>
-              ) : null}
             </div>
           </div>
-        </header>
-      ) : (
-        <div className={styles.titleOnly}>
-          <h1>{world.name}</h1>
-          {config.showTags && world.tags.length > 0 ? (
-            <div className={styles.tags}>
-              {world.tags.filter(Boolean).filter((t, i, arr) => arr.indexOf(t) === i).map((t, i) => (
-                <span key={`${t}-${i}`} className={styles.tagMuted}>
-                  #{t}
-                </span>
-              ))}
-            </div>
-          ) : null}
+        </div>
+      </header>
+
+      {intro ? (
+        <section className={styles.intro}>
+          <MarkdownView content={intro} />
+        </section>
+      ) : null}
+
+      <nav className={styles.tabBar} aria-label="世界导航">
+        <div className={styles.tabInner}>
+          <span className={styles.tabOn}>作品</span>
+          <Link href={`/w/${slug}/wiki`} className={styles.tab}>
+            Wiki
+          </Link>
+          <Link href={`/w/${slug}/discussion`} className={styles.tab}>
+            讨论
+          </Link>
           {isOwner ? (
-            <Link href={`/worlds/${world.id}/edit`} className={styles.editLinkInk}>
-              编辑此世界观
+            <Link href={`/worlds/${world.id}/edit`} className={styles.editLink}>
+              编辑世界观
             </Link>
           ) : null}
         </div>
-      )}
+      </nav>
 
-      <div className={styles.shell}>
-        {config.layout === "sidebar" ? (
-          <nav className={styles.sideNav} aria-label="Wiki 目录">
-            <p className={styles.sideNavTitle}>目录</p>
-            <ul>
-              {navItems.map((mod) => (
-                <li key={mod}>
-                  <a href={`#wiki-${mod}`}>{MODULE_LABELS[mod]}</a>
+      <div className={styles.layout}>
+        <main className={styles.main}>
+          <div className={styles.worksHead}>
+            <h2>{category === "all" ? "全部作品" : categoryLabel(category)}</h2>
+            <span className={styles.worksCount}>
+              {filtered.length} / {works.length}
+            </span>
+          </div>
+
+          {kinds.length > 0 ? (
+            <div className={styles.kindTabs}>
+              <button
+                type="button"
+                className={kind === "all" ? styles.kindOn : styles.kind}
+                onClick={() => setKind("all")}
+              >
+                全部 <span>{scoped.length}</span>
+              </button>
+              {kinds.map((k) => (
+                <button
+                  key={k.key}
+                  type="button"
+                  className={kind === k.key ? styles.kindOn : styles.kind}
+                  onClick={() => setKind(k.key)}
+                >
+                  {k.label} <span>{kindCounts[k.key] ?? 0}</span>
+                </button>
+              ))}
+            </div>
+          ) : null}
+
+          {filtered.length === 0 ? (
+            <div className={styles.empty}>
+              <p>{works.length === 0 ? "这个世界还没有作品。" : "该类型下暂无作品。"}</p>
+              <p className={styles.emptyHint}>
+                进入 <Link href={`/w/${slug}/wiki`}>Wiki</Link> 了解设定，
+                或到 <Link href="/create">创作</Link> 投稿。
+              </p>
+            </div>
+          ) : (
+            <ul className={styles.list}>
+              {filtered.map((w) => (
+                <li key={w.id} className={styles.item}>
+                  <Link
+                    href={`/works/${w.id}`}
+                    className={styles.hit}
+                    aria-label={w.title}
+                  />
+                  <div
+                    className={styles.thumb}
+                    style={workThumbStyle(w)}
+                    aria-hidden="true"
+                  />
+                  <div className={styles.itemBody}>
+                    <div className={styles.typeTag}>{workTypeLabel(w)}</div>
+                    <span className={styles.workTitle}>{w.title}</span>
+                    {w.summary ? (
+                      <p className={styles.workSummary}>{w.summary}</p>
+                    ) : null}
+                    <div className={styles.workMeta}>
+                      <span>{w.authorDisplayName || w.authorUsername}</span>
+                      <time dateTime={w.publishedAt ?? w.createdAt}>
+                        {formatWorkTime(w.publishedAt ?? w.createdAt)}
+                      </time>
+                    </div>
+                  </div>
                 </li>
               ))}
             </ul>
-          </nav>
-        ) : null}
+          )}
+        </main>
 
-        <div className={styles.body}>
-          {config.modules.map((mod) => renderModule(mod))}
-          <p className={styles.meta}>
-            {world.status === "draft" ? "草稿（仅创建者可见） · " : null}
-            更新于 {formatUtc(world.updatedAt)}
-          </p>
-        </div>
+        <aside className={styles.rail}>
+          <p className={styles.railTitle}>类型</p>
+          <ul className={styles.railList}>
+            <li>
+              <button
+                type="button"
+                className={category === "all" ? styles.railOn : styles.railBtn}
+                onClick={() => selectCategory("all")}
+              >
+                全部 <span>{works.length}</span>
+              </button>
+            </li>
+            {WORK_CATEGORIES.map((c) => {
+              const n = catCounts[c.key] ?? 0;
+              return (
+                <li key={c.key}>
+                  <button
+                    type="button"
+                    disabled={n === 0}
+                    className={category === c.key ? styles.railOn : styles.railBtn}
+                    onClick={() => selectCategory(c.key)}
+                  >
+                    {c.label} <span>{n}</span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </aside>
       </div>
     </div>
   );

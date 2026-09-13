@@ -186,7 +186,7 @@ export default function WorldsHubPage() {
                 href={`/w/${w.slug}`}
                 actions={
                   <>
-                    <Link href={`/w/${w.slug}`} className={styles.link}>
+                    <Link href={`/w/${w.slug}/wiki`} className={styles.link}>
                       查看 Wiki
                     </Link>
                     <Link href={`/worlds/${w.id}/edit`} className={styles.link}>
