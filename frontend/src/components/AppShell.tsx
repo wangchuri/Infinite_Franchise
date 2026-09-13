@@ -80,6 +80,34 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, [menuOpen]);
 
+  /** Reveal scrollbars only while a container is actively scrolling. */
+  useEffect(() => {
+    const timers = new WeakMap<Element, number>();
+    function onScroll(e: Event) {
+      const target = e.target;
+      const el =
+        target instanceof Document
+          ? target.scrollingElement
+          : target instanceof HTMLElement
+            ? target
+            : null;
+      if (!el || !el.classList) return;
+
+      el.classList.add("is-scrolling");
+      const prev = timers.get(el);
+      if (prev) window.clearTimeout(prev);
+      timers.set(
+        el,
+        window.setTimeout(() => {
+          el.classList.remove("is-scrolling");
+          timers.delete(el);
+        }, 700),
+      );
+    }
+    document.addEventListener("scroll", onScroll, true);
+    return () => document.removeEventListener("scroll", onScroll, true);
+  }, []);
+
   function logout() {
     clearTokens();
     setUser(null);
@@ -87,11 +115,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     router.push("/login");
   }
 
+  const isLab = pathname.startsWith("/create/lab");
+
   return (
     <div
-      className={
-        pathname === "/" ? `${styles.shell} ${styles.shellPlaza}` : styles.shell
-      }
+      className={[
+        styles.shell,
+        pathname === "/" ? styles.shellPlaza : "",
+        isLab ? styles.shellLab : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
     >
       <header className={styles.topbar}>
         <Link href="/" className={styles.brand}>
@@ -126,9 +160,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 }
               >
                 创作
-              </Link>
-              <Link href="/worlds" className={styles.create}>
-                创建世界观
               </Link>
               <div className={styles.avatarWrap} ref={menuRef}>
                 <button

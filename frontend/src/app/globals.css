@@ -10,11 +10,10 @@
   --danger: #8f2f2f;
   --font-display: Georgia, "Songti SC", "Noto Serif SC", serif;
   --font-body: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
-  /* Scrollbar · paper rail + soft ink pill */
-  --scroll-track: #fffcf5;
-  --scroll-thumb: #8a8680;
-  --scroll-thumb-hover: #6e6a64;
-  --scroll-size: 10px;
+  /* Scrollbar · transparent rail + soft ink pill */
+  --scroll-thumb: rgba(20, 33, 43, 0.18);
+  --scroll-thumb-hover: rgba(31, 92, 90, 0.55);
+  --scroll-size: 8px;
 }
 
 * {
@@ -29,10 +28,14 @@ body {
   min-height: 100%;
 }
 
-/* Firefox */
+/* Firefox — thumb hidden until scroll/hover */
 * {
   scrollbar-width: thin;
-  scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+  scrollbar-color: transparent transparent;
+}
+
+*.is-scrolling {
+  scrollbar-color: var(--scroll-thumb) transparent;
 }
 
 /* Chromium / Safari */
@@ -42,53 +45,35 @@ body {
 }
 
 *::-webkit-scrollbar-track {
-  background: var(--scroll-track);
-  border-radius: 999px;
-  border: 1px solid rgba(20, 33, 43, 0.04);
+  background: transparent;
 }
 
 *::-webkit-scrollbar-thumb {
-  background: var(--scroll-thumb);
+  background: transparent;
   border-radius: 999px;
-  border: 2px solid var(--scroll-track);
+  border: 2px solid transparent;
   background-clip: padding-box;
   min-height: 2.5rem;
 }
 
-*::-webkit-scrollbar-thumb:hover {
+*.is-scrolling::-webkit-scrollbar-thumb {
+  background: var(--scroll-thumb);
+}
+
+*::-webkit-scrollbar-thumb:hover,
+*.is-scrolling::-webkit-scrollbar-thumb:hover {
   background: var(--scroll-thumb-hover);
-  border: 2px solid var(--scroll-track);
-  background-clip: padding-box;
 }
 
 *::-webkit-scrollbar-corner {
   background: transparent;
 }
 
-/* Top / bottom arrow buttons (WebKit) */
-*::-webkit-scrollbar-button:single-button {
-  display: block;
-  background-color: var(--scroll-track);
-  background-repeat: no-repeat;
-  background-position: center;
-  height: 12px;
-  width: var(--scroll-size);
-}
-
-*::-webkit-scrollbar-button:single-button:vertical:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%238a8680' d='M4 0L8 6H0z'/%3E%3C/svg%3E");
-}
-
-*::-webkit-scrollbar-button:single-button:vertical:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='6' viewBox='0 0 8 6'%3E%3Cpath fill='%238a8680' d='M4 6L0 0h8z'/%3E%3C/svg%3E");
-}
-
-*::-webkit-scrollbar-button:single-button:horizontal:decrement {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8' viewBox='0 0 6 8'%3E%3Cpath fill='%238a8680' d='M0 4l6-4v8z'/%3E%3C/svg%3E");
-}
-
-*::-webkit-scrollbar-button:single-button:horizontal:increment {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='6' height='8' viewBox='0 0 6 8'%3E%3Cpath fill='%238a8680' d='M6 4L0 0v8z'/%3E%3C/svg%3E");
+/* Hide legacy arrow buttons (WebKit) */
+*::-webkit-scrollbar-button {
+  display: none;
+  width: 0;
+  height: 0;
 }
 
 body {

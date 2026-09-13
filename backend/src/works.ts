@@ -1,5 +1,6 @@
 import { pool } from "./db.js";
-import { findWorldById, isWorldCreator } from "./worlds.js";
+import { canCreateWorks, getMemberRole, getWorkSubmitMode } from "./collab.js";
+import { findWorldById } from "./worlds.js";
 import {
   listEntries,
   toPublicEntry,
@@ -190,6 +191,16 @@ export async function findPublicWorkById(
   return row;
 }
 
+/** Find any non-deleted work regardless of status (for review flows). */
+export async function findAnyWorkById(id: string): Promise<WorkFeedRow | null> {
+  const res = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT}
+     WHERE w.id = $1 AND w.deleted_at IS NULL LIMIT 1`,
+    [id],
+  );
+  return res.rows[0] ?? null;
+}
+
 async function listPublishedChapters(
   novelId: string,
 ): Promise<WorkFeedRow[]> {
@@ -333,10 +344,17 @@ export async function createWork(input: {
   if (!world) {
     throw Object.assign(new Error("世界观不存在"), { statusCode: 404 });
   }
-  if (!isWorldCreator(world, input.authorId)) {
-    throw Object.assign(new Error("仅创建者可发布作品（MVP）"), {
-      statusCode: 403,
-    });
+
+  const mode = await getWorkSubmitMode(world.id);
+  const role =
+    world.creator_id === input.authorId
+      ? ("creator" as const)
+      : await getMemberRole(world.id, input.authorId);
+  if (!canCreateWorks({ world, mode, role, userId: input.authorId })) {
+    throw Object.assign(
+      new Error("该世界观为仅邀请创作模式，暂不能投稿"),
+      { statusCode: 403 },
+    );
   }
 
   const title = input.title.trim().slice(0, 200);
@@ -364,8 +382,18 @@ export async function createWork(input: {
     parentId = null;
   }
 
+  // 状态由协作模式决定：创建者可直发/存草稿；open 直接发布（平台简单审核）；
+  // review / invite_only 进入 pending，等待创建者或 editor 审核。
   const publish = Boolean(input.publish);
-  const status: WorkStatus = publish ? "published" : "draft";
+  let status: WorkStatus;
+  if (world.creator_id === input.authorId) {
+    status = publish ? "published" : "draft";
+  } else if (mode === "open") {
+    status = "published";
+  } else {
+    status = "pending";
+  }
+
   const summary = input.summary?.trim().slice(0, 500) || null;
   const content = input.content?.trim() || null;
   const mediaUrl = input.mediaUrl?.trim() || null;
@@ -386,11 +414,63 @@ export async function createWork(input: {
       mediaUrl,
       status,
       parentId,
-      publish ? new Date() : null,
+      status === "published" ? new Date() : null,
     ],
   );
 
   const row = res.rows[0];
+  const joined = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT} WHERE w.id = $1 LIMIT 1`,
+    [row.id],
+  );
+  const out = joined.rows[0];
+  await attachReactionCounts([out]);
+  return out;
+}
+
+/** Pending works awaiting review in a world (for creator/editor). */
+export async function listPendingWorks(
+  worldId: string,
+): Promise<WorkFeedRow[]> {
+  const res = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT}
+     WHERE w.world_id = $1
+       AND w.status = 'pending'
+       AND w.deleted_at IS NULL
+     ORDER BY w.created_at DESC`,
+    [worldId],
+  );
+  await attachReactionCounts(res.rows);
+  return res.rows;
+}
+
+export async function reviewWork(input: {
+  workId: string;
+  reviewerId: string;
+  action: "approve" | "reject";
+  reason?: string;
+}): Promise<WorkFeedRow | null> {
+  const status: WorkStatus = input.action === "approve" ? "published" : "rejected";
+  const reason =
+    input.action === "reject"
+      ? input.reason?.trim().slice(0, 500) || null
+      : null;
+  const publishedAt = input.action === "approve" ? new Date() : null;
+
+  const res = await pool.query<WorkRow>(
+    `UPDATE works
+        SET status = $2,
+            published_at = $5,
+            reject_reason = $3,
+            reviewed_by = $4,
+            reviewed_at = now(),
+            updated_at = now()
+      WHERE id = $1 AND status = 'pending' AND deleted_at IS NULL
+      RETURNING *`,
+    [input.workId, status, reason, input.reviewerId, publishedAt],
+  );
+  const row = res.rows[0];
+  if (!row) return null;
   const joined = await pool.query<WorkFeedRow>(
     `${FEED_SELECT} WHERE w.id = $1 LIMIT 1`,
     [row.id],

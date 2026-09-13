@@ -17,6 +17,13 @@ export const TAG_PRESETS = [
   "末日",
 ] as const;
 
+/** 投稿协作模式：open=平台审核(直接发布)，review=创建者/编辑审核，invite_only=仅成员可写 */
+export const WORK_SUBMIT_MODES = ["open", "review", "invite_only"] as const;
+export type WorkSubmitMode = (typeof WORK_SUBMIT_MODES)[number];
+
+export const MEMBER_ROLES = ["creator", "editor", "contributor", "viewer"] as const;
+export type MemberRole = (typeof MEMBER_ROLES)[number];
+
 export type WorldRow = {
   id: string;
   creator_id: string;
@@ -36,6 +43,8 @@ export type WorldRow = {
   created_at: Date;
   updated_at: Date;
   deleted_at: Date | null;
+  /** Attached from world_permissions by attachWorkSubmitMode; not a DB column of worlds. */
+  work_submit_mode?: WorkSubmitMode;
 };
 
 export type PublicWorld = {
@@ -52,6 +61,7 @@ export type PublicWorld = {
   welcomeMessage: string | null;
   visibility: "public" | "private";
   allowFork: boolean;
+  workSubmitMode: WorkSubmitMode;
   homepageConfig: HomepageConfig;
   createdAt: string;
   updatedAt: string;
@@ -72,10 +82,30 @@ export function toPublicWorld(row: WorldRow): PublicWorld {
     welcomeMessage: row.welcome_message,
     visibility: row.visibility,
     allowFork: row.allow_fork,
+    workSubmitMode: row.work_submit_mode ?? "review",
     homepageConfig: normalizeHomepageConfig(row.homepage_config),
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
   };
+}
+
+/** Batch-attach each world's work_submit_mode from world_permissions. */
+export async function attachWorkSubmitMode<T extends { id: string }>(
+  rows: T[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  const ids = rows.map((r) => r.id);
+  const res = await pool.query<{ world_id: string; work_submit_mode: string }>(
+    `SELECT world_id, work_submit_mode FROM world_permissions
+      WHERE world_id = ANY($1::uuid[])`,
+    [ids],
+  );
+  const map = new Map<string, string>();
+  for (const row of res.rows) map.set(row.world_id, row.work_submit_mode);
+  for (const r of rows) {
+    (r as T & { work_submit_mode?: WorkSubmitMode }).work_submit_mode =
+      (map.get(r.id) as WorkSubmitMode) ?? "review";
+  }
 }
 
 /** URL-safe ASCII slug. Chinese-only names fall back to "world". */
@@ -151,6 +181,7 @@ export async function createDraftWorld(input: {
           [world.id, input.creatorId],
         );
 
+        await attachWorkSubmitMode([world]);
         return world;
       });
     } catch (err: unknown) {
@@ -171,7 +202,9 @@ export async function findWorldById(id: string): Promise<WorldRow | null> {
     `SELECT * FROM worlds WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,
     [id],
   );
-  return result.rows[0] ?? null;
+  const row = result.rows[0] ?? null;
+  if (row) await attachWorkSubmitMode([row]);
+  return row;
 }
 
 export async function findWorldBySlug(slug: string): Promise<WorldRow | null> {
@@ -179,7 +212,9 @@ export async function findWorldBySlug(slug: string): Promise<WorldRow | null> {
     `SELECT * FROM worlds WHERE slug = $1 AND deleted_at IS NULL LIMIT 1`,
     [slug],
   );
-  return result.rows[0] ?? null;
+  const row = result.rows[0] ?? null;
+  if (row) await attachWorkSubmitMode([row]);
+  return row;
 }
 
 export async function listMyWorlds(creatorId: string): Promise<WorldRow[]> {
@@ -189,6 +224,7 @@ export async function listMyWorlds(creatorId: string): Promise<WorldRow[]> {
      ORDER BY updated_at DESC`,
     [creatorId],
   );
+  await attachWorkSubmitMode(result.rows);
   return result.rows;
 }
 
@@ -204,6 +240,7 @@ export async function listPublicWorlds(limit = 48): Promise<WorldRow[]> {
      LIMIT $1`,
     [safeLimit],
   );
+  await attachWorkSubmitMode(result.rows);
   return result.rows;
 }
 
@@ -223,6 +260,7 @@ export async function listFollowedWorlds(
       LIMIT $2`,
     [userId, safeLimit],
   );
+  await attachWorkSubmitMode(result.rows);
   return result.rows;
 }
 
@@ -237,6 +275,7 @@ export async function updateWorld(
     tags?: string[];
     welcomeMessage?: string | null;
     homepageConfig?: HomepageConfig;
+    workSubmitMode?: WorkSubmitMode;
   },
 ): Promise<WorldRow | null> {
   const fields: string[] = [];
@@ -265,6 +304,17 @@ export async function updateWorld(
     values.push(JSON.stringify(normalizeHomepageConfig(patch.homepageConfig)));
   }
 
+  if (patch.workSubmitMode !== undefined) {
+    await pool.query(
+      `INSERT INTO world_permissions (world_id, work_submit_mode)
+       VALUES ($1, $2)
+       ON CONFLICT (world_id)
+       DO UPDATE SET work_submit_mode = EXCLUDED.work_submit_mode,
+                     updated_at = now()`,
+      [id, patch.workSubmitMode],
+    );
+  }
+
   if (fields.length === 0) {
     return findWorldById(id);
   }
@@ -278,6 +328,7 @@ export async function updateWorld(
      RETURNING *`,
     values,
   );
+  if (result.rows[0]) await attachWorkSubmitMode(result.rows);
   return result.rows[0] ?? null;
 }
 
@@ -289,6 +340,7 @@ export async function publishWorld(id: string): Promise<WorldRow | null> {
      RETURNING *`,
     [id],
   );
+  if (result.rows[0]) await attachWorkSubmitMode(result.rows);
   return result.rows[0] ?? null;
 }
 

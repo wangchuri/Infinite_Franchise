@@ -11,6 +11,7 @@ import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCommentRoutes } from "./routes/comments.js";
 import { registerReactionRoutes } from "./routes/reactions.js";
 import { registerUploadRoutes } from "./routes/uploads.js";
+import { registerUserRoutes } from "./routes/users.js";
 import { registerWorkRoutes } from "./routes/works.js";
 import { registerWorldRoutes } from "./routes/worlds.js";
 import { getLocalUploadDir } from "./storage/index.js";
@@ -105,6 +106,7 @@ async function main() {
   });
 
   await registerAuthRoutes(app);
+  await registerUserRoutes(app);
   await registerUploadRoutes(app);
   await registerWorldRoutes(app);
   await registerWorkRoutes(app);

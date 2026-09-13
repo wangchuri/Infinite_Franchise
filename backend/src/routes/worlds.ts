@@ -1,6 +1,15 @@
 import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth-guard.js";
+import {
+  addMember,
+  canReviewWorks,
+  getMemberRole,
+  listContributableWorlds,
+  listMembers,
+  removeMember,
+} from "../collab.js";
 import { normalizeHomepageConfig } from "../homepage-config.js";
+import { findUserByEmailOrUsername } from "../users.js";
 import {
   canViewWorld,
   createDraftWorld,
@@ -15,6 +24,10 @@ import {
   TAG_PRESETS,
   toPublicWorld,
   updateWorld,
+  MEMBER_ROLES,
+  WORK_SUBMIT_MODES,
+  type MemberRole,
+  type WorkSubmitMode,
 } from "../worlds.js";
 import {
   createEntry,
@@ -124,6 +137,73 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     return { worlds: rows.map(toPublicWorld) };
   });
 
+  /** Worlds the current user may submit works to (for the create page). */
+  app.get("/api/worlds/contributable", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const rows = await listContributableWorlds(user.id);
+    return { worlds: rows.map(toPublicWorld) };
+  });
+
+  /** Member list (creator or editor may view). */
+  app.get("/api/worlds/:id/members", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await findWorldById(id);
+    if (!world) return reply.code(404).send({ error: "world not found" });
+    const role = await getMemberRole(id, user.id);
+    if (!canReviewWorks({ world, role, userId: user.id })) {
+      return reply.code(403).send({ error: "无权查看成员列表" });
+    }
+    return { members: await listMembers(id) };
+  });
+
+  /** Invite a member (creator only). */
+  app.post("/api/worlds/:id/members", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadOwnedWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const username =
+      typeof body.username === "string" ? body.username.trim() : "";
+    const roleRaw = typeof body.role === "string" ? body.role : "";
+    if (!username || !roleRaw) {
+      return reply.code(400).send({ error: "username and role are required" });
+    }
+    if (!(MEMBER_ROLES as readonly string[]).includes(roleRaw) || roleRaw === "creator") {
+      return reply.code(400).send({ error: "invalid role" });
+    }
+
+    const target = await findUserByEmailOrUsername(username);
+    if (!target || target.status !== "active") {
+      return reply.code(404).send({ error: "用户不存在" });
+    }
+    const member = await addMember(id, target.id, roleRaw as MemberRole);
+    return reply.code(201).send({ member });
+  });
+
+  /** Remove a member (creator only, cannot remove creator/self). */
+  app.delete("/api/worlds/:id/members/:userId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, userId } = req.params as { id: string; userId: string };
+    const world = await loadOwnedWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const ok = await removeMember(id, userId, user.id);
+    if (!ok) {
+      return reply.code(400).send({ error: "无法移除该成员" });
+    }
+    return reply.code(204).send();
+  });
+
   app.get("/api/worlds/id/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const world = await findWorldById(id);
@@ -192,6 +272,14 @@ export async function registerWorldRoutes(app: FastifyInstance) {
         ? normalizeHomepageConfig(body.homepageConfig)
         : undefined;
 
+    let workSubmitMode: WorkSubmitMode | undefined;
+    if (typeof body.workSubmitMode === "string") {
+      if (!(WORK_SUBMIT_MODES as readonly string[]).includes(body.workSubmitMode)) {
+        return reply.code(400).send({ error: "invalid workSubmitMode" });
+      }
+      workSubmitMode = body.workSubmitMode as WorkSubmitMode;
+    }
+
     const updated = await updateWorld(id, {
       name: name?.trim().slice(0, 80),
       description: asString(body.description)?.slice(0, 500),
@@ -201,6 +289,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       tags: asStringArray(body.tags),
       welcomeMessage: asNullableString(body.welcomeMessage),
       homepageConfig,
+      workSubmitMode,
     });
 
     return { world: toPublicWorld(updated!) };

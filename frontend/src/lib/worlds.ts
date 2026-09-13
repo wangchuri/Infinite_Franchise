@@ -6,6 +6,9 @@ import {
 
 export type { HomepageConfig };
 
+export type WorkSubmitMode = "open" | "review" | "invite_only";
+export type MemberRole = "creator" | "editor" | "contributor" | "viewer";
+
 export type World = {
   id: string;
   creatorId: string;
@@ -20,6 +23,7 @@ export type World = {
   welcomeMessage: string | null;
   visibility: "public" | "private";
   allowFork: boolean;
+  workSubmitMode: WorkSubmitMode;
   homepageConfig: HomepageConfig;
   createdAt: string;
   updatedAt: string;
@@ -128,6 +132,7 @@ export async function updateWorld(
     tags: string[];
     welcomeMessage: string | null;
     homepageConfig: HomepageConfig;
+    workSubmitMode: WorkSubmitMode;
   }>,
 ): Promise<World> {
   const data = await apiFetch<{ world: World }>(`/api/worlds/${id}`, {
@@ -146,6 +151,48 @@ export async function publishWorld(id: string): Promise<World> {
 
 export async function deleteWorld(id: string): Promise<void> {
   await apiFetch(`/api/worlds/${id}`, { method: "DELETE" });
+}
+
+/** Worlds the current user may submit works to. */
+export async function fetchContributableWorlds(): Promise<World[]> {
+  const data = await apiFetch<{ worlds: World[] }>("/api/worlds/contributable");
+  return data.worlds.map(withConfig);
+}
+
+export type WorldMember = {
+  userId: string;
+  username: string;
+  displayName: string;
+  role: MemberRole;
+  joinedAt: string;
+};
+
+export async function fetchMembers(worldId: string): Promise<WorldMember[]> {
+  const data = await apiFetch<{ members: WorldMember[] }>(
+    `/api/worlds/${worldId}/members`,
+  );
+  return data.members;
+}
+
+export async function addMember(
+  worldId: string,
+  username: string,
+  role: MemberRole,
+): Promise<WorldMember> {
+  const data = await apiFetch<{ member: WorldMember }>(
+    `/api/worlds/${worldId}/members`,
+    { method: "POST", body: JSON.stringify({ username, role }) },
+  );
+  return data.member;
+}
+
+export async function removeMember(
+  worldId: string,
+  userId: string,
+): Promise<void> {
+  await apiFetch(`/api/worlds/${worldId}/members/${userId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function fetchTagPresets(): Promise<string[]> {

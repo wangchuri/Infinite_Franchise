@@ -22,6 +22,7 @@ import { createWork, type WorkType } from "@/lib/works";
 import EntrySlidePanel, {
   type EntryFormValue,
 } from "@/components/world-editor/EntrySlidePanel";
+import CollabPanel from "@/components/world-editor/CollabPanel";
 import ImageUpload from "@/components/world-editor/ImageUpload";
 import StylePanel from "@/components/world-editor/StylePanel";
 import TimelineEditor from "@/components/world-editor/TimelineEditor";
@@ -536,6 +537,16 @@ export default function EditWorldPage() {
               setWorld({ ...world, homepageConfig });
               void patchWorld({ homepageConfig });
             }}
+          />
+        </section>
+
+        <section className={styles.section}>
+          <CollabPanel
+            worldId={world.id}
+            currentMode={world.workSubmitMode}
+            onModeChange={(workSubmitMode) =>
+              void patchWorld({ workSubmitMode })
+            }
           />
         </section>
 

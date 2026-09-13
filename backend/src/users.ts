@@ -54,6 +54,44 @@ export async function findUserByEmailOrUsername(
   return result.rows[0] ?? null;
 }
 
+export type UserSearchItem = {
+  id: string;
+  username: string;
+  displayName: string;
+  avatarUrl: string | null;
+};
+
+/** Case-insensitive search by username / display name (excludes the caller). */
+export async function searchUsers(
+  query: string,
+  excludeId: string | null,
+  limit = 8,
+): Promise<UserSearchItem[]> {
+  const escaped = query.replace(/[\\%_]/g, (m) => `\\${m}`);
+  const res = await pool.query<{
+    id: string;
+    username: string;
+    display_name: string;
+    avatar_url: string | null;
+  }>(
+    `SELECT id, username, display_name, avatar_url
+       FROM users
+      WHERE deleted_at IS NULL
+        AND status = 'active'
+        AND (username ILIKE $1 OR display_name ILIKE $1)
+        AND ($2::uuid IS NULL OR id <> $2)
+      ORDER BY username ASC
+      LIMIT $3`,
+    [`%${escaped}%`, excludeId, limit],
+  );
+  return res.rows.map((r) => ({
+    id: r.id,
+    username: r.username,
+    displayName: r.display_name,
+    avatarUrl: r.avatar_url,
+  }));
+}
+
 export async function findUserById(id: string): Promise<UserRow | null> {
   const result = await pool.query<UserRow>(
     `SELECT * FROM users WHERE id = $1 AND deleted_at IS NULL LIMIT 1`,

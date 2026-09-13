@@ -1,11 +1,16 @@
 import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth-guard.js";
+import { canReviewWorks, getMemberRole } from "../collab.js";
+import { findWorldById, type WorldRow } from "../worlds.js";
 import {
   WORK_TYPES,
   createWork,
+  findAnyWorkById,
   findPublicWorkById,
   getWorkReadPayload,
+  listPendingWorks,
   listPublicWorks,
+  reviewWork,
   toPublicWork,
   type WorkType,
 } from "../works.js";
@@ -20,6 +25,17 @@ function asNullableString(v: unknown): string | null | undefined {
   return undefined;
 }
 
+async function loadReviewableWorld(
+  worldId: string,
+  userId: string,
+): Promise<WorldRow | null> {
+  const world = await findWorldById(worldId);
+  if (!world) return null;
+  const role = await getMemberRole(worldId, userId);
+  if (!canReviewWorks({ world, role, userId })) return null;
+  return world;
+}
+
 export async function registerWorkRoutes(app: FastifyInstance) {
   /** Plaza: published works across public worlds. */
   app.get("/api/works", async (req) => {
@@ -27,6 +43,50 @@ export async function registerWorkRoutes(app: FastifyInstance) {
     const limit = q.limit ? Number(q.limit) : 40;
     const rows = await listPublicWorks(Number.isFinite(limit) ? limit : 40);
     return { works: rows.map(toPublicWork) };
+  });
+
+  /** Pending works awaiting review (creator/editor of the world). */
+  app.get("/api/worlds/:id/works/pending", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadReviewableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const rows = await listPendingWorks(id);
+    return { works: rows.map(toPublicWork) };
+  });
+
+  /** Approve / reject a pending work (creator or editor of its world). */
+  app.post("/api/works/:id/review", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+
+    const { id } = req.params as { id: string };
+    const work = await findAnyWorkById(id);
+    if (!work || work.status !== "pending") {
+      return reply.code(404).send({ error: "待审核作品不存在" });
+    }
+
+    const world = await loadReviewableWorld(work.world_id, user.id);
+    if (!world) {
+      return reply.code(403).send({ error: "无审核权限" });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const action = asString(body.action);
+    if (action !== "approve" && action !== "reject") {
+      return reply.code(400).send({ error: "action must be approve|reject" });
+    }
+
+    const updated = await reviewWork({
+      workId: id,
+      reviewerId: user.id,
+      action,
+      reason: asString(body.reason),
+    });
+    return { work: toPublicWork(updated!) };
   });
 
   /** Reading view: work + chapter nav + wiki annotations. */

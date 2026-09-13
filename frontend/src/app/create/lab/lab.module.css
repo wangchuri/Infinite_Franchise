@@ -1,0 +1,503 @@
+.page {
+  max-width: none;
+}
+
+.stage {
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.head {
+  margin-bottom: 2.25rem;
+  text-align: center;
+}
+
+.eyebrow {
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--sea-bright);
+  margin-bottom: 0.45rem;
+}
+
+.title {
+  font-family: var(--font-display);
+  font-size: clamp(1.8rem, 4vw, 2.2rem);
+  font-weight: 700;
+  color: var(--paper);
+  margin-bottom: 0.5rem;
+}
+
+.lead {
+  color: rgba(243, 239, 230, 0.7);
+  font-size: 0.95rem;
+  max-width: 36em;
+  margin: 0 auto;
+}
+
+/* ---- Card deck selector ---- */
+
+.board {
+  --card-w: clamp(220px, 23vw, 320px);
+  --card-gap: clamp(2.5rem, 6vw, 5rem);
+  --shift: calc(var(--card-w) + var(--card-gap));
+  --shift-half: calc((var(--card-w) + var(--card-gap)) * 0.5);
+
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--card-gap);
+  min-height: 68vh;
+  padding: 2.5rem 1.5rem 4rem;
+}
+
+.activeSlot {
+  position: relative;
+  z-index: 60; /* keep the flying card above the deck (which uses z-index up to 40) */
+  width: var(--card-w);
+  aspect-ratio: 3 / 5;
+  flex-shrink: 0;
+}
+
+.cardWrap {
+  position: absolute;
+  inset: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  transform: rotate(-6deg);
+  transform-origin: 50% 60%;
+  will-change: transform, opacity;
+}
+
+button.cardWrap {
+  cursor: pointer;
+  text-align: left;
+}
+
+.card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(20, 33, 43, 0.2);
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--tone) 0%, var(--tone-deep) 100%);
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 239, 230, 0.1),
+    0 14px 26px rgba(20, 33, 43, 0.24);
+  color: var(--paper);
+  transition: box-shadow 0.25s ease, filter 0.25s ease;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 80% at 22% 0%,
+      rgba(243, 239, 230, 0.2),
+      transparent 55%
+    ),
+    radial-gradient(
+      120% 90% at 100% 100%,
+      rgba(20, 33, 43, 0.28),
+      transparent 60%
+    );
+  pointer-events: none;
+}
+
+button.cardWrap:hover .card {
+  filter: brightness(1.06);
+  box-shadow:
+    inset 0 0 0 1px rgba(243, 239, 230, 0.16),
+    0 18px 32px rgba(20, 33, 43, 0.3);
+}
+
+/* Tarot-style double frame. */
+.frame {
+  position: absolute;
+  inset: 10px;
+  border: 1px solid rgba(243, 239, 230, 0.55);
+  border-radius: 7px;
+  box-shadow: inset 0 0 0 4px transparent, inset 0 0 0 5px rgba(243, 239, 230, 0.2);
+  pointer-events: none;
+}
+
+/* Next card is drawn out of the deck: arcs up, overshoots, then settles. */
+.flyIn {
+  animation-name: flyIn;
+  animation-duration: 0.56s;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-delay: 70ms;
+  animation-fill-mode: both;
+}
+
+@keyframes flyIn {
+  0% {
+    transform: translate(var(--shift), 0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(var(--shift-half), -22px) rotate(5deg) scale(1.03);
+  }
+  82% {
+    transform: translate(-9px, 3px) rotate(-8.5deg) scale(1.008);
+  }
+  100% {
+    transform: translate(0, 0) rotate(-6deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* Current card slides back onto the deck, in front while crossing. */
+.leaving {
+  z-index: 2;
+  pointer-events: none;
+  will-change: transform, opacity;
+  animation: flyBack 0.46s cubic-bezier(0.45, 0, 0.7, 0.2) forwards;
+}
+
+@keyframes flyBack {
+  0% {
+    transform: translate(0, 0) rotate(-6deg) scale(1);
+    opacity: 1;
+  }
+  55% {
+    transform: translate(var(--shift-half), -15px) rotate(1deg) scale(0.99);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(calc(var(--shift) + 28px), -20px) rotate(6deg)
+      scale(0.93);
+    opacity: 0;
+  }
+}
+
+/* Selected card glows — pre-rendered halo, animated on the compositor. */
+.halo {
+  position: absolute;
+  inset: -7px;
+  border-radius: 15px;
+  opacity: 0;
+  box-shadow: 0 0 26px 8px var(--tone);
+  transition: opacity 0.35s ease;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.glow .halo {
+  opacity: 1;
+  animation: haloPulse 1.9s ease-in-out infinite;
+}
+
+@keyframes haloPulse {
+  0%,
+  100% {
+    opacity: 0.5;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.glow .card {
+  box-shadow:
+    0 0 0 2px rgba(243, 239, 230, 0.75),
+    0 14px 26px rgba(20, 33, 43, 0.28);
+}
+
+.face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.9rem 1.35rem 1.7rem;
+}
+
+.faceNumeral {
+  font-family: var(--font-display);
+  font-size: 0.82rem;
+  letter-spacing: 0.4em;
+  text-indent: 0.4em;
+  color: rgba(243, 239, 230, 0.82);
+}
+
+/* Framed art panel. */
+.faceIcon {
+  display: grid;
+  place-items: center;
+  width: 82%;
+  height: 44%;
+  padding: 0.9rem;
+  border: 1px solid rgba(243, 239, 230, 0.34);
+  border-radius: 7px;
+  background: rgba(20, 33, 43, 0.16);
+}
+
+.icon {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.faceFoot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.faceRule {
+  position: relative;
+  width: 62%;
+  height: 1px;
+  background: rgba(243, 239, 230, 0.42);
+}
+
+.faceRule::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 7px;
+  height: 7px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background: rgba(243, 239, 230, 0.65);
+}
+
+.faceLabel {
+  font-family: var(--font-display);
+  font-size: 1.55rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-indent: 0.14em;
+}
+
+.faceHint {
+  font-size: 0.76rem;
+  color: rgba(243, 239, 230, 0.72);
+  letter-spacing: 0.03em;
+}
+
+/* Staggered deck on the right. */
+.deck {
+  position: relative;
+  width: var(--card-w);
+  aspect-ratio: 3 / 5;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+}
+
+.deck:hover:not(:disabled) {
+  transform: translateY(-3px);
+}
+
+.deck:disabled {
+  cursor: default;
+}
+
+.deckCard {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(20, 33, 43, 0.2);
+  border-radius: 10px;
+  background: linear-gradient(160deg, var(--tone) 0%, var(--tone-deep) 100%);
+  box-shadow: 0 10px 18px rgba(20, 33, 43, 0.18);
+  pointer-events: none;
+  transition:
+    transform 0.42s cubic-bezier(0.34, 1.4, 0.64, 1),
+    filter 0.3s ease;
+}
+
+.deckCard::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    120% 80% at 22% 0%,
+    rgba(243, 239, 230, 0.16),
+    transparent 55%
+  );
+  pointer-events: none;
+}
+
+.deckCard[data-i="0"] {
+  z-index: 40;
+  transform: translate(0, 0) rotate(0deg) scale(1);
+}
+
+.deckCard[data-i="1"] {
+  z-index: 30;
+  transform: translate(14px, -10px) rotate(2deg) scale(0.965);
+}
+
+.deckCard[data-i="2"] {
+  z-index: 20;
+  transform: translate(28px, -20px) rotate(4deg) scale(0.93);
+}
+
+.deckCard[data-i="3"] {
+  z-index: 10;
+  transform: translate(42px, -30px) rotate(6deg) scale(0.895);
+}
+
+/* Fan the stack out on hover to invite the draw. */
+.deck:hover .deckCard {
+  filter: brightness(1.06);
+}
+
+.deck:hover .deckCard[data-i="0"] {
+  transform: translate(-2px, -4px) rotate(-1deg) scale(1);
+}
+
+.deck:hover .deckCard[data-i="1"] {
+  transform: translate(20px, -16px) rotate(4deg) scale(0.965);
+}
+
+.deck:hover .deckCard[data-i="2"] {
+  transform: translate(40px, -30px) rotate(8deg) scale(0.93);
+}
+
+.deck:hover .deckCard[data-i="3"] {
+  transform: translate(60px, -44px) rotate(12deg) scale(0.895);
+}
+
+.deckHint {
+  position: absolute;
+  left: 50%;
+  bottom: -2.1rem;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 0.82rem;
+  color: rgba(243, 239, 230, 0.62);
+}
+
+/* ---- Bottom confirm prompt ---- */
+
+.prompt {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  min-height: 2.75rem;
+  font-size: 1rem;
+  color: var(--paper);
+}
+
+.promptHint {
+  color: rgba(243, 239, 230, 0.62);
+  font-size: 0.9rem;
+}
+
+.confirm,
+.cancel {
+  padding: 0.5rem 1.15rem;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.confirm {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.confirm:hover {
+  background: var(--sea-bright);
+  color: #fff;
+}
+
+.cancel {
+  background: rgba(243, 239, 230, 0.08);
+  border-color: rgba(243, 239, 230, 0.22);
+  color: var(--paper);
+}
+
+.cancel:hover {
+  border-color: var(--sea-bright);
+  color: var(--sea-bright);
+}
+
+/* ---- Type tones ---- */
+
+.cardWrap[data-kind="novel"],
+.deckCard[data-kind="novel"] {
+  --tone: #1f5c5a;
+  --tone-deep: #0f3b39;
+}
+
+.cardWrap[data-kind="artwork"],
+.deckCard[data-kind="artwork"] {
+  --tone: #b06a3c;
+  --tone-deep: #6f3d22;
+}
+
+.cardWrap[data-kind="program"],
+.deckCard[data-kind="program"] {
+  --tone: #2f4453;
+  --tone-deep: #16232c;
+}
+
+.cardWrap[data-kind="audio"],
+.deckCard[data-kind="audio"] {
+  --tone: #2f8a86;
+  --tone-deep: #175b57;
+}
+
+.back {
+  display: inline-block;
+  margin-top: 1.25rem;
+  color: var(--sea-bright);
+  font-size: 0.92rem;
+}
+
+@media (max-width: 640px) {
+  .board {
+    flex-direction: column;
+    gap: 5rem;
+    min-height: 0;
+    padding-bottom: 4rem;
+  }
+
+  .deckHint {
+    bottom: -1.9rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board,
+  .flyIn,
+  .leaving,
+  .halo,
+  .deckCard {
+    animation: none !important;
+  }
+
+  .cardWrap,
+  .card,
+  .deckCard,
+  .deck {
+    transition-duration: 0.01ms !important;
+  }
+
+  .leaving {
+    display: none;
+  }
+}

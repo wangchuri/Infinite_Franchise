@@ -15,6 +15,78 @@
   flex-shrink: 0;
 }
 
+/* Create page: full-bleed dark "tarot table" theme */
+.shellLab {
+  background:
+    radial-gradient(
+      120% 80% at 50% -10%,
+      rgba(47, 138, 134, 0.18),
+      transparent 60%
+    ),
+    radial-gradient(
+      90% 70% at 100% 110%,
+      rgba(196, 92, 38, 0.12),
+      transparent 60%
+    ),
+    linear-gradient(160deg, #17262c 0%, #0e1a20 100%);
+}
+
+.shellLab .topbar {
+  background: rgba(14, 26, 32, 0.94);
+  border-bottom-color: rgba(243, 239, 230, 0.1);
+  /* Disable the expensive backdrop blur while cards animate on this page. */
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+.shellLab .brand {
+  color: var(--paper);
+}
+
+.shellLab .brand span {
+  color: rgba(243, 239, 230, 0.55);
+}
+
+.shellLab .nav a,
+.shellLab .nav button {
+  color: rgba(243, 239, 230, 0.74);
+}
+
+.shellLab .nav a:hover,
+.shellLab .nav button:hover {
+  color: var(--paper);
+  background: rgba(243, 239, 230, 0.1);
+}
+
+.shellLab .navActive {
+  color: var(--paper) !important;
+  background: rgba(243, 239, 230, 0.16) !important;
+}
+
+.shellLab .topSearch input {
+  background: rgba(243, 239, 230, 0.08);
+  border-color: rgba(243, 239, 230, 0.16);
+  color: var(--paper);
+}
+
+.shellLab .topSearch input::placeholder {
+  color: rgba(243, 239, 230, 0.45);
+}
+
+.shellLab .avatarBtn {
+  background: rgba(243, 239, 230, 0.12) !important;
+  border-color: rgba(243, 239, 230, 0.2);
+}
+
+.shellLab .avatarFallback {
+  color: var(--paper);
+}
+
+.shellLab .footer {
+  color: rgba(243, 239, 230, 0.5);
+  border-top-color: rgba(243, 239, 230, 0.1);
+}
+
 @media (max-width: 1024px) {
   .shellPlaza {
     height: auto;

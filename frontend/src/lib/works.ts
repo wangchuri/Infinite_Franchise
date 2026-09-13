@@ -94,6 +94,26 @@ export async function fetchWorkRead(id: string): Promise<WorkReadPayload> {
   return apiFetch<WorkReadPayload>(`/api/works/${id}/read`, {}, { auth: false });
 }
 
+/** Pending works awaiting review in a world (creator/editor only). */
+export async function fetchPendingWorks(worldId: string): Promise<Work[]> {
+  const data = await apiFetch<{ works: Work[] }>(
+    `/api/worlds/${worldId}/works/pending`,
+  );
+  return data.works;
+}
+
+export async function reviewWork(
+  workId: string,
+  action: "approve" | "reject",
+  reason?: string,
+): Promise<Work> {
+  const data = await apiFetch<{ work: Work }>(`/api/works/${workId}/review`, {
+    method: "POST",
+    body: JSON.stringify({ action, reason }),
+  });
+  return data.work;
+}
+
 export async function createWork(input: {
   worldId: string;
   type: WorkType;

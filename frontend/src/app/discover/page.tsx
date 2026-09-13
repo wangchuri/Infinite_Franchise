@@ -103,14 +103,6 @@ function DiscoverInner() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.hero}>
-        <p className={styles.eyebrow}>Discover</p>
-        <h1 className={styles.title}>发现世界</h1>
-        <p className={styles.lead}>
-          浏览已公开的世界观，点进卡片进入 Wiki。想找故事请回「广场」。
-        </p>
-      </header>
-
       <div className={styles.toolbar}>
         <div className={styles.sort}>
           <span className={styles.sortLabel}>排序</span>
