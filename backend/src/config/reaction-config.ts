@@ -1,4 +1,4 @@
-import { pool } from "./db.js";
+import { pool } from "../db.js";
 
 /**
  * Reaction 配置：这里是「棒极了 / OOC 警告」等反应类型的唯一来源。

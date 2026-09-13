@@ -7,15 +7,15 @@ import {
   signAccessToken,
   validateRegisterInput,
   verifyPassword,
-} from "../auth.js";
-import { requireAuth } from "../auth-guard.js";
+} from "../auth/auth.js";
+import { requireAuth } from "../auth/auth-guard.js";
 import {
   createSession,
   createUser,
   findUserByEmailOrUsername,
   toPublicUser,
   touchLastLogin,
-} from "../users.js";
+} from "../services/users.js";
 
 function clientMeta(req: FastifyRequest): {
   userAgent: string | null;

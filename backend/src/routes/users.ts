@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../auth-guard.js";
-import { searchUsers } from "../users.js";
+import { requireAuth } from "../auth/auth-guard.js";
+import { searchUsers } from "../services/users.js";
 
 export async function registerUserRoutes(app: FastifyInstance) {
   /** Search site users by username / display name (for co-author pickers). */

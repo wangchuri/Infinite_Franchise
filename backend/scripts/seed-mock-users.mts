@@ -1,7 +1,7 @@
 import "dotenv/config";
-import { hashPassword } from "../src/auth.ts";
+import { hashPassword } from "../src/auth/auth.ts";
 import { pool } from "../src/db.ts";
-import { createUser, findUserByEmailOrUsername } from "../src/users.ts";
+import { createUser, findUserByEmailOrUsername } from "../src/services/users.ts";
 
 /**
  * Local mock users for development.

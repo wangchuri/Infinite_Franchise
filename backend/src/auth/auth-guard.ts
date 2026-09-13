@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { verifyAccessToken } from "./auth.js";
-import { findUserById, type PublicUser, toPublicUser, type UserRow } from "./users.js";
+import { findUserById, type PublicUser, toPublicUser, type UserRow } from "../services/users.js";
 
 export type AuthUser = PublicUser & { raw: UserRow };
 

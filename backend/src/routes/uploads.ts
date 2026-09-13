@@ -2,7 +2,7 @@ import multipart from "@fastify/multipart";
 import type { FastifyInstance } from "fastify";
 import { randomUUID } from "node:crypto";
 import path from "node:path";
-import { requireAuth } from "../auth-guard.js";
+import { requireAuth } from "../auth/auth-guard.js";
 import { getStorage } from "../storage/index.js";
 
 const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);

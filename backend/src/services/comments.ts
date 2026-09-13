@@ -1,4 +1,4 @@
-import { pool } from "./db.js";
+import { pool } from "../db.js";
 import type { ReactionTargetType } from "./reactions.js";
 
 export const COMMENT_MAX = 2000;

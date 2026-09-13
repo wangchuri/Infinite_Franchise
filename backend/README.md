@@ -2,6 +2,21 @@
 
 Node.js + TypeScript API（Fastify + PostgreSQL）。前后端分离，不承载页面。
 
+## 目录结构
+
+```text
+src/
+  index.ts          服务装配与启动
+  db.ts             连接池 / 事务
+  config/           平台配置 schema（homepage-config · world-layout · reaction-config）
+  auth/             鉴权（auth · auth-guard）
+  services/         业务逻辑（worlds · wiki · works · users · collab · comments · reactions）
+  routes/           各资源 HTTP 路由
+  storage/          文件存储驱动（local）
+```
+
+- `config/` 下与前端 `frontend/src/lib/` 的同名文件互为镜像（`homepage-config.ts`、`world-layout.ts`），改动需两边同步。
+
 ## Scripts
 
 ```bash

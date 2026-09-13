@@ -1,5 +1,5 @@
 import type { PoolClient, QueryResultRow } from "pg";
-import { pool } from "./db.js";
+import { pool } from "../db.js";
 
 export type UserRow = {
   id: string;

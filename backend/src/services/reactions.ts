@@ -1,8 +1,8 @@
-import { pool } from "./db.js";
+import { pool } from "../db.js";
 import {
   listActiveReactionTypes,
   type ReactionDef,
-} from "./reaction-config.js";
+} from "../config/reaction-config.js";
 
 export const TARGET_TYPES = ["work", "entry", "timeline"] as const;
 export type ReactionTargetType = (typeof TARGET_TYPES)[number];

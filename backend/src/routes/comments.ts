@@ -1,15 +1,15 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../auth-guard.js";
+import { requireAuth } from "../auth/auth-guard.js";
 import {
   createComment,
   deleteComment,
   listComments,
-} from "../comments.js";
+} from "../services/comments.js";
 import {
   assertTargetExists,
   isReactionTargetType,
   type ReactionTargetType,
-} from "../reactions.js";
+} from "../services/reactions.js";
 
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;

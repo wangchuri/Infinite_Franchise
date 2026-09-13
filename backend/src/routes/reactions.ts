@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../auth-guard.js";
-import { isKnownReactionType, listActiveReactionTypes } from "../reaction-config.js";
+import { requireAuth } from "../auth/auth-guard.js";
+import { isKnownReactionType, listActiveReactionTypes } from "../config/reaction-config.js";
 import {
   assertTargetExists,
   getReactionSummary,
@@ -8,7 +8,7 @@ import {
   removeReaction,
   toggleReaction,
   type ReactionTargetType,
-} from "../reactions.js";
+} from "../services/reactions.js";
 
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
