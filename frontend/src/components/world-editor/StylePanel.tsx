@@ -5,11 +5,9 @@ import {
   HERO_LABELS,
   LAYOUT_LABELS,
   MODULE_LABELS,
-  THEME_LABELS,
   WIKI_HERO_STYLES,
   WIKI_LAYOUTS,
   WIKI_MODULES,
-  WIKI_THEMES,
   type HomepageConfig,
   type WikiModule,
 } from "@/lib/homepage-config";
@@ -76,22 +74,6 @@ export default function StylePanel({ value, onChange }: Props) {
           </p>
 
       <label className={styles.field}>
-        <span>主题</span>
-        <select
-          value={value.theme}
-          onChange={(e) =>
-            patch({ theme: e.target.value as HomepageConfig["theme"] })
-          }
-        >
-          {WIKI_THEMES.map((t) => (
-            <option key={t} value={t}>
-              {THEME_LABELS[t]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className={styles.field}>
         <span>布局</span>
         <select
           value={value.layout}
@@ -131,7 +113,7 @@ export default function StylePanel({ value, onChange }: Props) {
           <input
             type="color"
             value={
-              /^#[0-9A-Fa-f]{6}$/.test(value.accent) ? value.accent : "#1f5c5a"
+              /^#[0-9A-Fa-f]{6}$/.test(value.accent) ? value.accent : "#1a232c"
             }
             onChange={(e) => {
               setAccentDraft(e.target.value);

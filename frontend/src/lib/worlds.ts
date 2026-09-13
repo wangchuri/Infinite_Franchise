@@ -3,8 +3,10 @@ import {
   normalizeHomepageConfig,
   type HomepageConfig,
 } from "./homepage-config";
+import { normalizeWorldLayout, type WorldLayout } from "./world-layout";
 
 export type { HomepageConfig };
+export type { WorldLayout };
 
 export type WorkSubmitMode = "open" | "review" | "invite_only";
 export type MemberRole = "creator" | "editor" | "contributor" | "viewer";
@@ -14,6 +16,7 @@ export type World = {
   creatorId: string;
   name: string;
   slug: string;
+  tagline: string;
   description: string;
   coverUrl: string | null;
   logoUrl: string | null;
@@ -25,6 +28,7 @@ export type World = {
   allowFork: boolean;
   workSubmitMode: WorkSubmitMode;
   homepageConfig: HomepageConfig;
+  layout: WorldLayout;
   createdAt: string;
   updatedAt: string;
 };
@@ -33,6 +37,7 @@ function withConfig(world: World): World {
   return {
     ...world,
     homepageConfig: normalizeHomepageConfig(world.homepageConfig),
+    layout: normalizeWorldLayout(world.layout),
   };
 }
 
@@ -125,6 +130,7 @@ export async function updateWorld(
   id: string,
   patch: Partial<{
     name: string;
+    tagline: string;
     description: string;
     logoUrl: string | null;
     wikiBackgroundUrl: string | null;
@@ -132,6 +138,7 @@ export async function updateWorld(
     tags: string[];
     welcomeMessage: string | null;
     homepageConfig: HomepageConfig;
+    layout: WorldLayout;
     workSubmitMode: WorkSubmitMode;
   }>,
 ): Promise<World> {

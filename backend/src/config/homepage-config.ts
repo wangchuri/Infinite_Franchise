@@ -1,4 +1,4 @@
-/** Wiki homepage style config — mirrored with backend/src/config/homepage-config.ts */
+/** Shared Wiki homepage style config (stored in worlds.homepage_config). */
 
 export const WIKI_MODULES = [
   "intro",
@@ -26,7 +26,9 @@ export type WikiHeroStyle = (typeof WIKI_HERO_STYLES)[number];
 export type HomepageConfig = {
   theme: WikiTheme;
   layout: WikiLayout;
+  /** Optional accent override, #RRGGBB */
   accent: string;
+  /** Visible modules in display order */
   modules: WikiModule[];
   showTags: boolean;
   heroStyle: WikiHeroStyle;
@@ -59,7 +61,9 @@ function isHexColor(v: string): boolean {
   return /^#[0-9A-Fa-f]{6}$/.test(v);
 }
 
-export function normalizeHomepageConfig(raw: unknown): HomepageConfig {
+export function normalizeHomepageConfig(
+  raw: unknown,
+): HomepageConfig {
   const src =
     raw && typeof raw === "object" && !Array.isArray(raw)
       ? (raw as Record<string, unknown>)
@@ -132,27 +136,3 @@ export const HERO_LABELS: Record<WikiHeroStyle, string> = {
   compact: "紧凑头图",
   none: "无头图",
 };
-
-/** CSS custom properties for Wiki themes */
-export function themeCssVars(
-  config: HomepageConfig,
-): Record<string, string> {
-  const palettes: Record<WikiTheme, Record<string, string>> = {
-    paper: {
-      "--wiki-bg": "#f4f0e6",
-      "--wiki-bg-2": "#eae3d4",
-      "--wiki-ink": "#1a232c",
-      "--wiki-ink-soft": "#3a4753",
-      "--wiki-accent": "#1a232c",
-      "--wiki-card": "rgba(255, 254, 249, 0.72)",
-      "--wiki-line": "rgba(26, 35, 44, 0.14)",
-      "--wiki-hero-fg": "#f7f3ea",
-    },
-  };
-
-  const vars = { ...palettes[config.theme] };
-  if (config.accent) {
-    vars["--wiki-accent"] = config.accent;
-  }
-  return vars;
-}

@@ -116,6 +116,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const isLab = pathname.startsWith("/create/lab");
+  /** World wikis render their own standalone shell — hide the platform chrome. */
+  const isWorld = pathname.startsWith("/w/");
+
+  if (isWorld) {
+    return <>{children}</>;
+  }
 
   return (
     <div

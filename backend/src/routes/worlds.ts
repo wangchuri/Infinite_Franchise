@@ -1,5 +1,5 @@
 import type { FastifyInstance } from "fastify";
-import { requireAuth } from "../auth-guard.js";
+import { requireAuth } from "../auth/auth-guard.js";
 import {
   addMember,
   canReviewWorks,
@@ -7,9 +7,10 @@ import {
   listContributableWorlds,
   listMembers,
   removeMember,
-} from "../collab.js";
-import { normalizeHomepageConfig } from "../homepage-config.js";
-import { findUserByEmailOrUsername } from "../users.js";
+} from "../services/collab.js";
+import { normalizeHomepageConfig } from "../config/homepage-config.js";
+import { normalizeWorldLayout } from "../config/world-layout.js";
+import { findUserByEmailOrUsername } from "../services/users.js";
 import {
   canViewWorld,
   createDraftWorld,
@@ -28,7 +29,7 @@ import {
   WORK_SUBMIT_MODES,
   type MemberRole,
   type WorkSubmitMode,
-} from "../worlds.js";
+} from "../services/worlds.js";
 import {
   createEntry,
   createTimelineEvent,
@@ -42,7 +43,7 @@ import {
   toPublicTimeline,
   updateEntry,
   updateTimelineEvent,
-} from "../wiki.js";
+} from "../services/wiki.js";
 
 const ENTRY_CATEGORIES = new Set([
   "intro",
@@ -272,6 +273,9 @@ export async function registerWorldRoutes(app: FastifyInstance) {
         ? normalizeHomepageConfig(body.homepageConfig)
         : undefined;
 
+    const layout =
+      body.layout !== undefined ? normalizeWorldLayout(body.layout) : undefined;
+
     let workSubmitMode: WorkSubmitMode | undefined;
     if (typeof body.workSubmitMode === "string") {
       if (!(WORK_SUBMIT_MODES as readonly string[]).includes(body.workSubmitMode)) {
@@ -282,6 +286,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
 
     const updated = await updateWorld(id, {
       name: name?.trim().slice(0, 80),
+      tagline: asString(body.tagline)?.slice(0, 140),
       description: asString(body.description)?.slice(0, 500),
       logoUrl: asNullableString(body.logoUrl),
       wikiBackgroundUrl: asNullableString(body.wikiBackgroundUrl),
@@ -289,6 +294,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       tags: asStringArray(body.tags),
       welcomeMessage: asNullableString(body.welcomeMessage),
       homepageConfig,
+      layout,
       workSubmitMode,
     });
 

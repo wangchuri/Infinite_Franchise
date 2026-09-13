@@ -12,7 +12,8 @@
     "db:migrate": "tsx scripts/migrate.mts",
     "db:seed": "tsx scripts/seed-mock-users.mts",
     "db:seed:works": "tsx scripts/seed-mock-works.mts",
-    "db:seed:reading": "tsx scripts/seed-reading-demo.mts"
+    "db:seed:reading": "tsx scripts/seed-reading-demo.mts",
+    "db:seed:shenhui": "tsx scripts/seed-shenhui.mts"
   },
   "engines": {
     "node": ">=20"

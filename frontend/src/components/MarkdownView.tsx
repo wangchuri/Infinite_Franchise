@@ -1,7 +1,7 @@
 "use client";
 
 import ReactMarkdown from "react-markdown";
-import styles from "./markdown.module.css";
+import styles from "./MarkdownView.module.css";
 
 export default function MarkdownView({
   content,
