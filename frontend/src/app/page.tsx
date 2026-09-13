@@ -15,9 +15,9 @@ import {
   type World,
 } from "@/lib/worlds";
 import {
-  WORK_TYPE_LABEL,
   fetchPublicWorks,
   formatWorkTime,
+  workTypeLabel,
   type Work,
 } from "@/lib/works";
 import styles from "./page.module.css";
@@ -159,7 +159,7 @@ function PlazaPage() {
         w.worldName,
         w.authorDisplayName,
         w.authorUsername,
-        WORK_TYPE_LABEL[w.type] ?? w.type,
+        workTypeLabel(w),
       ]
         .join(" ")
         .toLowerCase();
@@ -288,7 +288,7 @@ function PlazaPage() {
                   />
                   <div className={styles.workBody}>
                     <div className={styles.typeTag}>
-                      {WORK_TYPE_LABEL[w.type] ?? w.type}
+                      {workTypeLabel(w)}
                     </div>
                     <span className={styles.workTitle}>{w.title}</span>
                     {w.summary ? (

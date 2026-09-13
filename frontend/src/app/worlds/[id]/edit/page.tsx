@@ -18,7 +18,12 @@ import {
   type WikiEntry,
   type World,
 } from "@/lib/worlds";
-import { createWork, type WorkType } from "@/lib/works";
+import { createWork } from "@/lib/works";
+import {
+  WORK_CATEGORIES,
+  WORK_KINDS,
+  type WorkCategory,
+} from "@/lib/work-taxonomy";
 import EntrySlidePanel, {
   type EntryFormValue,
 } from "@/components/world-editor/EntrySlidePanel";
@@ -48,6 +53,7 @@ export default function EditWorldPage() {
   const [slide, setSlide] = useState<SlideState>(null);
   const [customTag, setCustomTag] = useState("");
   const [nameDraft, setNameDraft] = useState("");
+  const [taglineDraft, setTaglineDraft] = useState("");
   const [saving, setSaving] = useState(false);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -55,7 +61,8 @@ export default function EditWorldPage() {
   const [workTitle, setWorkTitle] = useState("");
   const [workSummary, setWorkSummary] = useState("");
   const [workContent, setWorkContent] = useState("");
-  const [workType, setWorkType] = useState<WorkType>("story");
+  const [workCategory, setWorkCategory] = useState<WorkCategory>("novel");
+  const [workKind, setWorkKind] = useState("short");
   const [workBusy, setWorkBusy] = useState(false);
   const [workMsg, setWorkMsg] = useState<string | null>(null);
 
@@ -79,6 +86,7 @@ export default function EditWorldPage() {
     }
     setWorld(data.world);
     setNameDraft(data.world.name);
+    setTaglineDraft(data.world.tagline);
     setEntries(data.entries);
     setTimeline(data.timeline);
   }, [worldId]);
@@ -148,6 +156,13 @@ export default function EditWorldPage() {
     if (name === world.name) return true;
     const next = await patchWorld({ name });
     return next != null;
+  }
+
+  async function saveTagline() {
+    if (!world) return;
+    const tagline = taglineDraft.trim().slice(0, 140);
+    if (tagline === world.tagline) return;
+    await patchWorld({ tagline });
   }
 
   async function saveIntro(content: string) {
@@ -239,7 +254,8 @@ export default function EditWorldPage() {
     try {
       const work = await createWork({
         worldId: world.id,
-        type: workType,
+        category: workCategory,
+        kind: workKind,
         title,
         summary: workSummary.trim() || undefined,
         content: workContent.trim() || undefined,
@@ -287,6 +303,16 @@ export default function EditWorldPage() {
                 onChange={(e) => setNameDraft(e.target.value)}
                 onBlur={() => void saveName()}
                 maxLength={80}
+              />
+            </label>
+            <label className={styles.field}>
+              <span>一句话简介</span>
+              <input
+                value={taglineDraft}
+                onChange={(e) => setTaglineDraft(e.target.value)}
+                onBlur={() => void saveTagline()}
+                maxLength={140}
+                placeholder="用一句话点出这个世界的基调"
               />
             </label>
             <label className={styles.field}>
@@ -477,16 +503,38 @@ export default function EditWorldPage() {
           </div>
           <div className={styles.workForm}>
             <label className={styles.field}>
-              <span>类型</span>
+              <span>分类</span>
               <select
-                value={workType}
-                onChange={(e) => setWorkType(e.target.value as WorkType)}
+                value={workCategory}
+                onChange={(e) => {
+                  const c = e.target.value as WorkCategory;
+                  setWorkCategory(c);
+                  setWorkKind(WORK_KINDS[c][0]?.key ?? "");
+                }}
               >
-                <option value="story">短篇</option>
-                <option value="novel">长篇</option>
-                <option value="chapter">章节</option>
-                <option value="artwork">美术</option>
-                <option value="other">其他</option>
+                {WORK_CATEGORIES.map((c) => (
+                  <option key={c.key} value={c.key}>
+                    {c.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={styles.field}>
+              <span>子类型</span>
+              <select
+                value={workKind}
+                onChange={(e) => setWorkKind(e.target.value)}
+                disabled={WORK_KINDS[workCategory].length === 0}
+              >
+                {WORK_KINDS[workCategory].length === 0 ? (
+                  <option value="">—</option>
+                ) : (
+                  WORK_KINDS[workCategory].map((k) => (
+                    <option key={k.key} value={k.key}>
+                      {k.label}
+                    </option>
+                  ))
+                )}
               </select>
             </label>
             <label className={styles.field}>

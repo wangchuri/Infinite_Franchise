@@ -1,4 +1,17 @@
 import { apiFetch } from "./api";
+import {
+  categoryLabel,
+  kindLabel,
+  type WorkCategory,
+} from "./work-taxonomy";
+
+export {
+  WORK_CATEGORIES,
+  WORK_KINDS,
+  categoryLabel,
+  kindLabel,
+} from "./work-taxonomy";
+export type { WorkCategory } from "./work-taxonomy";
 
 export type WorkType =
   | "novel"
@@ -18,6 +31,8 @@ export type Work = {
   authorUsername: string;
   authorDisplayName: string;
   type: WorkType;
+  category: WorkCategory;
+  kind: string;
   title: string;
   summary: string | null;
   content: string | null;
@@ -81,6 +96,18 @@ export async function fetchPublicWorks(limit = 40): Promise<Work[]> {
   return data.works;
 }
 
+export async function fetchWorldWorks(
+  worldId: string,
+  limit = 24,
+): Promise<Work[]> {
+  const data = await apiFetch<{ works: Work[] }>(
+    `/api/works?worldId=${encodeURIComponent(worldId)}&limit=${limit}`,
+    {},
+    { auth: false },
+  );
+  return data.works;
+}
+
 export async function fetchWorkById(id: string): Promise<Work> {
   const data = await apiFetch<{ work: Work }>(
     `/api/works/${id}`,
@@ -114,9 +141,18 @@ export async function reviewWork(
   return data.work;
 }
 
+/** Display label for a work: subtype if present, else category. */
+export function workTypeLabel(work: {
+  category: WorkCategory;
+  kind: string;
+}): string {
+  return kindLabel(work.category, work.kind) || categoryLabel(work.category);
+}
+
 export async function createWork(input: {
   worldId: string;
-  type: WorkType;
+  category: WorkCategory;
+  kind?: string;
   title: string;
   summary?: string;
   content?: string;

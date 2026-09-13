@@ -7,8 +7,8 @@ import MarkdownView from "@/components/MarkdownView";
 import CommentSection from "@/components/CommentSection";
 import ReactionBar from "@/components/ReactionBar";
 import {
-  WORK_TYPE_LABEL,
   paginateContent,
+  workTypeLabel,
   type WorkAnnotation,
   type WorkReadPayload,
 } from "@/lib/works";
@@ -134,7 +134,7 @@ export default function ReaderView({ data }: Props) {
 
         <article className={styles.reader}>
           <p className={styles.meta}>
-            <span>{WORK_TYPE_LABEL[work.type] ?? work.type}</span>
+            <span>{workTypeLabel(work)}</span>
             {novel && isChapter ? (
               <>
                 <span aria-hidden="true"> · </span>

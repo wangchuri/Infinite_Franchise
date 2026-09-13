@@ -58,9 +58,9 @@ async function main() {
   } else {
     const n = await pool.query<{ id: string }>(
       `INSERT INTO works (
-         world_id, author_id, type, title, summary, content,
+         world_id, author_id, type, category, kind, title, summary, content,
          status, published_at
-       ) VALUES ($1, $2, 'novel', $3, $4, $5, 'published', now() - interval '2 days')
+       ) VALUES ($1, $2, 'novel', 'novel', 'long', $3, $4, $5, 'published', now() - interval '2 days')
        RETURNING id`,
       [
         world.id,
@@ -102,9 +102,9 @@ async function main() {
     }
     await pool.query(
       `INSERT INTO works (
-         world_id, author_id, type, title, content, parent_id,
+         world_id, author_id, type, category, kind, title, content, parent_id,
          status, published_at
-       ) VALUES ($1, $2, 'chapter', $3, $4, $5, 'published',
+       ) VALUES ($1, $2, 'chapter', 'novel', 'chapter', $3, $4, $5, 'published',
                  now() - ($6 || ' hours')::interval)`,
       [world.id, world.creator_id, ch.title, ch.content, novelId, String((3 - i) * 8)],
     );

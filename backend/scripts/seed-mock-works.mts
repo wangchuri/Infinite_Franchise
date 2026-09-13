@@ -7,12 +7,16 @@ import { pool } from "../src/db.ts";
  */
 const SAMPLES: Array<{
   type: string;
+  category: string;
+  kind: string;
   title: string;
   summary: string;
   content: string;
 }> = [
   {
     type: "story",
+    category: "novel",
+    kind: "short",
     title: "离港通知书",
     summary: "雾散之前，码头只留下一张未署名的离港单。",
     content:
@@ -20,6 +24,8 @@ const SAMPLES: Array<{
   },
   {
     type: "story",
+    category: "novel",
+    kind: "short",
     title: "雨夜档案",
     summary: "档案室的灯坏了三天，雨却一直没停。",
     content:
@@ -27,6 +33,8 @@ const SAMPLES: Array<{
   },
   {
     type: "artwork",
+    category: "artwork",
+    kind: "illustration",
     title: "沙海停战（概念图）",
     summary: "停火线画在沙丘背风面，风一吹就没了。",
     content: "（美术占位：可在编辑器中替换为实际上传图。）",
@@ -69,13 +77,15 @@ async function main() {
 
     await pool.query(
       `INSERT INTO works (
-         world_id, author_id, type, title, summary, content,
+         world_id, author_id, type, category, kind, title, summary, content,
          status, published_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, 'published', now() - ($7 || ' hours')::interval)`,
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'published', now() - ($9 || ' hours')::interval)`,
       [
         world.id,
         world.creator_id,
         sample.type,
+        sample.category,
+        sample.kind,
         sample.title,
         sample.summary,
         sample.content,

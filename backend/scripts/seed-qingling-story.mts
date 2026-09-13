@@ -53,6 +53,8 @@ async function main() {
       `UPDATE works
           SET content = $1,
               summary = $2,
+              category = 'novel',
+              kind = 'short',
               status = 'published',
               published_at = COALESCE(published_at, now()),
               updated_at = now()
@@ -63,9 +65,9 @@ async function main() {
   } else {
     const ins = await pool.query<{ id: string }>(
       `INSERT INTO works (
-         world_id, author_id, type, title, summary, content,
+         world_id, author_id, type, category, kind, title, summary, content,
          status, published_at
-       ) VALUES ($1, $2, 'story', $3, $4, $5, 'published', now())
+       ) VALUES ($1, $2, 'story', 'novel', 'short', $3, $4, $5, 'published', now())
        RETURNING id`,
       [world.id, world.creator_id, title, summary, raw],
     );
