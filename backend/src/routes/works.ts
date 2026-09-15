@@ -4,16 +4,25 @@ import type { WorkCategory } from "../config/work-taxonomy.js";
 import { canReviewWorks, getMemberRole } from "../services/collab.js";
 import { findWorldById, type WorldRow } from "../services/worlds.js";
 import {
+  canEditWork,
   createWork,
   findAnyWorkById,
-  findPublicWorkById,
+  findWorkForViewer,
   getWorkReadPayload,
+  listMyWorks,
   listPendingWorks,
   listPublicWorks,
   listPublicWorksByWorld,
   reviewWork,
+  softDeleteWork,
   toPublicWork,
+  updateWork,
 } from "../services/works.js";
+import {
+  getWorkSticker,
+  removeWorkSticker,
+  setWorkSticker,
+} from "../services/stickers.js";
 
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
@@ -46,6 +55,16 @@ export async function registerWorkRoutes(app: FastifyInstance) {
     const rows = worldId
       ? await listPublicWorksByWorld(worldId, safeLimit)
       : await listPublicWorks(safeLimit);
+    return { works: rows.map(toPublicWork) };
+  });
+
+  /** Current user's works across worlds (draft / pending / published). */
+  app.get("/api/works/mine", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const q = req.query as { limit?: string };
+    const limit = q.limit ? Number(q.limit) : 60;
+    const rows = await listMyWorks(user.id, Number.isFinite(limit) ? limit : 60);
     return { works: rows.map(toPublicWork) };
   });
 
@@ -96,20 +115,117 @@ export async function registerWorkRoutes(app: FastifyInstance) {
   /** Reading view: work + chapter nav + wiki annotations. */
   app.get("/api/works/:id/read", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const payload = await getWorkReadPayload(id);
+    const payload = await getWorkReadPayload(id, req.authUser?.id ?? null);
     if (!payload) {
       return reply.code(404).send({ error: "作品不存在或未公开" });
     }
     return payload;
   });
 
+  /** Whether an artwork is used as a sticker (and if the viewer may manage it). */
+  app.get("/api/works/:id/sticker", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const info = await getWorkSticker(id, req.authUser?.id ?? null);
+    return info;
+  });
+
+  /** Promote an artwork to a sticker (any signed-in user). */
+  app.post("/api/works/:id/sticker", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    try {
+      const sticker = await setWorkSticker(id, user.id);
+      return reply.code(201).send({ sticker });
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      return reply
+        .code(e.statusCode ?? 500)
+        .send({ error: e.message || "操作失败" });
+    }
+  });
+
+  /** Remove a sticker (artwork author / world owner / editor). */
+  app.delete("/api/works/:id/sticker", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    try {
+      await removeWorkSticker(id, user.id);
+      return reply.code(204).send();
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      return reply
+        .code(e.statusCode ?? 500)
+        .send({ error: e.message || "操作失败" });
+    }
+  });
+
   app.get("/api/works/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
-    const row = await findPublicWorkById(id);
+    const row = await findWorkForViewer(id, req.authUser?.id ?? null);
     if (!row) {
       return reply.code(404).send({ error: "作品不存在或未公开" });
     }
     return { work: toPublicWork(row) };
+  });
+
+  /** Edit a work (author / world creator / editor). */
+  app.patch("/api/works/:id", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const body = (req.body ?? {}) as Record<string, unknown>;
+
+    const patch: Parameters<typeof updateWork>[0]["patch"] = {};
+    const category = asString(body.category);
+    if (category !== undefined) patch.category = category as WorkCategory;
+    const kind = asString(body.kind);
+    if (kind !== undefined) patch.kind = kind;
+    if (body.title !== undefined) patch.title = asString(body.title) ?? "";
+    if (body.summary !== undefined) {
+      patch.summary = asNullableString(body.summary) ?? null;
+    }
+    if (body.content !== undefined) {
+      patch.content = asNullableString(body.content) ?? null;
+    }
+    if (body.mediaUrl !== undefined) {
+      patch.mediaUrl = asNullableString(body.mediaUrl) ?? null;
+    }
+    if (body.status === "draft" || body.status === "published") {
+      patch.status = body.status;
+    }
+
+    try {
+      const updated = await updateWork({
+        workId: id,
+        editorId: user.id,
+        patch,
+      });
+      if (!updated) return reply.code(404).send({ error: "作品不存在" });
+      return { work: toPublicWork(updated) };
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      return reply
+        .code(e.statusCode ?? 500)
+        .send({ error: e.message || "更新失败" });
+    }
+  });
+
+  /** Soft-delete a work (author / world creator / editor). */
+  app.delete("/api/works/:id", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const work = await findAnyWorkById(id);
+    if (!work || work.deleted_at) {
+      return reply.code(404).send({ error: "作品不存在" });
+    }
+    if (!(await canEditWork(work, user.id))) {
+      return reply.code(403).send({ error: "无权删除该作品" });
+    }
+    await softDeleteWork(id);
+    return reply.code(204).send();
   });
 
   /** MVP: world creator can create (and optionally publish) a work. */

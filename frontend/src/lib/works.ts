@@ -75,6 +75,7 @@ export type WorkReadPayload = {
   prevChapter: WorkChapterRef | null;
   nextChapter: WorkChapterRef | null;
   annotations: WorkAnnotation[];
+  canEdit: boolean;
 };
 
 export const WORK_TYPE_LABEL: Record<WorkType, string> = {
@@ -96,6 +97,36 @@ export async function fetchPublicWorks(limit = 40): Promise<Work[]> {
   return data.works;
 }
 
+export async function updateWork(
+  id: string,
+  patch: Partial<{
+    category: WorkCategory;
+    kind: string;
+    title: string;
+    summary: string | null;
+    content: string | null;
+    mediaUrl: string | null;
+    status: "draft" | "published";
+  }>,
+): Promise<Work> {
+  const data = await apiFetch<{ work: Work }>(`/api/works/${id}`, {
+    method: "PATCH",
+    body: JSON.stringify(patch),
+  });
+  return data.work;
+}
+
+export async function deleteWork(id: string): Promise<void> {
+  await apiFetch(`/api/works/${id}`, { method: "DELETE" });
+}
+
+export async function fetchMyWorks(limit = 60): Promise<Work[]> {
+  const data = await apiFetch<{ works: Work[] }>(
+    `/api/works/mine?limit=${limit}`,
+  );
+  return data.works;
+}
+
 export async function fetchWorldWorks(
   worldId: string,
   limit = 24,
@@ -109,16 +140,12 @@ export async function fetchWorldWorks(
 }
 
 export async function fetchWorkById(id: string): Promise<Work> {
-  const data = await apiFetch<{ work: Work }>(
-    `/api/works/${id}`,
-    {},
-    { auth: false },
-  );
+  const data = await apiFetch<{ work: Work }>(`/api/works/${id}`);
   return data.work;
 }
 
 export async function fetchWorkRead(id: string): Promise<WorkReadPayload> {
-  return apiFetch<WorkReadPayload>(`/api/works/${id}/read`, {}, { auth: false });
+  return apiFetch<WorkReadPayload>(`/api/works/${id}/read`);
 }
 
 /** Pending works awaiting review in a world (creator/editor only). */

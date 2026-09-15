@@ -303,6 +303,7 @@
 
 .field input,
 .field textarea,
+.field select,
 .authorSearch input {
   width: 100%;
   border: 1px solid var(--line);
@@ -311,6 +312,10 @@
   font: inherit;
   font-size: 1rem;
   color: var(--ink);
+}
+
+.field select {
+  cursor: pointer;
 }
 
 .field textarea {
@@ -441,4 +446,225 @@
 .enter:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+/* ---- workbench extras ---- */
+
+.fieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.fileBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.28rem 0.75rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fffef9;
+  font-size: 0.8rem;
+  color: var(--sea);
+  cursor: pointer;
+}
+
+.fileBtn:hover {
+  border-color: var(--sea);
+}
+
+.fileHint {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.formError {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+  flex-wrap: wrap;
+}
+
+.draftBtn {
+  padding: 0.7rem 1.4rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  cursor: pointer;
+  transition:
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.draftBtn:hover:not(:disabled) {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.draftBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ---- my works (shown instead of the type tiles) ---- */
+
+.myWorks {
+  margin-bottom: 0.5rem;
+}
+
+.myWorksHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.6rem;
+  border-bottom: 2px solid color-mix(in srgb, var(--sea) 40%, transparent);
+}
+
+.myWorksHead h2 {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  color: var(--ink);
+}
+
+.newWorkBtn {
+  padding: 0.42rem 1rem;
+  border: 1px solid var(--sea);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--sea);
+  cursor: pointer;
+}
+
+.newWorkBtn:hover {
+  background: var(--sea);
+  color: #f7f3ea;
+}
+
+.workGrid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1rem;
+}
+
+.workCard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: #fffef9;
+  color: inherit;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.workCard:hover {
+  border-color: color-mix(in srgb, var(--sea) 55%, transparent);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 26px rgba(20, 33, 43, 0.1);
+  text-decoration: none;
+}
+
+.workCover {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 4 / 3;
+  background-color: rgba(31, 92, 90, 0.08);
+  background-size: cover;
+  background-position: center;
+  border-bottom: 1px solid var(--line);
+}
+
+.workCoverGlyph {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  color: color-mix(in srgb, var(--sea) 60%, transparent);
+}
+
+.workInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.6rem 0.7rem 0.75rem;
+}
+
+.workTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.workKind {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  color: var(--sea);
+}
+
+.workStatus {
+  flex-shrink: 0;
+  padding: 0.05rem 0.42rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.66rem;
+  color: var(--ink-soft);
+}
+
+.workStatus[data-status="published"] {
+  border-color: color-mix(in srgb, var(--sea) 50%, transparent);
+  color: var(--sea);
+}
+
+.workStatus[data-status="pending"] {
+  border-color: color-mix(in srgb, var(--ember) 55%, transparent);
+  color: var(--ember);
+}
+
+.workTitle {
+  font-family: var(--font-display);
+  font-size: 1rem;
+  color: var(--ink);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workMeta {
+  font-size: 0.74rem;
+  color: var(--ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.backToWorks {
+  margin-bottom: 1rem;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 0.88rem;
+  color: var(--sea);
+  cursor: pointer;
 }

@@ -29,6 +29,7 @@ export const WORK_KINDS: Record<WorkCategory, WorkKind[]> = {
     { key: "comic", label: "漫画" },
     { key: "design", label: "设定" },
     { key: "cover", label: "封面" },
+    { key: "sticker", label: "表情" },
   ],
   program: [
     { key: "tool", label: "工具" },

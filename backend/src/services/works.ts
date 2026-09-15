@@ -98,6 +98,8 @@ export type WorkReadPayload = {
   prevChapter: WorkChapterRef | null;
   nextChapter: WorkChapterRef | null;
   annotations: WorkAnnotation[];
+  /** Whether the viewer may edit this work. */
+  canEdit: boolean;
 };
 
 export function toPublicWork(row: WorkFeedRow): PublicWork {
@@ -133,19 +135,19 @@ async function attachReactionCounts<T extends { id: string }>(
   const ids = rows.map((r) => r.id);
   const res = await pool.query<{
     target_id: string;
-    reaction_type: string;
+    reaction_type_id: string;
     n: number;
   }>(
-    `SELECT target_id, reaction_type, count(*)::int AS n
+    `SELECT target_id, reaction_type_id, count(*)::int AS n
        FROM reactions
       WHERE target_type = 'work' AND target_id = ANY($1::uuid[])
-      GROUP BY target_id, reaction_type`,
+      GROUP BY target_id, reaction_type_id`,
     [ids],
   );
   const map = new Map<string, Record<string, number>>();
   for (const row of res.rows) {
     const cur = map.get(row.target_id) ?? {};
-    cur[row.reaction_type] = row.n;
+    cur[row.reaction_type_id] = row.n;
     map.set(row.target_id, cur);
   }
   for (const r of rows) {
@@ -179,6 +181,26 @@ export async function listPublicWorks(limit = 40): Promise<WorkFeedRow[]> {
      ORDER BY w.published_at DESC NULLS LAST, w.created_at DESC
      LIMIT $1`,
     [capped],
+  );
+  const rows = res.rows;
+  await attachReactionCounts(rows);
+  return rows;
+}
+
+/** Works authored by a user across worlds (all statuses), newest first. */
+export async function listMyWorks(
+  authorId: string,
+  limit = 60,
+): Promise<WorkFeedRow[]> {
+  const capped = Math.min(Math.max(limit, 1), 200);
+  const res = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT}
+     WHERE w.author_id = $1
+       AND w.deleted_at IS NULL
+       AND w.type <> 'chapter'
+     ORDER BY w.updated_at DESC
+     LIMIT $2`,
+    [authorId, capped],
   );
   const rows = res.rows;
   await attachReactionCounts(rows);
@@ -236,6 +258,29 @@ export async function findAnyWorkById(id: string): Promise<WorkFeedRow | null> {
     [id],
   );
   return res.rows[0] ?? null;
+}
+
+/**
+ * Find a work the viewer may read: a published public work, or a non-public
+ * one if the viewer is its author, the world's creator, or an editor.
+ */
+export async function findWorkForViewer(
+  id: string,
+  viewerId: string | null,
+): Promise<WorkFeedRow | null> {
+  const pub = await findPublicWorkById(id);
+  if (pub) return pub;
+  if (!viewerId) return null;
+
+  const any = await findAnyWorkById(id);
+  if (!any) return null;
+  if (any.author_id === viewerId) return any;
+
+  const world = await findWorldById(any.world_id);
+  if (world && world.creator_id === viewerId) return any;
+  const role = await getMemberRole(any.world_id, viewerId);
+  if (role === "editor") return any;
+  return null;
 }
 
 async function listPublishedChapters(
@@ -307,9 +352,11 @@ function matchMentions(
 
 export async function getWorkReadPayload(
   id: string,
+  viewerId: string | null = null,
 ): Promise<WorkReadPayload | null> {
-  const row = await findPublicWorkById(id);
+  const row = await findWorkForViewer(id, viewerId);
   if (!row) return null;
+  const canEdit = viewerId ? await canEditWork(row, viewerId) : false;
 
   const work = toPublicWork(row);
   let novel: PublicWork | null = null;
@@ -363,6 +410,7 @@ export async function getWorkReadPayload(
     prevChapter,
     nextChapter,
     annotations: [...byId.values()],
+    canEdit,
   };
 }
 
@@ -475,6 +523,112 @@ export async function createWork(input: {
   const out = joined.rows[0];
   await attachReactionCounts([out]);
   return out;
+}
+
+/** Author, world creator, or editor may edit/delete a work. */
+export async function canEditWork(
+  row: WorkRow,
+  userId: string,
+): Promise<boolean> {
+  if (row.author_id === userId) return true;
+  const world = await findWorldById(row.world_id);
+  if (world && world.creator_id === userId) return true;
+  const role = await getMemberRole(row.world_id, userId);
+  return role === "editor";
+}
+
+export async function updateWork(input: {
+  workId: string;
+  editorId: string;
+  patch: {
+    category?: WorkCategory;
+    kind?: string;
+    title?: string;
+    summary?: string | null;
+    content?: string | null;
+    mediaUrl?: string | null;
+    status?: "draft" | "published";
+  };
+}): Promise<WorkFeedRow | null> {
+  const cur = await findAnyWorkById(input.workId);
+  if (!cur) return null;
+  if (!(await canEditWork(cur, input.editorId))) {
+    throw Object.assign(new Error("无权编辑该作品"), { statusCode: 403 });
+  }
+
+  const category = input.patch.category ?? cur.category;
+  if (!isWorkCategory(category)) {
+    throw Object.assign(new Error("无效的作品分类"), { statusCode: 400 });
+  }
+  const kind = (input.patch.kind ?? cur.kind ?? "").trim().slice(0, 32);
+  if (!isWorkKind(category, kind)) {
+    throw Object.assign(new Error("无效的作品子类型"), { statusCode: 400 });
+  }
+  const type = structuralType(category, kind);
+
+  const fields: string[] = [];
+  const values: unknown[] = [];
+  let i = 1;
+  const set = (col: string, val: unknown) => {
+    fields.push(`${col} = $${i++}`);
+    values.push(val);
+  };
+
+  set("category", category);
+  set("kind", kind);
+  set("type", type);
+
+  if (input.patch.title !== undefined) {
+    const title = input.patch.title.trim().slice(0, 200);
+    if (!title) {
+      throw Object.assign(new Error("标题不能为空"), { statusCode: 400 });
+    }
+    set("title", title);
+  }
+  if (input.patch.summary !== undefined) {
+    set("summary", input.patch.summary?.trim().slice(0, 500) || null);
+  }
+  if (input.patch.content !== undefined) {
+    set("content", input.patch.content?.trim() || null);
+  }
+  if (input.patch.mediaUrl !== undefined) {
+    set("media_url", input.patch.mediaUrl?.trim() || null);
+  }
+  if (input.patch.status !== undefined) {
+    const status = input.patch.status;
+    set("status", status);
+    set(
+      "published_at",
+      status === "published" ? (cur.published_at ?? new Date()) : null,
+    );
+  }
+  fields.push("updated_at = now()");
+  values.push(input.workId);
+
+  const res = await pool.query<WorkRow>(
+    `UPDATE works SET ${fields.join(", ")}
+      WHERE id = $${i} AND deleted_at IS NULL
+      RETURNING *`,
+    values,
+  );
+  const row = res.rows[0];
+  if (!row) return null;
+  const joined = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT} WHERE w.id = $1 LIMIT 1`,
+    [row.id],
+  );
+  const out = joined.rows[0];
+  await attachReactionCounts([out]);
+  return out;
+}
+
+export async function softDeleteWork(id: string): Promise<boolean> {
+  const res = await pool.query(
+    `UPDATE works SET deleted_at = now(), updated_at = now()
+      WHERE id = $1 AND deleted_at IS NULL`,
+    [id],
+  );
+  return (res.rowCount ?? 0) > 0;
 }
 
 /** Pending works awaiting review in a world (for creator/editor). */

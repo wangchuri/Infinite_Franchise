@@ -1,39 +1,41 @@
 "use client";
 
-import Link from "next/link";
-import { useEffect } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { getAccessToken } from "@/lib/auth";
-import styles from "../create.module.css";
+import { Suspense } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import Workbench from "@/components/work/Workbench";
+import { WORK_KINDS, type WorkCategory } from "@/lib/work-taxonomy";
+import styles from "@/components/work/workbench.module.css";
 
-const LABELS: Record<string, string> = {
-  novel: "小说",
-  artwork: "美术",
-  program: "程序",
-  audio: "音频",
-  world: "世界观",
-};
+const CATEGORIES = new Set(["novel", "artwork", "program", "audio", "video"]);
 
-export default function CreateTypePage() {
-  const router = useRouter();
+export default function CreateWorkbenchPage() {
+  return (
+    <Suspense fallback={<p className={styles.loading}>加载工作台…</p>}>
+      <CreateWorkbench />
+    </Suspense>
+  );
+}
+
+function CreateWorkbench() {
   const params = useParams<{ type: string }>();
+  const searchParams = useSearchParams();
   const type = params?.type ?? "";
-  const label = LABELS[type] ?? "创作";
+  const category = (CATEGORIES.has(type) ? type : "other") as WorkCategory;
 
-  useEffect(() => {
-    if (!getAccessToken()) router.replace("/login");
-  }, [router]);
+  const rawKind = searchParams.get("kind") ?? "";
+  const kind = (WORK_KINDS[category] ?? []).some((k) => k.key === rawKind)
+    ? rawKind
+    : "";
 
   return (
-    <div className={styles.stage}>
-      <header className={styles.head}>
-        <p className={styles.eyebrow}>Create · {type}</p>
-        <h1 className={styles.title}>{label}</h1>
-        <p className={styles.lead}>创作界面待设计。</p>
-      </header>
-      <Link className={styles.back} href="/create">
-        ← 返回选择
-      </Link>
-    </div>
+    <Workbench
+      initialCategory={category}
+      prefill={{
+        kind,
+        title: searchParams.get("title") ?? "",
+        summary: searchParams.get("summary") ?? "",
+        mediaUrl: searchParams.get("cover"),
+      }}
+    />
   );
 }

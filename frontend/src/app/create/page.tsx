@@ -1,18 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAccessToken, fetchMe, type AuthUser } from "@/lib/auth";
 import { searchUsers, type UserSearchItem } from "@/lib/users";
+import { WORK_KINDS, type WorkCategory } from "@/lib/work-taxonomy";
+import { fetchMyWorks, formatWorkTime, workTypeLabel, type Work } from "@/lib/works";
 import ImageUpload from "@/components/world-editor/ImageUpload";
 import styles from "./create.module.css";
 
+const STATUS_LABEL: Record<string, string> = {
+  draft: "草稿",
+  pending: "待审核",
+  published: "已发布",
+};
+
 type CreativeKind = {
-  key: string;
+  key: WorkCategory;
   label: string;
   href: string;
-  kinds: string[];
-  /** Field labels — worlds use "world" wording. */
+  /** Field labels — works use "作品" wording. */
   titleLabel: string;
   coverLabel: string;
   authorLabel: string;
@@ -23,7 +31,6 @@ const KINDS: CreativeKind[] = [
     key: "novel",
     label: "小说",
     href: "/create/novel",
-    kinds: ["短篇", "长篇", "章节"],
     titleLabel: "作品名称",
     coverLabel: "作品封面",
     authorLabel: "作者",
@@ -32,7 +39,6 @@ const KINDS: CreativeKind[] = [
     key: "artwork",
     label: "美术",
     href: "/create/artwork",
-    kinds: ["插画", "设定", "封面"],
     titleLabel: "作品名称",
     coverLabel: "作品封面",
     authorLabel: "作者",
@@ -41,7 +47,6 @@ const KINDS: CreativeKind[] = [
     key: "program",
     label: "程序",
     href: "/create/program",
-    kinds: ["工具", "互动", "玩法"],
     titleLabel: "作品名称",
     coverLabel: "作品封面",
     authorLabel: "作者",
@@ -50,19 +55,17 @@ const KINDS: CreativeKind[] = [
     key: "audio",
     label: "音频",
     href: "/create/audio",
-    kinds: ["音乐", "配音", "音效"],
     titleLabel: "作品名称",
     coverLabel: "作品封面",
     authorLabel: "作者",
   },
   {
-    key: "world",
-    label: "世界观",
-    href: "/worlds",
-    kinds: ["设定", "词条", "时间线"],
-    titleLabel: "世界名称",
-    coverLabel: "世界封面",
-    authorLabel: "共创者",
+    key: "video",
+    label: "视频",
+    href: "/create/video",
+    titleLabel: "作品名称",
+    coverLabel: "作品封面",
+    authorLabel: "作者",
   },
 ];
 
@@ -176,7 +179,7 @@ function KindIcon({ kind }: { kind: string }) {
           />
         </svg>
       );
-    case "world":
+    case "video":
       return (
         <svg
           viewBox="0 0 24 24"
@@ -184,30 +187,17 @@ function KindIcon({ kind }: { kind: string }) {
           className={styles.icon}
           aria-hidden="true"
         >
-          <circle
-            cx="12"
-            cy="12"
-            r="8.5"
+          <rect
+            x="3"
+            y="5.5"
+            width="18"
+            height="13"
+            rx="2.4"
             fill="none"
             stroke="var(--tone)"
             strokeWidth="2.2"
           />
-          <ellipse
-            cx="12"
-            cy="12"
-            rx="3.8"
-            ry="8.5"
-            fill="none"
-            stroke="var(--tone)"
-            strokeOpacity="0.45"
-            strokeWidth="2.2"
-          />
-          <path
-            d="M3.5 12h17"
-            stroke="var(--tone)"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
+          <path d="M10.2 9.2 15 12l-4.8 2.8z" fill="var(--tone)" />
         </svg>
       );
     default:
@@ -219,8 +209,12 @@ export default function CreatePage() {
   const router = useRouter();
   const detailRef = useRef<HTMLDivElement>(null);
 
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<WorkCategory | null>(null);
   const [kind, setKind] = useState<string | null>(null);
+
+  const [myWorks, setMyWorks] = useState<Work[]>([]);
+  const [worksReady, setWorksReady] = useState(false);
+  const [showTypes, setShowTypes] = useState(false);
 
   const [me, setMe] = useState<AuthUser | null>(null);
   const [title, setTitle] = useState("");
@@ -242,6 +236,16 @@ export default function CreatePage() {
         if (!cancelled) setMe(u);
       })
       .catch(() => {});
+    fetchMyWorks(60)
+      .then((list) => {
+        if (cancelled) return;
+        setMyWorks(list);
+        setShowTypes(list.length === 0);
+        setWorksReady(true);
+      })
+      .catch(() => {
+        if (!cancelled) setWorksReady(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -300,12 +304,85 @@ export default function CreatePage() {
   function enterWorkbench(e: React.FormEvent) {
     e.preventDefault();
     if (!current || !title.trim()) return;
-    router.push(current.href);
+    const qs = new URLSearchParams();
+    if (kind) qs.set("kind", kind);
+    qs.set("title", title.trim());
+    if (summary.trim()) qs.set("summary", summary.trim());
+    if (cover) qs.set("cover", cover);
+    router.push(`${current.href}?${qs.toString()}`);
   }
+
+  const showWorks = worksReady && myWorks.length > 0 && !showTypes;
 
   return (
     <div className={styles.page}>
-      <div className={styles.grid}>
+      {!worksReady ? (
+        <p className={styles.panelHint}>加载…</p>
+      ) : showWorks ? (
+        <section className={styles.myWorks}>
+          <div className={styles.myWorksHead}>
+            <h2>我的作品</h2>
+            <button
+              type="button"
+              className={styles.newWorkBtn}
+              onClick={() => setShowTypes(true)}
+            >
+              ＋ 新建作品
+            </button>
+          </div>
+          <ul className={styles.workGrid}>
+            {myWorks.map((w) => (
+              <li key={w.id}>
+                <Link href={`/works/${w.id}`} className={styles.workCard}>
+                  <span
+                    className={styles.workCover}
+                    style={
+                      w.mediaUrl
+                        ? { backgroundImage: `url(${w.mediaUrl})` }
+                        : undefined
+                    }
+                    aria-hidden="true"
+                  >
+                    {w.mediaUrl ? null : (
+                      <span className={styles.workCoverGlyph}>
+                        {workTypeLabel(w).slice(0, 1)}
+                      </span>
+                    )}
+                  </span>
+                  <span className={styles.workInfo}>
+                    <span className={styles.workTop}>
+                      <span className={styles.workKind}>
+                        {workTypeLabel(w)}
+                      </span>
+                      <span
+                        className={styles.workStatus}
+                        data-status={w.status}
+                      >
+                        {STATUS_LABEL[w.status] ?? w.status}
+                      </span>
+                    </span>
+                    <strong className={styles.workTitle}>{w.title}</strong>
+                    <span className={styles.workMeta}>
+                      {w.worldName} · {formatWorkTime(w.updatedAt)}
+                    </span>
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : (
+        <>
+          {myWorks.length > 0 ? (
+            <button
+              type="button"
+              className={styles.backToWorks}
+              onClick={() => setShowTypes(false)}
+            >
+              ← 我的作品
+            </button>
+          ) : null}
+          <div className={styles.grid}>
         {KINDS.map((k) => (
           <button
             key={k.key}
@@ -336,15 +413,15 @@ export default function CreatePage() {
           <div className={styles.kindsHead}>
             <span className={styles.typeName}>{current.label}</span>
             <div className={styles.kinds}>
-              {current.kinds.map((s) => (
+              {WORK_KINDS[current.key].map((s) => (
                 <button
-                  key={s}
+                  key={s.key}
                   type="button"
-                  className={`${styles.chip} ${kind === s ? styles.chipOn : ""}`}
-                  onClick={() => setKind((prev) => (prev === s ? null : s))}
-                  aria-pressed={kind === s}
+                  className={`${styles.chip} ${kind === s.key ? styles.chipOn : ""}`}
+                  onClick={() => setKind((prev) => (prev === s.key ? null : s.key))}
+                  aria-pressed={kind === s.key}
                 >
-                  {s}
+                  {s.label}
                 </button>
               ))}
             </div>
@@ -457,6 +534,8 @@ export default function CreatePage() {
             </p>
           )}
         </section>
+      )}
+        </>
       )}
     </div>
   );
