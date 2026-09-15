@@ -102,8 +102,10 @@ export default function ReaderView({
   const [stickerBusy, setStickerBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lightbox, setLightbox] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
   const settingsRef = useRef<HTMLDivElement>(null);
   const articleRef = useRef<HTMLElement>(null);
+  const saveTimer = useRef<number | null>(null);
 
   useEffect(() => {
     const m = localStorage.getItem(MODE_KEY);
@@ -212,6 +214,64 @@ export default function ReaderView({
     return () => document.removeEventListener("mousedown", onDown);
   }, [settingsOpen]);
 
+  const posKey = `if_read_pos:${work.id}`;
+
+  // Track scroll progress and remember the position for this work.
+  useEffect(() => {
+    if (mode === "pages") return;
+    let raf = window.requestAnimationFrame(() => {
+      raf = 0;
+      compute();
+    });
+    function compute() {
+      const doc = document.documentElement;
+      const max = doc.scrollHeight - window.innerHeight;
+      setScrollProgress(
+        max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0,
+      );
+    }
+    function scheduleSave() {
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+      saveTimer.current = window.setTimeout(() => {
+        try {
+          localStorage.setItem(posKey, String(Math.round(window.scrollY)));
+        } catch {
+          /* ignore */
+        }
+      }, 350);
+    }
+    function onScroll() {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        compute();
+        scheduleSave();
+      });
+    }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+      if (raf) window.cancelAnimationFrame(raf);
+      if (saveTimer.current) window.clearTimeout(saveTimer.current);
+    };
+  }, [mode, posKey]);
+
+  // Resume where this work was last left off.
+  useEffect(() => {
+    if (mode !== "scroll") return;
+    let y = 0;
+    try {
+      y = Number(localStorage.getItem(posKey) ?? "0");
+    } catch {
+      y = 0;
+    }
+    if (!y || Number.isNaN(y) || y < 80) return;
+    const t = window.setTimeout(() => window.scrollTo({ top: y }), 140);
+    return () => window.clearTimeout(t);
+  }, [mode, posKey]);
+
   function updatePrefs(patch: Partial<Prefs>) {
     setPrefs((prev) => {
       const next = { ...prev, ...patch };
@@ -277,6 +337,13 @@ export default function ReaderView({
     "--reader-line": LEADING_V[prefs.leading],
   } as CSSProperties;
 
+  const progress =
+    mode === "pages"
+      ? pages.length
+        ? (page + 1) / pages.length
+        : 0
+      : scrollProgress;
+
   return (
     <div
       className={`${styles.shell} ${showNotes ? styles.withNotes : ""} ${
@@ -284,6 +351,12 @@ export default function ReaderView({
       }`}
       style={readerVars}
     >
+      <div className={styles.progressTrack} aria-hidden="true">
+        <span
+          className={styles.progressFill}
+          style={{ transform: `scaleX(${progress})` }}
+        />
+      </div>
       <div className={styles.main}>
         <header className={styles.toolbar}>
           <div className={styles.toolbarLeft}>
