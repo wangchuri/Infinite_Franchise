@@ -15,7 +15,10 @@ import {
   createWork,
   deleteWork,
   fetchWorkById,
+  fetchWorkChapters,
+  reorderWorkChapters,
   updateWork,
+  type Work,
 } from "@/lib/works";
 import { WORK_KINDS, type WorkCategory } from "@/lib/work-taxonomy";
 import MarkdownView from "@/components/MarkdownView";
@@ -72,6 +75,10 @@ export default function Workbench({
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(!isEdit);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [workType, setWorkType] = useState<string>("");
+  const [parentId, setParentId] = useState<string | null>(null);
+  const [chapters, setChapters] = useState<Work[]>([]);
+  const [chapterBusy, setChapterBusy] = useState(false);
   const [saveState, setSaveState] = useState<
     "idle" | "saving" | "saved" | "error"
   >("idle");
@@ -107,6 +114,8 @@ export default function Workbench({
           setContent(w.content ?? "");
           setMediaUrl(w.mediaUrl);
           setStatus(w.status);
+          setWorkType(w.type);
+          setParentId(w.parentId);
         } catch (err) {
           if (!cancelled) {
             setError(err instanceof Error ? err.message : "加载失败");
@@ -231,6 +240,67 @@ export default function Workbench({
     }, 600);
     return () => window.clearTimeout(t);
   }, [ready, workId, draftKey, kind, title, summary, content, mediaUrl]);
+
+  /** Novel whose outline is shown: the work itself, or a chapter's parent. */
+  const novelId =
+    workType === "novel"
+      ? (workId ?? null)
+      : workType === "chapter"
+        ? parentId
+        : null;
+
+  useEffect(() => {
+    if (!novelId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await fetchWorkChapters(novelId);
+        if (!cancelled) setChapters(list);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [novelId]);
+
+  async function createChapter() {
+    if (!novelId || !worldId) return;
+    setChapterBusy(true);
+    setError(null);
+    try {
+      const ch = await createWork({
+        worldId,
+        category: "novel",
+        kind: "chapter",
+        title: `第${chapters.length + 1}章`,
+        parentId: novelId,
+      });
+      router.push(`/works/${ch.id}/edit`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "新建章节失败");
+      setChapterBusy(false);
+    }
+  }
+
+  async function moveChapter(index: number, delta: number) {
+    if (!novelId) return;
+    const target = index + delta;
+    if (target < 0 || target >= chapters.length) return;
+    const next = [...chapters];
+    const [item] = next.splice(index, 1);
+    next.splice(target, 0, item);
+    setChapters(next);
+    try {
+      await reorderWorkChapters(
+        novelId,
+        next.map((c) => c.id),
+      );
+    } catch {
+      setError("调整章节顺序失败");
+    }
+  }
 
   async function onUpload(file: File | undefined) {
     if (!file) return;
@@ -427,6 +497,73 @@ export default function Workbench({
         </main>
 
         <aside className={styles.side}>
+          {novelId ? (
+            <div className={styles.chapters}>
+              <div className={styles.chaptersHead}>
+                <span className={styles.chaptersTitle}>
+                  章节 · {chapters.length}
+                </span>
+                <button
+                  type="button"
+                  className={styles.addChapter}
+                  disabled={chapterBusy}
+                  onClick={() => void createChapter()}
+                >
+                  ＋ 新章
+                </button>
+              </div>
+              {chapters.length === 0 ? (
+                <p className={styles.chaptersEmpty}>
+                  还没有章节，点「＋ 新章」开始。
+                </p>
+              ) : (
+                <ol className={styles.chapterList}>
+                  {chapters.map((c, i) => (
+                    <li key={c.id} className={styles.chapterRow}>
+                      <button
+                        type="button"
+                        className={
+                          c.id === workId
+                            ? `${styles.chapterItem} ${styles.chapterOn}`
+                            : styles.chapterItem
+                        }
+                        onClick={() => router.push(`/works/${c.id}/edit`)}
+                        title={c.title}
+                      >
+                        <span className={styles.chapterIndex}>{i + 1}</span>
+                        <span className={styles.chapterName}>{c.title}</span>
+                        {c.status !== "published" ? (
+                          <span
+                            className={styles.chapterDot}
+                            data-status={c.status}
+                          />
+                        ) : null}
+                      </button>
+                      <span className={styles.chapterMoves}>
+                        <button
+                          type="button"
+                          disabled={i === 0}
+                          aria-label="上移"
+                          onClick={() => void moveChapter(i, -1)}
+                        >
+                          ↑
+                        </button>
+                        <button
+                          type="button"
+                          disabled={i === chapters.length - 1}
+                          aria-label="下移"
+                          onClick={() => void moveChapter(i, 1)}
+                        >
+                          ↓
+                        </button>
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              )}
+            </div>
+          ) : null}
+
           <ImageUpload
             label="封面"
             value={mediaUrl}

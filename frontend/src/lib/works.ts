@@ -144,6 +144,22 @@ export async function fetchWorkById(id: string): Promise<Work> {
   return data.work;
 }
 
+/** Chapters of a novel (drafts included when the viewer may edit it). */
+export async function fetchWorkChapters(id: string): Promise<Work[]> {
+  const data = await apiFetch<{ chapters: Work[] }>(`/api/works/${id}/chapters`);
+  return data.chapters;
+}
+
+export async function reorderWorkChapters(
+  novelId: string,
+  ids: string[],
+): Promise<void> {
+  await apiFetch(`/api/works/${novelId}/chapters/order`, {
+    method: "PATCH",
+    body: JSON.stringify({ ids }),
+  });
+}
+
 export async function fetchWorkRead(id: string): Promise<WorkReadPayload> {
   return apiFetch<WorkReadPayload>(`/api/works/${id}/read`);
 }

@@ -302,6 +302,150 @@
   color: var(--sea);
 }
 
+/* Chapters / outline for novels and their chapters. */
+.chapters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.chaptersHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.chaptersTitle {
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--ink-soft);
+}
+
+.addChapter {
+  padding: 0.28rem 0.7rem;
+  border: 1px solid var(--sea);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--sea);
+  cursor: pointer;
+}
+
+.addChapter:hover:not(:disabled) {
+  background: var(--sea);
+  color: #f7f3ea;
+}
+
+.addChapter:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.chaptersEmpty {
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+}
+
+.chapterList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.chapterRow {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.chapterItem {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.3rem 0.45rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.84rem;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+}
+
+.chapterItem:hover {
+  background: rgba(31, 92, 90, 0.08);
+}
+
+.chapterOn {
+  border-color: color-mix(in srgb, var(--sea) 55%, transparent);
+  background: rgba(31, 92, 90, 0.1);
+}
+
+.chapterIndex {
+  flex-shrink: 0;
+  width: 1.3rem;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
+.chapterName {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.chapterDot {
+  flex-shrink: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+}
+
+.chapterDot[data-status="pending"] {
+  background: var(--ember);
+}
+
+.chapterMoves {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.chapterMoves button {
+  padding: 0 0.2rem;
+  border: none;
+  background: none;
+  font-size: 0.7rem;
+  line-height: 1.1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.chapterMoves button:hover:not(:disabled) {
+  color: var(--sea);
+}
+
+.chapterMoves button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
 .linkHint {
   padding: 0.6rem 0.7rem;
   border: 1px dashed var(--line);

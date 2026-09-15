@@ -295,10 +295,52 @@ async function listPublishedChapters(
        AND worlds.status = 'published'
        AND worlds.visibility = 'public'
        AND worlds.deleted_at IS NULL
-     ORDER BY w.published_at ASC NULLS LAST, w.created_at ASC`,
+     ORDER BY w.position ASC, w.published_at ASC NULLS LAST, w.created_at ASC`,
     [novelId],
   );
   return res.rows;
+}
+
+/**
+ * Chapters of a novel for the author's outline. Drafts/review copies are only
+ * included when the viewer may edit the novel.
+ */
+export async function listWorkChapters(
+  novelId: string,
+  includeDrafts: boolean,
+): Promise<WorkFeedRow[]> {
+  const res = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT}
+     WHERE w.parent_id = $1
+       AND w.type = 'chapter'
+       AND w.deleted_at IS NULL
+       ${
+         includeDrafts
+           ? ""
+           : `AND w.status = 'published'
+              AND worlds.status = 'published'
+              AND worlds.visibility = 'public'
+              AND worlds.deleted_at IS NULL`
+       }
+     ORDER BY w.position ASC, w.created_at ASC`,
+    [novelId],
+  );
+  return res.rows;
+}
+
+/** Rewrite chapter order for a novel from an explicit id list. */
+export async function reorderWorkChapters(
+  novelId: string,
+  ids: string[],
+): Promise<void> {
+  if (ids.length === 0) return;
+  await pool.query(
+    `UPDATE works w
+        SET position = t.ord - 1
+       FROM unnest($2::uuid[]) WITH ORDINALITY AS t(id, ord)
+      WHERE w.id = t.id AND w.parent_id = $1`,
+    [novelId, ids],
+  );
 }
 
 function toChapterRef(row: WorkFeedRow): WorkChapterRef {
@@ -458,6 +500,7 @@ export async function createWork(input: {
   }
 
   let parentId = input.parentId?.trim() || null;
+  let position = 0;
   if (type === "chapter") {
     if (!parentId) {
       throw Object.assign(new Error("章节需要所属长篇 parentId"), {
@@ -473,6 +516,12 @@ export async function createWork(input: {
     if (!p || p.type !== "novel") {
       throw Object.assign(new Error("所属长篇不存在"), { statusCode: 400 });
     }
+    const next = await pool.query<{ next: number }>(
+      `SELECT COALESCE(MAX(position), -1) + 1 AS next FROM works
+        WHERE parent_id = $1 AND deleted_at IS NULL`,
+      [parentId],
+    );
+    position = next.rows[0]?.next ?? 0;
   } else {
     parentId = null;
   }
@@ -496,8 +545,8 @@ export async function createWork(input: {
   const res = await pool.query<WorkRow>(
     `INSERT INTO works (
        world_id, author_id, type, category, kind, title, summary, content,
-       media_url, status, parent_id, published_at
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+       media_url, status, parent_id, position, published_at
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING *`,
     [
       input.worldId,
@@ -511,6 +560,7 @@ export async function createWork(input: {
       mediaUrl,
       status,
       parentId,
+      position,
       status === "published" ? new Date() : null,
     ],
   );

@@ -13,6 +13,8 @@ import {
   listPendingWorks,
   listPublicWorks,
   listPublicWorksByWorld,
+  listWorkChapters,
+  reorderWorkChapters,
   reviewWork,
   softDeleteWork,
   toPublicWork,
@@ -168,6 +170,40 @@ export async function registerWorkRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "作品不存在或未公开" });
     }
     return { work: toPublicWork(row) };
+  });
+
+  /** Chapters of a novel (drafts included for its editors). */
+  app.get("/api/works/:id/chapters", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const work = await findAnyWorkById(id);
+    if (!work || work.deleted_at) {
+      return reply.code(404).send({ error: "作品不存在" });
+    }
+    const canManage = req.authUser
+      ? await canEditWork(work, req.authUser.id)
+      : false;
+    const rows = await listWorkChapters(id, canManage);
+    return { chapters: rows.map(toPublicWork) };
+  });
+
+  /** Reorder a novel's chapters (author / world creator / editor). */
+  app.patch("/api/works/:id/chapters/order", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const novel = await findAnyWorkById(id);
+    if (!novel || novel.deleted_at) {
+      return reply.code(404).send({ error: "作品不存在" });
+    }
+    if (!(await canEditWork(novel, user.id))) {
+      return reply.code(403).send({ error: "无权调整章节顺序" });
+    }
+    const body = (req.body ?? {}) as { ids?: unknown };
+    const ids = Array.isArray(body.ids)
+      ? body.ids.filter((x): x is string => typeof x === "string")
+      : [];
+    await reorderWorkChapters(id, ids);
+    return { ok: true };
   });
 
   /** Edit a work (author / world creator / editor). */
