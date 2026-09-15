@@ -800,7 +800,7 @@ User ──拥有角色──▶ WorldMember (在某 World 下)
 | 5 | 后端技术栈 | Node / Go / Rust / 其他 | 待定 |
 | 6 | Web 前端框架 | React / Vue / 其他 | 待定 |
 | 7 | 数据库 | PostgreSQL / MySQL / 其他 | 待定 |
-| 8 | 富文本 vs Markdown | 写作与 Wiki 编辑器选型 | 待定 |
+| 8 | 富文本 vs Markdown | 写作与 Wiki 编辑器选型 | 已定：正文用「Markdown 文本块 + 块布局」，块内文本为 Markdown |
 | 9 | 广场推荐算法 | 最新 / 热门 / 编辑推荐 | MVP 先用最新 |
 | 10 | 私密世界观 | 是否纳入 MVP | 倾向：MVP 仅公开 |
 

@@ -10,6 +10,7 @@ import {
   type AuthUser,
 } from "@/lib/auth";
 import TopSearch from "./TopSearch";
+import RouteSwipe from "./RouteSwipe";
 import styles from "./shell.module.css";
 
 function initials(name: string): string {
@@ -27,10 +28,27 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const topbarRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Expose the real topbar height so sticky world headers can offset correctly.
+  useEffect(() => {
+    const el = topbarRef.current;
+    if (!el) return;
+    const update = () => {
+      document.documentElement.style.setProperty(
+        "--topbar-h",
+        `${el.offsetHeight}px`,
+      );
+    };
+    update();
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mounted, pathname]);
 
   useEffect(() => {
     if (!mounted) return;
@@ -116,10 +134,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   const isLab = pathname.startsWith("/create/lab");
-  /** World wikis render their own standalone shell — hide the platform chrome. */
+  /**
+   * The wiki surface (author layout, public collection + entry pages) renders
+   * its own standalone shell with no platform chrome. The world home and
+   * discussion keep the platform topbar.
+   */
+  const isWorldWiki =
+    /^\/w\/[^/]+\/(?:wiki|entry|c)(?:\/|$)/.test(pathname);
   const isWorld = pathname.startsWith("/w/");
+  /** World home locks the viewport: only the works column scrolls. */
+  const isWorldHome = /^\/w\/[^/]+\/?$/.test(pathname);
+  /** Visual wiki layout editor / entry library fill the viewport like tools. */
+  const isWikiLayoutEditor =
+    /^\/worlds\/[^/]+\/(?:wiki|entries)(?:\/|$)/.test(pathname);
+  /** The workbench for a creative type fills the viewport like a tool. */
+  const isCreateWorkbench =
+    /^\/create\/(?:novel|artwork|program|audio|video)(?:\/|$)/.test(pathname);
+  /** Editing a work fills the viewport like a tool. */
+  const isWorkBench = /^\/works\/[^/]+\/edit(?:\/|$)/.test(pathname);
 
-  if (isWorld) {
+  if (isWorldWiki) {
     return <>{children}</>;
   }
 
@@ -129,11 +163,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         styles.shell,
         pathname === "/" ? styles.shellPlaza : "",
         isLab ? styles.shellLab : "",
+        isWorldHome || isWikiLayoutEditor || isCreateWorkbench || isWorkBench
+          ? styles.shellWorld
+          : "",
       ]
         .filter(Boolean)
         .join(" ")}
     >
-      <header className={styles.topbar}>
+      <header className={styles.topbar} ref={topbarRef}>
         <Link href="/" className={styles.brand}>
           无限企划 <span>Infinite Franchise</span>
         </Link>
@@ -219,13 +256,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         className={
           pathname === "/"
             ? `${styles.main} ${styles.mainPlaza}`
-            : pathname.startsWith("/works/")
+            : pathname.startsWith("/works/") && !isWorkBench
               ? `${styles.main} ${styles.mainReader}`
-              : styles.main
+              : isWorld || isWikiLayoutEditor || isCreateWorkbench || isWorkBench
+                ? `${styles.main} ${styles.mainWorld}`
+                : styles.main
         }
       >
         {children}
       </div>
+      <RouteSwipe />
       <footer className={styles.footer}>无限企划 · Web · 本地开发</footer>
     </div>
   );

@@ -100,6 +100,7 @@
     height: auto;
     flex: none;
   }
+
 }
 
 .topbar {
@@ -374,6 +375,22 @@
 .mainReader {
   width: min(1040px, 94vw);
   padding-top: 1.5rem;
+}
+
+/* World home / discussion: full-bleed — the page manages its own widths. */
+.mainWorld {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* World home: hide the platform footer so the page fills the viewport. */
+.shellWorld {
+  min-height: 100vh;
+}
+
+.shellWorld .footer {
+  display: none;
 }
 
 .footer {
