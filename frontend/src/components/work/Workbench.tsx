@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { getAccessToken } from "@/lib/auth";
@@ -72,6 +72,15 @@ export default function Workbench({
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(!isEdit);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [saveState, setSaveState] = useState<
+    "idle" | "saving" | "saved" | "error"
+  >("idle");
+  const [savedAt, setSavedAt] = useState("");
+  const autosaveTimer = useRef<number | null>(null);
+  const skipAutosave = useRef(true);
+  const draftKey = workId
+    ? `if_work_draft:${workId}`
+    : `if_work_draft:new:${initialCategory}`;
 
   const label = LABELS[category] ?? "创作";
   const kinds = WORK_KINDS[category] ?? [];
@@ -113,6 +122,29 @@ export default function Workbench({
           if (cancelled) return;
           setWorlds(list);
           setWorldId((prev) => prev || list[0]?.id || "");
+
+          // Restore a locally backed-up draft (content wins; blanks filled).
+          try {
+            const raw = localStorage.getItem(
+              `if_work_draft:new:${initialCategory}`,
+            );
+            if (raw) {
+              const d = JSON.parse(raw) as {
+                title?: string;
+                summary?: string;
+                content?: string;
+                mediaUrl?: string | null;
+                kind?: string;
+              };
+              setContent(d.content ?? "");
+              setTitle((prev) => prev || d.title || "");
+              setSummary((prev) => prev || d.summary || "");
+              setKind((prev) => prev || d.kind || "");
+              setMediaUrl((prev) => prev ?? d.mediaUrl ?? null);
+            }
+          } catch {
+            /* ignore */
+          }
         } catch {
           /* ignore */
         }
@@ -122,7 +154,7 @@ export default function Workbench({
     return () => {
       cancelled = true;
     };
-  }, [router, workId]);
+  }, [router, workId, initialCategory]);
 
   /** Slug of the world being written for (create picks it from the select). */
   const activeSlug = isEdit
@@ -147,6 +179,58 @@ export default function Workbench({
       cancelled = true;
     };
   }, [activeSlug]);
+
+  // Autosave edits to existing works (new ones keep a local backup instead).
+  useEffect(() => {
+    if (!workId || !ready) return;
+    if (skipAutosave.current) {
+      skipAutosave.current = false;
+      return;
+    }
+    if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
+    autosaveTimer.current = window.setTimeout(() => {
+      setSaveState("saving");
+      void (async () => {
+        try {
+          await updateWork(workId, {
+            kind: kind || undefined,
+            title: title.trim() || undefined,
+            summary: summary.trim() || null,
+            content: content.trim() || null,
+            mediaUrl,
+          });
+          setSaveState("saved");
+          setSavedAt(
+            new Date().toLocaleTimeString("zh-CN", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          );
+        } catch {
+          setSaveState("error");
+        }
+      })();
+    }, 1500);
+    return () => {
+      if (autosaveTimer.current) window.clearTimeout(autosaveTimer.current);
+    };
+  }, [workId, ready, kind, title, summary, content, mediaUrl]);
+
+  // Local backup for new works so a refresh never loses the draft.
+  useEffect(() => {
+    if (!ready || workId) return;
+    const t = window.setTimeout(() => {
+      try {
+        localStorage.setItem(
+          draftKey,
+          JSON.stringify({ title, summary, content, mediaUrl, kind }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [ready, workId, draftKey, kind, title, summary, content, mediaUrl]);
 
   async function onUpload(file: File | undefined) {
     if (!file) return;
@@ -178,6 +262,11 @@ export default function Workbench({
           mediaUrl,
           status: nextStatus,
         });
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          /* ignore */
+        }
         router.push(`/works/${workId}`);
       } else {
         if (!worldId) {
@@ -195,6 +284,11 @@ export default function Workbench({
           mediaUrl,
           publish,
         });
+        try {
+          localStorage.removeItem(draftKey);
+        } catch {
+          /* ignore */
+        }
         router.push(`/works/${work.id}`);
       }
     } catch (err) {
@@ -237,13 +331,24 @@ export default function Workbench({
           maxLength={200}
         />
         <span className={styles.state}>
-          {busy
-            ? "提交中…"
-            : status === "pending"
-              ? "待审核"
-              : status === "published"
-                ? "已发布"
-                : ""}
+          {[
+            busy
+              ? "提交中…"
+              : status === "pending"
+                ? "待审核"
+                : status === "published"
+                  ? "已发布"
+                  : "",
+            saveState === "saving"
+              ? "保存中…"
+              : saveState === "saved"
+                ? `已保存${savedAt ? ` ${savedAt}` : ""}`
+                : saveState === "error"
+                  ? "自动保存失败"
+                  : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </span>
         <div className={styles.barActions}>
           <button
