@@ -1,9 +1,21 @@
 /* World home (entry page): cover + intro, then works with a category rail. */
 
+/* Fixed-height sub-page: the window never scrolls here. The banner scrolls
+   away inside .scroller; the intro/tab bar/kind tabs pin; the works list
+   scrolls in the remaining space. Few works never collapse the page. */
 .page {
-  min-height: 100vh;
-  background: var(--paper);
+  position: relative;
+  height: calc(100dvh - var(--topbar-h, 60px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   color: var(--ink);
+}
+
+.scroller {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .loading {
@@ -21,33 +33,73 @@
 .cover {
   position: relative;
   min-height: 260px;
-  display: flex;
-  align-items: flex-end;
-  padding: 3.5rem 4vw 2.5rem;
+  padding: 1.75rem 4vw 2.5rem;
   background-size: cover;
   background-position: center;
   color: #f7f3ea;
 }
 
+/* Pinned header: intro + tab bar + kind tabs stay put while works scroll. */
+.headSticky {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  background: rgba(243, 239, 230, 0.96);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+}
+
 .coverInner {
+  position: relative;
   width: min(1120px, 92vw);
   margin: 0 auto;
+  min-height: 212px;
+  display: flex;
+  flex-direction: column;
 }
 
-.back {
-  display: inline-block;
-  margin-bottom: 1.25rem;
-  font-size: 0.88rem;
-  color: rgba(247, 243, 234, 0.85);
+.wikiBtn {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.5rem 1.15rem;
+  border-radius: 8px;
+  border: 1px solid rgba(247, 243, 234, 0.5);
+  background: rgba(247, 243, 234, 0.14);
+  color: #f7f3ea;
+  font-size: 0.9rem;
   text-decoration: none;
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
 }
 
-.back:hover {
+.wikiBtn:hover {
+  background: rgba(247, 243, 234, 0.24);
   color: #fff;
   text-decoration: none;
 }
 
+/* "进入 Wiki" also lives in the pinned tab bar, so it stays reachable. */
+.wikiTab {
+  margin-left: auto;
+  padding: 0.4rem 0.95rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--sea);
+  background: rgba(31, 92, 90, 0.12);
+  text-decoration: none;
+}
+
+.wikiTab:hover {
+  background: rgba(31, 92, 90, 0.2);
+  text-decoration: none;
+}
+
 .coverText {
+  margin-top: auto;
   display: flex;
   align-items: flex-end;
   gap: 1.25rem;
@@ -120,9 +172,7 @@
 /* ---------- tab bar ---------- */
 
 .tabBar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
+  position: relative;
   margin-top: 1.75rem;
   background: rgba(243, 239, 230, 0.92);
   -webkit-backdrop-filter: blur(10px);
@@ -164,7 +214,7 @@
 }
 
 .editLink {
-  margin-left: auto;
+  margin-left: 0.75rem;
   font-size: 0.85rem;
   color: var(--ink-soft);
 }
@@ -173,12 +223,31 @@
   color: var(--sea);
 }
 
+.wikiEdit {
+  margin-left: auto;
+  padding: 0.38rem 0.9rem;
+  border: 1px solid var(--sea);
+  border-radius: 999px;
+  font-size: 0.85rem;
+  color: var(--sea);
+}
+
+.wikiEdit:hover {
+  background: var(--sea);
+  color: #f7f3ea;
+  text-decoration: none;
+}
+
 /* ---------- layout: works + category rail ---------- */
 
 .layout {
   width: min(1120px, 92vw);
   margin: 0 auto;
   padding: 2rem 0 4.5rem;
+  /* Always tall enough that the banner can be scrolled fully away: the
+     scroller scrolls exactly the banner height, then the works pane fills
+     the rest — even when there are only one or two works. */
+  min-height: calc(100dvh - var(--topbar-h, 60px) - var(--head-h, 0px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) 190px;
   gap: 2.5rem;
@@ -190,11 +259,19 @@
 }
 
 .worksHead {
+  position: sticky;
+  top: var(--head-h, 0px);
+  z-index: 4;
+  background: rgba(243, 239, 230, 0.94);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   display: flex;
-  align-items: baseline;
+  flex-wrap: wrap;
+  align-items: center;
   gap: 0.75rem;
-  padding-bottom: 0.55rem;
-  margin-bottom: 1.1rem;
+  padding-top: 0.6rem;
+  padding-bottom: 1.35rem;
+  margin-bottom: 0;
   border-bottom: 2px solid rgba(31, 92, 90, 0.35);
 }
 
@@ -216,7 +293,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0.4rem;
-  margin-bottom: 1.4rem;
+  margin-left: 0.35rem;
 }
 
 .kind,
@@ -331,7 +408,7 @@
 
 .rail {
   position: sticky;
-  top: 72px;
+  top: var(--head-h, 0px);
 }
 
 .railTitle {
@@ -417,6 +494,24 @@
   display: inline-block;
   margin-top: 1.25rem;
   color: var(--sea);
+}
+
+@media (max-width: 1024px) {
+  /* Small screens: fall back to normal document scrolling. */
+  .page {
+    height: auto;
+    overflow: visible;
+  }
+
+  .scroller {
+    overflow: visible;
+  }
+
+  .headSticky,
+  .worksHead,
+  .rail {
+    position: static;
+  }
 }
 
 @media (max-width: 860px) {

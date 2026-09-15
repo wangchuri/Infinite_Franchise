@@ -1,14 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { getAccessToken } from "@/lib/auth";
 import {
   fetchReactionSummary,
+  REACTIONS_CHANGED,
   toggleReaction,
   type ReactionSummary,
   type ReactionTargetType,
   type ReactionType,
+  type ReactionsChangedDetail,
 } from "@/lib/reactions";
 import styles from "./ReactionBar.module.css";
 
@@ -29,7 +32,7 @@ export default function ReactionBar({ targetType, targetId, compact = false }: P
   const router = useRouter();
   const barRef = useRef<HTMLDivElement>(null);
   const [summary, setSummary] = useState<ReactionSummary | null>(null);
-  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [tip, setTip] = useState<TipState>(null);
   const hideTimer = useRef<number | null>(null);
@@ -48,6 +51,19 @@ export default function ReactionBar({ targetType, targetId, compact = false }: P
       cancelled = true;
       if (hideTimer.current) window.clearTimeout(hideTimer.current);
     };
+  }, [targetType, targetId]);
+
+  // Keep in sync when the same target is reacted to elsewhere (e.g. the
+  // right-click stamp menu on the reading page).
+  useEffect(() => {
+    function onChanged(e: Event) {
+      const d = (e as CustomEvent<ReactionsChangedDetail>).detail;
+      if (d && d.targetType === targetType && d.targetId === targetId) {
+        setSummary(d.summary);
+      }
+    }
+    window.addEventListener(REACTIONS_CHANGED, onChanged);
+    return () => window.removeEventListener(REACTIONS_CHANGED, onChanged);
   }, [targetType, targetId]);
 
   function showTip(def: ReactionType, btn: HTMLButtonElement) {
@@ -70,20 +86,20 @@ export default function ReactionBar({ targetType, targetId, compact = false }: P
     hideTimer.current = window.setTimeout(() => setTip(null), 120);
   }
 
-  async function onToggle(key: string) {
+  async function onToggle(id: string) {
     if (!getAccessToken()) {
       router.push("/login");
       return;
     }
-    setBusyKey(key);
+    setBusyId(id);
     setError(null);
     try {
-      const next = await toggleReaction(targetType, targetId, key);
+      const next = await toggleReaction(targetType, targetId, id);
       setSummary(next);
     } catch (err) {
       setError(err instanceof Error ? err.message : "操作失败");
     } finally {
-      setBusyKey(null);
+      setBusyId(null);
     }
   }
 
@@ -92,24 +108,33 @@ export default function ReactionBar({ targetType, targetId, compact = false }: P
   return (
     <div ref={barRef} className={`${styles.bar} ${compact ? styles.compact : ""}`} role="group" aria-label="回应">
       {summary.types.map((t) => {
-        const mine = summary.mine.includes(t.key);
-        const count = summary.counts[t.key] ?? 0;
+        const mine = summary.mine.includes(t.id);
+        const count = summary.counts[t.id] ?? 0;
+        const isLike = t.key === "like";
+        const cls = [mine ? styles.on : styles.btn, isLike ? styles.like : ""]
+          .filter(Boolean)
+          .join(" ");
         return (
           <button
-            key={t.key}
+            key={t.id}
             type="button"
             aria-pressed={mine}
-            className={mine ? styles.on : styles.btn}
-            disabled={busyKey !== null}
+            className={cls}
+            disabled={busyId !== null}
             onMouseEnter={(e) => showTip(t, e.currentTarget)}
             onMouseLeave={hideTip}
             onFocus={(e) => showTip(t, e.currentTarget)}
             onBlur={hideTip}
-            onClick={() => void onToggle(t.key)}
+            onClick={() => void onToggle(t.id)}
           >
-            <span className={styles.icon} aria-hidden="true">
-              {t.icon}
-            </span>
+            {t.kind === "artwork" && t.artworkUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={t.artworkUrl} alt="" className={styles.sticker} />
+            ) : (
+              <span className={styles.icon} aria-hidden="true">
+                {t.icon}
+              </span>
+            )}
             {!compact ? <span className={styles.label}>{t.label}</span> : null}
             <span className={styles.count}>{count}</span>
           </button>
@@ -127,10 +152,23 @@ export default function ReactionBar({ targetType, targetId, compact = false }: P
           onMouseLeave={hideTip}
           role="tooltip"
         >
-          <span className={styles.tipIcon}>{tip.def.icon}</span>
+          {tip.def.kind === "artwork" && tip.def.artworkUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={tip.def.artworkUrl} alt="" className={styles.tipSticker} />
+          ) : (
+            <span className={styles.tipIcon}>{tip.def.icon}</span>
+          )}
           <div>
             <strong>{tip.def.label}</strong>
-            <p>{tip.def.description}</p>
+            <p>{tip.def.description || "自定义表情"}</p>
+            {tip.def.kind === "artwork" && tip.def.artworkId ? (
+              <Link
+                href={`/works/${tip.def.artworkId}`}
+                className={styles.tipLink}
+              >
+                查看作品 →
+              </Link>
+            ) : null}
           </div>
         </div>
       ) : null}

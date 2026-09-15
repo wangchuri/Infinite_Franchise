@@ -55,6 +55,20 @@
   line-height: 1;
 }
 
+/* The built-in "like" reads as the primary action. */
+.like {
+  font-weight: 600;
+  padding: 4px 12px;
+}
+
+.sticker {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  border-radius: 4px;
+  display: block;
+}
+
 .label {
   white-space: nowrap;
 }
@@ -101,6 +115,20 @@
 .tipIcon {
   font-size: 1.25rem;
   line-height: 1;
+}
+
+.tipSticker {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  border-radius: 4px;
+}
+
+.tipLink {
+  display: inline-block;
+  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  color: var(--sea);
 }
 
 .tip strong {

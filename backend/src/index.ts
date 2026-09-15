@@ -10,6 +10,7 @@ import { syncReactionTypes } from "./config/reaction-config.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCommentRoutes } from "./routes/comments.js";
 import { registerReactionRoutes } from "./routes/reactions.js";
+import { registerTopicRoutes } from "./routes/topics.js";
 import { registerUploadRoutes } from "./routes/uploads.js";
 import { registerUserRoutes } from "./routes/users.js";
 import { registerWorkRoutes } from "./routes/works.js";
@@ -112,6 +113,7 @@ async function main() {
   await registerWorkRoutes(app);
   await registerReactionRoutes(app);
   await registerCommentRoutes(app);
+  await registerTopicRoutes(app);
 
   app.addHook("onClose", async () => {
     await pool.end();

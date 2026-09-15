@@ -60,11 +60,11 @@ function topReactions(
   counts: Record<string, number>,
   types: ReactionType[],
 ): TopReaction[] {
-  const byKey = new Map(types.map((t) => [t.key, t]));
+  const byId = new Map(types.map((t) => [t.id, t]));
   return Object.entries(counts)
     .filter(([, n]) => n > 0)
     .map(([key, count]) => {
-      const def = byKey.get(key);
+      const def = byId.get(key);
       return {
         key,
         icon: def?.icon ?? key,

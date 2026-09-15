@@ -1,6 +1,6 @@
 import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth/auth-guard.js";
-import { isKnownReactionType, listActiveReactionTypes } from "../config/reaction-config.js";
+import { listReactionTypesForWorld } from "../config/reaction-config.js";
 import {
   assertTargetExists,
   getReactionSummary,
@@ -14,21 +14,26 @@ function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
 }
 
-function parseTarget(query: Record<string, unknown>): {
+function parseTarget(source: Record<string, unknown>): {
   targetType: ReactionTargetType;
   targetId: string;
 } | null {
-  const targetType = asString(query.targetType);
-  const targetId = asString(query.targetId);
+  const targetType = asString(source.targetType);
+  const targetId = asString(source.targetId);
   if (!targetType || !targetId) return null;
   if (!isReactionTargetType(targetType)) return null;
   return { targetType, targetId };
 }
 
 export async function registerReactionRoutes(app: FastifyInstance) {
-  /** Active reaction types (icon/label/type) — config synced to DB. */
-  app.get("/api/reactions/types", async () => {
-    return { types: await listActiveReactionTypes() };
+  /**
+   * Active reaction types. Global built-ins by default; pass ?worldId= to also
+   * include that world's custom reactions.
+   */
+  app.get("/api/reactions/types", async (req) => {
+    const q = (req.query ?? {}) as Record<string, unknown>;
+    const worldId = asString(q.worldId) ?? null;
+    return { types: await listReactionTypesForWorld(worldId) };
   });
 
   /** Per-target counts + the current viewer's reactions. */
@@ -59,20 +64,27 @@ export async function registerReactionRoutes(app: FastifyInstance) {
         error: "targetType (work|entry|timeline) and targetId are required",
       });
     }
-    const reactionType = asString(body.reactionType) ?? "";
-    if (!isKnownReactionType(reactionType)) {
-      return reply.code(400).send({ error: "invalid reactionType" });
+    const reactionTypeId = asString(body.reactionTypeId) ?? "";
+    if (!reactionTypeId) {
+      return reply.code(400).send({ error: "reactionTypeId is required" });
     }
     if (!(await assertTargetExists(parsed.targetType, parsed.targetId))) {
       return reply.code(404).send({ error: "target not found" });
     }
 
-    const summary = await toggleReaction({
-      userId: user.id,
-      ...parsed,
-      reactionType,
-    });
-    return summary;
+    try {
+      const summary = await toggleReaction({
+        userId: user.id,
+        ...parsed,
+        reactionTypeId,
+      });
+      return summary;
+    } catch (err) {
+      const e = err as Error & { statusCode?: number };
+      return reply
+        .code(e.statusCode ?? 500)
+        .send({ error: e.message || "操作失败" });
+    }
   });
 
   /** Explicitly remove a reaction (un-toggle). */
@@ -87,15 +99,15 @@ export async function registerReactionRoutes(app: FastifyInstance) {
         error: "targetType (work|entry|timeline) and targetId are required",
       });
     }
-    const reactionType = asString(body.reactionType) ?? "";
-    if (!isKnownReactionType(reactionType)) {
-      return reply.code(400).send({ error: "invalid reactionType" });
+    const reactionTypeId = asString(body.reactionTypeId) ?? "";
+    if (!reactionTypeId) {
+      return reply.code(400).send({ error: "reactionTypeId is required" });
     }
 
     const summary = await removeReaction({
       userId: user.id,
       ...parsed,
-      reactionType,
+      reactionTypeId,
     });
     return summary;
   });

@@ -1,12 +1,23 @@
 import { apiFetch } from "./api";
+import { prepareImage } from "./image";
+import {
+  normalizeCollections,
+  type WorldCollection,
+} from "./collections";
 import {
   normalizeHomepageConfig,
   type HomepageConfig,
 } from "./homepage-config";
-import { normalizeWorldLayout, type WorldLayout } from "./world-layout";
+import {
+  normalizeWorldLayout,
+  normalizeEntryLayout,
+  type EntryLayout,
+  type WorldLayout,
+} from "./world-layout";
 
 export type { HomepageConfig };
 export type { WorldLayout };
+export type { WorldCollection };
 
 export type WorkSubmitMode = "open" | "review" | "invite_only";
 export type MemberRole = "creator" | "editor" | "contributor" | "viewer";
@@ -49,12 +60,18 @@ export type WikiEntry = {
   slug: string;
   aliases: string[];
   content: string;
+  contentLayout: EntryLayout;
   imageUrl: string | null;
+  attributes: Record<string, string>;
   status: string;
   version: number;
   createdAt: string;
   updatedAt: string;
 };
+
+function withEntry(entry: WikiEntry): WikiEntry {
+  return { ...entry, contentLayout: normalizeEntryLayout(entry.contentLayout) };
+}
 
 export type TimelineEvent = {
   id: string;
@@ -100,30 +117,48 @@ export async function fetchWorldBySlug(slug: string): Promise<{
   world: World;
   entries: WikiEntry[];
   timeline: TimelineEvent[];
+  collections: WorldCollection[];
   isOwner: boolean;
+  canEdit: boolean;
 }> {
   const data = await apiFetch<{
     world: World;
     entries: WikiEntry[];
     timeline: TimelineEvent[];
+    collections: WorldCollection[];
     isOwner: boolean;
+    canEdit: boolean;
   }>(`/api/worlds/${encodeURIComponent(slug)}`, {}, { auth: true });
-  return { ...data, world: withConfig(data.world) };
+  return {
+    ...data,
+    world: withConfig(data.world),
+    entries: data.entries.map(withEntry),
+    collections: normalizeCollections(data.collections),
+  };
 }
 
 export async function fetchWorldById(id: string): Promise<{
   world: World;
   entries: WikiEntry[];
   timeline: TimelineEvent[];
+  collections: WorldCollection[];
   isOwner: boolean;
+  canEdit: boolean;
 }> {
   const data = await apiFetch<{
     world: World;
     entries: WikiEntry[];
     timeline: TimelineEvent[];
+    collections: WorldCollection[];
     isOwner: boolean;
+    canEdit: boolean;
   }>(`/api/worlds/id/${encodeURIComponent(id)}`);
-  return { ...data, world: withConfig(data.world) };
+  return {
+    ...data,
+    world: withConfig(data.world),
+    entries: data.entries.map(withEntry),
+    collections: normalizeCollections(data.collections),
+  };
 }
 
 export async function updateWorld(
@@ -217,7 +252,7 @@ export async function fetchEntries(
   const data = await apiFetch<{ entries: WikiEntry[] }>(
     `/api/worlds/${worldId}/entries${q}`,
   );
-  return data.entries;
+  return data.entries.map(withEntry);
 }
 
 export async function createEntry(
@@ -226,26 +261,35 @@ export async function createEntry(
     category: string;
     title: string;
     content?: string;
+    contentLayout?: EntryLayout;
     imageUrl?: string | null;
+    attributes?: Record<string, string>;
   },
 ): Promise<WikiEntry> {
   const data = await apiFetch<{ entry: WikiEntry }>(
     `/api/worlds/${worldId}/entries`,
     { method: "POST", body: JSON.stringify(input) },
   );
-  return data.entry;
+  return withEntry(data.entry);
 }
 
 export async function updateEntry(
   worldId: string,
   entryId: string,
-  patch: Partial<{ title: string; content: string; imageUrl: string | null }>,
+  patch: Partial<{
+    title: string;
+    category: string;
+    content: string;
+    contentLayout: EntryLayout;
+    imageUrl: string | null;
+    attributes: Record<string, string>;
+  }>,
 ): Promise<WikiEntry> {
   const data = await apiFetch<{ entry: WikiEntry }>(
     `/api/worlds/${worldId}/entries/${entryId}`,
     { method: "PATCH", body: JSON.stringify(patch) },
   );
-  return data.entry;
+  return withEntry(data.entry);
 }
 
 export async function deleteEntry(
@@ -302,6 +346,17 @@ export async function deleteTimelineEvent(
 }
 
 export async function uploadImage(file: File): Promise<string> {
+  const prepared = await prepareImage(file);
+  const form = new FormData();
+  form.append("file", prepared);
+  const data = await apiFetch<{ url: string }>("/api/uploads", {
+    method: "POST",
+    body: form,
+  });
+  return data.url;
+}
+
+export async function uploadFont(file: File): Promise<string> {
   const form = new FormData();
   form.append("file", file);
   const data = await apiFetch<{ url: string }>("/api/uploads", {
