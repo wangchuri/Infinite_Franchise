@@ -1,7 +1,7 @@
 # 无限企划 · 产品设计文档
 
 > 版本：v0.1（设计阶段）  
-> 状态：待评审，**尚未进入开发**  
+> 状态：**已进入开发**，当前实现进度见 [`features.md`](./features.md)  
 > 相关文档：视觉规范见 [`visual.md`](./visual.md)；Web 结构示意见 [`prototype/web-preview.html`](./prototype/web-preview.html)；灵感草案见 [`inspiration/`](./inspiration/)；技术选型见 [`tech-stack.md`](./tech-stack.md)；本地环境见 [`dev-setup.md`](./dev-setup.md)；数据库见 [`database/`](./database/)
 
 ---
