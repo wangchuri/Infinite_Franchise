@@ -1,36 +1,109 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 import { useRouter } from "next/navigation";
 import MarkdownView from "@/components/MarkdownView";
 import CommentSection from "@/components/CommentSection";
 import ReactionBar from "@/components/ReactionBar";
+import ReactionStampLayer from "./ReactionStampLayer";
+import { getAccessToken } from "@/lib/auth";
+import type { WorldCollection } from "@/lib/collections";
+import {
+  fetchWorkSticker,
+  removeWorkSticker,
+  setWorkSticker,
+  type WorkStickerInfo,
+} from "@/lib/stickers";
 import {
   paginateContent,
   workTypeLabel,
+  type Work,
   type WorkAnnotation,
   type WorkReadPayload,
 } from "@/lib/works";
+import type { WikiEntry } from "@/lib/worlds";
 import styles from "./ReaderView.module.css";
 
 export type ReadMode = "scroll" | "pages";
 
 type Props = {
   data: WorkReadPayload;
+  entries?: WikiEntry[];
+  collections?: WorldCollection[];
+  others?: Work[];
 };
+
+type Size = "s" | "m" | "l" | "xl";
+type Leading = "tight" | "normal" | "loose";
+type Prefs = { size: Size; leading: Leading; night: boolean };
 
 const MODE_KEY = "if_read_mode";
 const NOTES_KEY = "if_read_notes";
+const PREFS_KEY = "if_reader_prefs";
 
-export default function ReaderView({ data }: Props) {
+const SIZE_V: Record<Size, string> = {
+  s: "0.98rem",
+  m: "1.08rem",
+  l: "1.2rem",
+  xl: "1.34rem",
+};
+const LEADING_V: Record<Leading, string> = {
+  tight: "1.62",
+  normal: "1.85",
+  loose: "2.15",
+};
+const SIZES: { key: Size; label: string }[] = [
+  { key: "s", label: "小" },
+  { key: "m", label: "中" },
+  { key: "l", label: "大" },
+  { key: "xl", label: "特大" },
+];
+const LEADINGS: { key: Leading; label: string }[] = [
+  { key: "tight", label: "紧凑" },
+  { key: "normal", label: "标准" },
+  { key: "loose", label: "宽松" },
+];
+const DEFAULT_PREFS: Prefs = { size: "m", leading: "normal", night: false };
+
+function formatDate(iso: string | null): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日`;
+}
+
+function textStats(content: string | null): { chars: number; minutes: number } {
+  const chars = (content ?? "").replace(/\s+/g, "").length;
+  return { chars, minutes: chars > 0 ? Math.max(1, Math.round(chars / 400)) : 0 };
+}
+
+export default function ReaderView({
+  data,
+  entries = [],
+  collections = [],
+  others = [],
+}: Props) {
   const router = useRouter();
   const { work, novel, chapters, prevChapter, nextChapter, annotations } = data;
 
   const [mode, setMode] = useState<ReadMode>("scroll");
   const [showNotes, setShowNotes] = useState(true);
+  const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [page, setPage] = useState(0);
   const [activeNote, setActiveNote] = useState<WorkAnnotation | null>(null);
+  const [sticker, setSticker] = useState<WorkStickerInfo | null>(null);
+  const [stickerBusy, setStickerBusy] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
+  const [lightbox, setLightbox] = useState(false);
+  const settingsRef = useRef<HTMLDivElement>(null);
+  const articleRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const m = localStorage.getItem(MODE_KEY);
@@ -38,17 +111,52 @@ export default function ReaderView({ data }: Props) {
     const n = localStorage.getItem(NOTES_KEY);
     if (n === "0") setShowNotes(false);
     if (n === "1") setShowNotes(true);
+    const raw = localStorage.getItem(PREFS_KEY);
+    if (raw) {
+      try {
+        const p = JSON.parse(raw) as Partial<Prefs>;
+        setPrefs({
+          size: p.size && p.size in SIZE_V ? p.size : "m",
+          leading: p.leading && p.leading in LEADING_V ? p.leading : "normal",
+          night: Boolean(p.night),
+        });
+      } catch {
+        /* keep defaults */
+      }
+    }
   }, []);
 
   useEffect(() => {
     setPage(0);
     setActiveNote(null);
+    setLightbox(false);
+    setSettingsOpen(false);
   }, [work.id]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void (async () => {
+      if (work.category !== "artwork") {
+        if (!cancelled) setSticker(null);
+        return;
+      }
+      try {
+        const info = await fetchWorkSticker(work.id);
+        if (!cancelled) setSticker(info);
+      } catch {
+        if (!cancelled) setSticker(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [work.id, work.category]);
 
   const pages = useMemo(
     () => paginateContent(work.content ?? ""),
     [work.content],
   );
+  const stats = useMemo(() => textStats(work.content), [work.content]);
 
   useEffect(() => {
     if (mode !== "pages") return;
@@ -66,6 +174,52 @@ export default function ReaderView({ data }: Props) {
     return () => window.removeEventListener("keydown", onKey);
   }, [mode, pages.length]);
 
+  const isChapter = work.type === "chapter";
+
+  // Arrow keys flip chapters while reading in scroll mode.
+  useEffect(() => {
+    if (mode === "pages" || !isChapter) return;
+    function onKey(e: KeyboardEvent) {
+      const t = e.target as HTMLElement | null;
+      if (t && /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)) return;
+      if (e.key === "ArrowLeft" && prevChapter) {
+        router.push(`/works/${prevChapter.id}`);
+      } else if (e.key === "ArrowRight" && nextChapter) {
+        router.push(`/works/${nextChapter.id}`);
+      }
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [mode, isChapter, prevChapter, nextChapter, router]);
+
+  useEffect(() => {
+    if (!lightbox) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightbox(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [lightbox]);
+
+  useEffect(() => {
+    if (!settingsOpen) return;
+    function onDown(e: MouseEvent) {
+      if (!settingsRef.current?.contains(e.target as Node)) {
+        setSettingsOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", onDown);
+    return () => document.removeEventListener("mousedown", onDown);
+  }, [settingsOpen]);
+
+  function updatePrefs(patch: Partial<Prefs>) {
+    setPrefs((prev) => {
+      const next = { ...prev, ...patch };
+      localStorage.setItem(PREFS_KEY, JSON.stringify(next));
+      return next;
+    });
+  }
+
   function changeMode(next: ReadMode) {
     setMode(next);
     localStorage.setItem(MODE_KEY, next);
@@ -80,18 +234,55 @@ export default function ReaderView({ data }: Props) {
     });
   }
 
+  async function onSetSticker() {
+    if (!getAccessToken()) {
+      router.push("/login");
+      return;
+    }
+    setStickerBusy(true);
+    try {
+      const info = await setWorkSticker(work.id);
+      setSticker({ sticker: info, canManage: true });
+    } catch {
+      /* ignore */
+    } finally {
+      setStickerBusy(false);
+    }
+  }
+
+  async function onRemoveSticker() {
+    setStickerBusy(true);
+    try {
+      await removeWorkSticker(work.id);
+      setSticker((prev) => ({
+        sticker: null,
+        canManage: prev?.canManage ?? false,
+      }));
+    } catch {
+      /* ignore */
+    } finally {
+      setStickerBusy(false);
+    }
+  }
+
   const isNovelToc = work.type === "novel";
-  const isChapter = work.type === "chapter";
-  const isShort = work.type === "story";
   const hasTextBody =
     work.type === "story" ||
     work.type === "chapter" ||
     work.type === "other" ||
     (work.type === "novel" && Boolean(work.content));
 
+  const readerVars = {
+    "--reader-size": SIZE_V[prefs.size],
+    "--reader-line": LEADING_V[prefs.leading],
+  } as CSSProperties;
+
   return (
     <div
-      className={`${styles.shell} ${showNotes ? styles.withNotes : ""}`}
+      className={`${styles.shell} ${showNotes ? styles.withNotes : ""} ${
+        prefs.night ? styles.night : ""
+      }`}
+      style={readerVars}
     >
       <div className={styles.main}>
         <header className={styles.toolbar}>
@@ -105,22 +296,105 @@ export default function ReaderView({ data }: Props) {
           </div>
           <div className={styles.toolbarRight}>
             {hasTextBody && !isNovelToc ? (
-              <div className={styles.modeSwitch} role="group" aria-label="阅读模式">
-                <button
-                  type="button"
-                  className={mode === "scroll" ? styles.modeOn : styles.modeBtn}
-                  onClick={() => changeMode("scroll")}
+              <>
+                <div className={styles.settingsWrap} ref={settingsRef}>
+                  <button
+                    type="button"
+                    className={settingsOpen ? styles.modeOn : styles.modeBtn}
+                    aria-expanded={settingsOpen}
+                    aria-haspopup="dialog"
+                    title="阅读设置"
+                    onClick={() => setSettingsOpen((v) => !v)}
+                  >
+                    Aa
+                  </button>
+                  {settingsOpen ? (
+                    <div
+                      className={styles.settingsPanel}
+                      role="dialog"
+                      aria-label="阅读设置"
+                    >
+                      <div className={styles.settingsGroup}>
+                        <span className={styles.settingsLabel}>字号</span>
+                        <div className={styles.seg}>
+                          {SIZES.map((s) => (
+                            <button
+                              key={s.key}
+                              type="button"
+                              className={
+                                prefs.size === s.key
+                                  ? styles.segOn
+                                  : styles.segBtn
+                              }
+                              onClick={() => updatePrefs({ size: s.key })}
+                            >
+                              {s.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div className={styles.settingsGroup}>
+                        <span className={styles.settingsLabel}>行距</span>
+                        <div className={styles.seg}>
+                          {LEADINGS.map((l) => (
+                            <button
+                              key={l.key}
+                              type="button"
+                              className={
+                                prefs.leading === l.key
+                                  ? styles.segOn
+                                  : styles.segBtn
+                              }
+                              onClick={() => updatePrefs({ leading: l.key })}
+                            >
+                              {l.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <label className={styles.settingSwitch}>
+                        <span>夜间</span>
+                        <input
+                          type="checkbox"
+                          checked={prefs.night}
+                          onChange={(e) =>
+                            updatePrefs({ night: e.target.checked })
+                          }
+                        />
+                      </label>
+                    </div>
+                  ) : null}
+                </div>
+                <div
+                  className={styles.modeSwitch}
+                  role="group"
+                  aria-label="阅读模式"
                 >
-                  滚动
-                </button>
-                <button
-                  type="button"
-                  className={mode === "pages" ? styles.modeOn : styles.modeBtn}
-                  onClick={() => changeMode("pages")}
-                >
-                  翻页
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    className={
+                      mode === "scroll" ? styles.modeOn : styles.modeBtn
+                    }
+                    onClick={() => changeMode("scroll")}
+                  >
+                    滚动
+                  </button>
+                  <button
+                    type="button"
+                    className={
+                      mode === "pages" ? styles.modeOn : styles.modeBtn
+                    }
+                    onClick={() => changeMode("pages")}
+                  >
+                    翻页
+                  </button>
+                </div>
+              </>
+            ) : null}
+            {data.canEdit ? (
+              <Link href={`/works/${work.id}/edit`} className={styles.modeBtn}>
+                编辑
+              </Link>
             ) : null}
             <button
               type="button"
@@ -132,34 +406,145 @@ export default function ReaderView({ data }: Props) {
           </div>
         </header>
 
-        <article className={styles.reader}>
+        <article className={styles.reader} ref={articleRef}>
           <p className={styles.meta}>
             <span>{workTypeLabel(work)}</span>
-            {novel && isChapter ? (
+            {work.publishedAt ? (
               <>
-                <span aria-hidden="true"> · </span>
-                <Link href={`/works/${novel.id}`}>{novel.title}</Link>
+                <span className={styles.dot} aria-hidden="true">
+                  ·
+                </span>
+                <time dateTime={work.publishedAt}>
+                  {formatDate(work.publishedAt)}
+                </time>
               </>
+            ) : null}
+            {stats.chars > 0 ? (
+              <>
+                <span className={styles.dot} aria-hidden="true">
+                  ·
+                </span>
+                <span>{stats.chars.toLocaleString()} 字</span>
+                <span className={styles.dot} aria-hidden="true">
+                  ·
+                </span>
+                <span>约 {stats.minutes} 分钟</span>
+              </>
+            ) : null}
+            {data.canEdit && work.status !== "published" ? (
+              <span className={styles.status}>
+                {work.status === "pending" ? "待审核" : "草稿"}
+              </span>
             ) : null}
           </p>
 
-          {isShort || isChapter || (work.type !== "novel" && !isNovelToc) ? (
-            <h1 className={styles.title}>{work.title}</h1>
-          ) : (
-            <h1 className={styles.title}>{work.title}</h1>
-          )}
+          <h1 className={styles.title}>{work.title}</h1>
 
           <p className={styles.byline}>
             {work.authorDisplayName || work.authorUsername}
           </p>
 
-          {work.summary && (isNovelToc || isShort) ? (
+          {work.summary && !isChapter ? (
             <p className={styles.summary}>{work.summary}</p>
           ) : null}
 
           {work.mediaUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className={styles.media} src={work.mediaUrl} alt={work.title} />
+            work.category === "video" ? (
+              <figure className={styles.mediaWrap}>
+                <video
+                  className={styles.video}
+                  src={work.mediaUrl}
+                  controls
+                  playsInline
+                  preload="metadata"
+                />
+                <a
+                  className={styles.mediaLink}
+                  href={work.mediaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  在新窗口打开 ↗
+                </a>
+              </figure>
+            ) : work.category === "audio" ? (
+              <figure className={styles.mediaWrap}>
+                <audio
+                  className={styles.audio}
+                  src={work.mediaUrl}
+                  controls
+                  preload="metadata"
+                />
+                <a
+                  className={styles.mediaLink}
+                  href={work.mediaUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  在新窗口打开 ↗
+                </a>
+              </figure>
+            ) : work.category === "artwork" ? (
+              <button
+                type="button"
+                className={styles.artworkBtn}
+                title="点击放大"
+                onClick={() => setLightbox(true)}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  className={styles.artwork}
+                  src={work.mediaUrl}
+                  alt={work.title}
+                />
+              </button>
+            ) : (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className={styles.media}
+                src={work.mediaUrl}
+                alt={work.title}
+              />
+            )
+          ) : null}
+
+          {work.category === "artwork" ? (
+            <div className={styles.stickerBar}>
+              {sticker?.sticker ? (
+                <>
+                  <span className={styles.stickerState}>
+                    {sticker.sticker.artworkUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={sticker.sticker.artworkUrl}
+                        alt=""
+                        className={styles.stickerThumb}
+                      />
+                    ) : null}
+                    已设为表情 · 被引用 {sticker.sticker.usageCount} 次
+                  </span>
+                  {sticker.canManage ? (
+                    <button
+                      type="button"
+                      className={styles.stickerBtn}
+                      disabled={stickerBusy}
+                      onClick={() => void onRemoveSticker()}
+                    >
+                      取消表情
+                    </button>
+                  ) : null}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  className={styles.stickerBtn}
+                  disabled={stickerBusy}
+                  onClick={() => void onSetSticker()}
+                >
+                  {stickerBusy ? "处理中…" : "设为表情"}
+                </button>
+              )}
+            </div>
           ) : null}
 
           {isNovelToc ? (
@@ -173,7 +558,12 @@ export default function ReaderView({ data }: Props) {
                     <li key={ch.id}>
                       <Link href={`/works/${ch.id}`}>
                         <span className={styles.tocIndex}>{i + 1}</span>
-                        {ch.title}
+                        <span className={styles.tocTitle}>{ch.title}</span>
+                        {ch.publishedAt ? (
+                          <time className={styles.tocDate}>
+                            {formatDate(ch.publishedAt)}
+                          </time>
+                        ) : null}
                       </Link>
                     </li>
                   ))}
@@ -188,6 +578,9 @@ export default function ReaderView({ data }: Props) {
                 <MarkdownView
                   content={work.content ?? ""}
                   className={styles.readerMd}
+                  worldSlug={work.worldSlug}
+                  entries={entries}
+                  collections={collections}
                 />
               </div>
             ) : (
@@ -196,6 +589,9 @@ export default function ReaderView({ data }: Props) {
                   <MarkdownView
                     content={pages[page] ?? ""}
                     className={styles.readerMd}
+                    worldSlug={work.worldSlug}
+                    entries={entries}
+                    collections={collections}
                   />
                 </div>
                 <div className={styles.pageNav}>
@@ -228,13 +624,12 @@ export default function ReaderView({ data }: Props) {
           {isChapter ? (
             <nav className={styles.chapterNav} aria-label="章节导航">
               {prevChapter ? (
-                <button
-                  type="button"
+                <Link
+                  href={`/works/${prevChapter.id}`}
                   className={styles.chapterBtn}
-                  onClick={() => router.push(`/works/${prevChapter.id}`)}
                 >
                   ← {prevChapter.title}
-                </button>
+                </Link>
               ) : (
                 <span className={styles.chapterPlaceholder} />
               )}
@@ -244,19 +639,58 @@ export default function ReaderView({ data }: Props) {
                 </Link>
               ) : null}
               {nextChapter ? (
-                <button
-                  type="button"
+                <Link
+                  href={`/works/${nextChapter.id}`}
                   className={`${styles.chapterBtn} ${styles.chapterNext}`}
-                  onClick={() => router.push(`/works/${nextChapter.id}`)}
                 >
                   {nextChapter.title} →
-                </button>
+                </Link>
               ) : (
                 <span className={styles.chapterPlaceholder} />
               )}
             </nav>
           ) : null}
         </article>
+
+        {others.length > 0 ? (
+          <section className={styles.more}>
+            <h2 className={styles.moreTitle}>同世界的其他作品</h2>
+            <ul className={styles.moreList}>
+              {others.map((w) => (
+                <li key={w.id}>
+                  <Link href={`/works/${w.id}`} className={styles.moreCard}>
+                    <span className={styles.moreThumb}>
+                      {w.mediaUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={w.mediaUrl} alt="" />
+                      ) : (
+                        <span className={styles.moreGlyph}>
+                          {workTypeLabel(w).slice(0, 1)}
+                        </span>
+                      )}
+                    </span>
+                    <span className={styles.moreBody}>
+                      <strong>{w.title}</strong>
+                      <span className={styles.moreMeta}>
+                        {workTypeLabel(w)}
+                        {w.authorDisplayName ? ` · ${w.authorDisplayName}` : ""}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </section>
+        ) : null}
+
+        <section className={styles.foot}>
+          <div className={styles.footBar}>
+            <ReactionBar targetType="work" targetId={work.id} />
+          </div>
+          <div className={styles.footComments}>
+            <CommentSection targetType="work" targetId={work.id} />
+          </div>
+        </section>
       </div>
 
       {showNotes ? (
@@ -298,14 +732,27 @@ export default function ReaderView({ data }: Props) {
               ))}
             </ul>
           )}
-          <div className={styles.noteReactions}>
-            <ReactionBar targetType="work" targetId={work.id} compact />
-          </div>
-          <div className={styles.noteComments}>
-            <CommentSection targetType="work" targetId={work.id} />
-          </div>
         </aside>
       ) : null}
+
+      {lightbox && work.mediaUrl ? (
+        <div
+          className={styles.lightbox}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setLightbox(false)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={work.mediaUrl} alt={work.title} />
+          <span className={styles.lightboxHint}>点击任意处关闭 · Esc</span>
+        </div>
+      ) : null}
+
+      <ReactionStampLayer
+        targetType="work"
+        targetId={work.id}
+        hostRef={articleRef}
+      />
     </div>
   );
 }

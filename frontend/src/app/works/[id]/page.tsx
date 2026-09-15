@@ -4,12 +4,22 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ReaderView from "@/components/reader/ReaderView";
-import { fetchWorkRead, type WorkReadPayload } from "@/lib/works";
+import {
+  fetchWorldWorks,
+  fetchWorkRead,
+  type Work,
+  type WorkReadPayload,
+} from "@/lib/works";
+import { fetchWorldBySlug, type WikiEntry } from "@/lib/worlds";
+import type { WorldCollection } from "@/lib/collections";
 import styles from "./work.module.css";
 
 export default function WorkDetailPage() {
   const params = useParams<{ id: string }>();
   const [data, setData] = useState<WorkReadPayload | null>(null);
+  const [entries, setEntries] = useState<WikiEntry[]>([]);
+  const [collections, setCollections] = useState<WorldCollection[]>([]);
+  const [others, setOthers] = useState<Work[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -19,10 +29,23 @@ export default function WorkDetailPage() {
       setReady(false);
       try {
         const payload = await fetchWorkRead(params.id);
-        if (!cancelled) {
-          setData(payload);
-          setError(null);
-        }
+        if (cancelled) return;
+        setData(payload);
+        setError(null);
+
+        // World context: entry links in the body + related works. Best-effort.
+        const [world, works] = await Promise.all([
+          fetchWorldBySlug(payload.work.worldSlug).catch(() => null),
+          fetchWorldWorks(payload.work.worldId, 24).catch(() => [] as Work[]),
+        ]);
+        if (cancelled) return;
+        setEntries(world?.entries ?? []);
+        setCollections(world?.collections ?? []);
+        setOthers(
+          works
+            .filter((w) => w.id !== payload.work.id && !w.parentId)
+            .slice(0, 6),
+        );
       } catch (err) {
         if (!cancelled) {
           setData(null);
@@ -55,5 +78,12 @@ export default function WorkDetailPage() {
     );
   }
 
-  return <ReaderView data={data} />;
+  return (
+    <ReaderView
+      data={data}
+      entries={entries}
+      collections={collections}
+      others={others}
+    />
+  );
 }
