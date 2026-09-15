@@ -70,7 +70,12 @@
 }
 
 .clear:hover {
-  color: var(--danger);
+  color: var(--sea);
+}
+
+.actions {
+  display: flex;
+  gap: 0.9rem;
 }
 
 .error {

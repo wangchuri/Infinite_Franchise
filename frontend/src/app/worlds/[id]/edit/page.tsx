@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getAccessToken } from "@/lib/auth";
 import {
@@ -29,6 +30,7 @@ import EntrySlidePanel, {
 } from "@/components/world-editor/EntrySlidePanel";
 import CollabPanel from "@/components/world-editor/CollabPanel";
 import ImageUpload from "@/components/world-editor/ImageUpload";
+import ReactionManager from "@/components/world-editor/ReactionManager";
 import StylePanel from "@/components/world-editor/StylePanel";
 import TimelineEditor from "@/components/world-editor/TimelineEditor";
 import {
@@ -586,6 +588,32 @@ export default function EditWorldPage() {
               void patchWorld({ homepageConfig });
             }}
           />
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <div>
+              <h2>Wiki 排版</h2>
+              <p className={styles.sectionLead}>
+                用可视化编辑器安排 Wiki 主页的区域与内容，预览示例数据。
+              </p>
+            </div>
+            <div className={styles.footerActions}>
+              <Link
+                href={`/worlds/${world.id}/entries`}
+                className={styles.saveExit}
+              >
+                词条库
+              </Link>
+              <Link href={`/worlds/${world.id}/wiki`} className={styles.publish}>
+                打开排版编辑器
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <ReactionManager worldId={world.id} />
         </section>
 
         <section className={styles.section}>

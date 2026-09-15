@@ -1,0 +1,80 @@
+/* Entry reference link + hover info card. */
+
+.ref {
+  color: var(--sea);
+  text-decoration: none;
+  border-bottom: 1px dashed color-mix(in srgb, var(--sea) 45%, transparent);
+}
+
+.ref:hover {
+  text-decoration: none;
+  border-bottom-color: var(--sea);
+}
+
+.pop {
+  position: fixed;
+  z-index: 90;
+  width: 268px;
+  display: flex;
+  gap: 0.6rem;
+  padding: 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffef9;
+  box-shadow: 0 12px 30px rgba(20, 33, 43, 0.16);
+  color: var(--ink);
+  font-size: 0.82rem;
+  line-height: 1.5;
+  text-align: left;
+  pointer-events: none;
+}
+
+.popImg,
+.popImgEmpty {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 4px;
+}
+
+.popImg {
+  object-fit: cover;
+  border: 1px solid var(--line);
+}
+
+.popImgEmpty {
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  background: #efe9dc;
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  color: color-mix(in srgb, var(--ink-soft) 55%, transparent);
+}
+
+.popBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.popTitle {
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  color: var(--ink);
+}
+
+.popCat {
+  font-size: 0.72rem;
+  color: var(--sea);
+}
+
+.popText {
+  color: var(--ink-soft);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

@@ -18,6 +18,7 @@ export function Hero({ block }: { block: Block }) {
 
   return (
     <header
+      id={block.id}
       className={cx(styles.hero, compact && styles.heroCompact)}
       style={bg}
     >

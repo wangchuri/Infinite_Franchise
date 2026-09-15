@@ -41,7 +41,7 @@ export function Columns({ block }: { block: Block }) {
     : undefined;
 
   return (
-    <div className={styles.layout} style={style}>
+    <div id={block.id} className={styles.layout} style={style}>
       {keys.map((key) => (
         <div key={key} className={cx(styles.column, slotClass(key))}>
           <BlockRenderer blocks={slots[key]} />

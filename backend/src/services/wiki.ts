@@ -1,4 +1,9 @@
 import { pool } from "../db.js";
+import { sanitizeAttributes } from "../config/entry-schema.js";
+import {
+  normalizeEntryLayout,
+  type EntryLayout,
+} from "../config/world-layout.js";
 
 export type WikiEntryRow = {
   id: string;
@@ -8,7 +13,9 @@ export type WikiEntryRow = {
   slug: string;
   aliases: string[];
   content: string;
+  content_layout: unknown;
   image_url: string | null;
+  attributes: Record<string, string>;
   status: string;
   created_by: string;
   updated_by: string;
@@ -26,7 +33,9 @@ export type PublicWikiEntry = {
   slug: string;
   aliases: string[];
   content: string;
+  contentLayout: EntryLayout;
   imageUrl: string | null;
+  attributes: Record<string, string>;
   status: string;
   version: number;
   createdAt: string;
@@ -65,7 +74,9 @@ export function toPublicEntry(row: WikiEntryRow): PublicWikiEntry {
     slug: row.slug,
     aliases: row.aliases ?? [],
     content: row.content,
+    contentLayout: normalizeEntryLayout(row.content_layout),
     imageUrl: row.image_url,
+    attributes: row.attributes ?? {},
     status: row.status,
     version: row.version,
     createdAt: row.created_at.toISOString(),
@@ -151,15 +162,17 @@ export async function createEntry(input: {
   category: string;
   title: string;
   content?: string;
+  contentLayout?: unknown;
   imageUrl?: string | null;
+  attributes?: Record<string, string>;
   userId: string;
 }): Promise<WikiEntryRow> {
   const slug = await uniqueEntrySlug(input.worldId, input.title);
   const result = await pool.query<WikiEntryRow>(
     `INSERT INTO wiki_entries (
-       world_id, category, title, slug, content, image_url,
-       status, created_by, updated_by
-     ) VALUES ($1, $2, $3, $4, $5, $6, 'published', $7, $7)
+       world_id, category, title, slug, content, content_layout, image_url,
+       attributes, status, created_by, updated_by
+     ) VALUES ($1, $2, $3, $4, $5, $6::jsonb, $7, $8::jsonb, 'published', $9, $9)
      RETURNING *`,
     [
       input.worldId,
@@ -167,7 +180,9 @@ export async function createEntry(input: {
       input.title.slice(0, 120),
       slug,
       input.content ?? "",
+      JSON.stringify(normalizeEntryLayout(input.contentLayout)),
       input.imageUrl ?? null,
+      JSON.stringify(sanitizeAttributes(input.attributes) ?? {}),
       input.userId,
     ],
   );
@@ -179,8 +194,11 @@ export async function updateEntry(
   userId: string,
   patch: {
     title?: string;
+    category?: string;
     content?: string;
+    contentLayout?: unknown;
     imageUrl?: string | null;
+    attributes?: Record<string, string>;
   },
 ): Promise<WikiEntryRow | null> {
   const fields: string[] = [];
@@ -191,13 +209,25 @@ export async function updateEntry(
     fields.push(`title = $${i++}`);
     values.push(patch.title.slice(0, 120));
   }
+  if (patch.category !== undefined) {
+    fields.push(`category = $${i++}`);
+    values.push(patch.category.slice(0, 40));
+  }
   if (patch.content !== undefined) {
     fields.push(`content = $${i++}`);
     values.push(patch.content);
   }
+  if (patch.contentLayout !== undefined) {
+    fields.push(`content_layout = $${i++}::jsonb`);
+    values.push(JSON.stringify(normalizeEntryLayout(patch.contentLayout)));
+  }
   if (patch.imageUrl !== undefined) {
     fields.push(`image_url = $${i++}`);
     values.push(patch.imageUrl);
+  }
+  if (patch.attributes !== undefined) {
+    fields.push(`attributes = $${i++}::jsonb`);
+    values.push(JSON.stringify(sanitizeAttributes(patch.attributes) ?? {}));
   }
 
   if (fields.length === 0) return findEntryById(id);

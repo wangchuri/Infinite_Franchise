@@ -58,16 +58,28 @@ export default function ImageUpload({
         type="file"
         accept="image/jpeg,image/png,image/webp,image/gif"
         hidden
-        onChange={(e) => void onFile(e.target.files?.[0])}
+        onChange={(e) => {
+          void onFile(e.target.files?.[0]);
+          e.target.value = "";
+        }}
       />
       {value ? (
-        <button
-          type="button"
-          className={styles.clear}
-          onClick={() => onChange(null)}
-        >
-          清除
-        </button>
+        <div className={styles.actions}>
+          <button
+            type="button"
+            className={styles.clear}
+            onClick={() => inputRef.current?.click()}
+          >
+            更换
+          </button>
+          <button
+            type="button"
+            className={styles.clear}
+            onClick={() => onChange(null)}
+          >
+            清除
+          </button>
+        </div>
       ) : null}
       {error ? <p className={styles.error}>{error}</p> : null}
     </div>

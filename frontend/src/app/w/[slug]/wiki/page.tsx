@@ -9,21 +9,36 @@ import {
   themeCssVars,
 } from "@/lib/homepage-config";
 import { EMPTY_LAYOUT, normalizeWorldLayout } from "@/lib/world-layout";
+import { decodeParam } from "@/lib/url";
 import {
   fetchWorldBySlug,
   type TimelineEvent,
   type WikiEntry,
   type World,
 } from "@/lib/worlds";
+import type { WorldCollection } from "@/lib/collections";
 import { fetchWorldWorks, type Work } from "@/lib/works";
+import {
+  sampleCollections,
+  sampleEntries,
+  sampleTimeline,
+  sampleWorks,
+} from "@/lib/sample-world-data";
 import styles from "./wiki.module.css";
+
+/** `?preview=1` (layout editor) fills empty regions with example data. */
+function isPreviewMode(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("preview") === "1";
+}
 
 export default function WorldWikiPage() {
   const params = useParams<{ slug: string }>();
-  const slug = params.slug;
+  const slug = decodeParam(params.slug);
 
   const [world, setWorld] = useState<World | null>(null);
   const [entries, setEntries] = useState<WikiEntry[]>([]);
+  const [collections, setCollections] = useState<WorldCollection[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
   const [isOwner, setIsOwner] = useState(false);
@@ -36,15 +51,33 @@ export default function WorldWikiPage() {
       try {
         const data = await fetchWorldBySlug(slug);
         if (cancelled) return;
+        const preview = isPreviewMode();
         setWorld(data.world);
-        setEntries(data.entries);
-        setTimeline(data.timeline);
+        setEntries(
+          data.entries.length === 0 && preview
+            ? sampleEntries(data.world.id)
+            : data.entries,
+        );
+        setCollections(
+          data.collections.length === 0 && preview
+            ? sampleCollections()
+            : data.collections,
+        );
+        setTimeline(
+          data.timeline.length === 0 && preview
+            ? sampleTimeline(data.world.id)
+            : data.timeline,
+        );
         setIsOwner(data.isOwner);
         try {
           const list = await fetchWorldWorks(data.world.id, 30);
-          if (!cancelled) setWorks(list);
+          if (!cancelled) {
+            setWorks(list.length === 0 && preview ? sampleWorks(data.world) : list);
+          }
         } catch {
-          if (!cancelled) setWorks([]);
+          if (!cancelled) {
+            setWorks(preview ? sampleWorks(data.world) : []);
+          }
         }
       } catch (err) {
         if (!cancelled) {
@@ -87,6 +120,7 @@ export default function WorldWikiPage() {
       <WorldBlocksProvider
         world={world}
         entries={entries}
+        collections={collections}
         timeline={timeline}
         works={works}
         isOwner={isOwner}

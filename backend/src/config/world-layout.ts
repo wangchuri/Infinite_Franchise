@@ -18,6 +18,7 @@ export const BLOCK_TYPES = [
   "footer",
   // data regions (auto-filled from the world's data)
   "nav",
+  "navGrid",
   "prose",
   "entryGrid",
   "glossary",
@@ -29,13 +30,17 @@ export const BLOCK_TYPES = [
   "tagCloud",
   // platform affordances
   "platformButton",
-  // reserved static content (later phases)
+  // author-authored HTML (rendered in a sandboxed iframe with world data)
+  "customHtml",
+  // content blocks (entry bodies + world pages)
   "heading",
+  "text",
   "image",
   "gallery",
   "quote",
   "button",
   "linkList",
+  "relatedEntries",
 ] as const;
 
 export type BlockType = (typeof BLOCK_TYPES)[number];
@@ -51,6 +56,40 @@ export type LayoutTheme = {
   accent?: string;
   serif?: boolean;
   density?: "compact" | "normal" | "loose";
+};
+
+export type ComponentFieldType = "text" | "image" | "color" | "font";
+
+export type ComponentField = {
+  key: string;
+  label: string;
+  type: ComponentFieldType;
+  default?: string;
+};
+
+export type VariantMatchOp = "eq" | "neq" | "contains";
+
+/** Condition on an entry attribute (used to pick a card variant). */
+export type VariantMatch = {
+  field: string;
+  op: VariantMatchOp;
+  value: string;
+};
+
+/**
+ * A card variant for a region: how each item in the region is rendered.
+ * Regions may define several; the first whose `match` passes wins, else the
+ * default variant. `html`/`css` are the advanced template ({{key}} tokens).
+ */
+export type BlockVariant = {
+  id: string;
+  name: string;
+  isDefault?: boolean;
+  match: VariantMatch | null;
+  fields: ComponentField[];
+  values: Record<string, string>;
+  html: string;
+  css: string;
 };
 
 export type WorldLayout = {
@@ -142,10 +181,27 @@ function sanitizeProps(raw: unknown): Record<string, unknown> | undefined {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
-    if (typeof v === "string") out[k] = v.slice(0, 500);
+    if (k === "variants") {
+      const variants = sanitizeVariants(v);
+      if (variants) out[k] = variants;
+      continue;
+    }
+    if (typeof v === "string") out[k] = v.slice(0, 20000);
     else if (typeof v === "number" || typeof v === "boolean") out[k] = v;
     else if (Array.isArray(v)) {
       out[k] = v.filter((x) => typeof x === "string").slice(0, 50);
+    } else if (v && typeof v === "object") {
+      // shallow string map (e.g. component instance values)
+      const map: Record<string, string> = {};
+      let n = 0;
+      for (const [mk, mv] of Object.entries(v as Record<string, unknown>)) {
+        if (n >= 60) break;
+        if (typeof mv === "string") {
+          map[mk.slice(0, 40)] = mv.slice(0, 20000);
+          n += 1;
+        }
+      }
+      if (Object.keys(map).length) out[k] = map;
     }
   }
   return Object.keys(out).length ? out : undefined;
@@ -211,6 +267,110 @@ function sanitizeTheme(raw: unknown): LayoutTheme | undefined {
     theme.density = src.density;
   }
   return Object.keys(theme).length ? theme : undefined;
+}
+
+const COMPONENT_FIELD_TYPES = new Set<ComponentFieldType>([
+  "text",
+  "image",
+  "color",
+  "font",
+]);
+const VARIANT_MATCH_OPS = new Set<VariantMatchOp>(["eq", "neq", "contains"]);
+const MAX_VARIANTS = 12;
+const MAX_COMPONENT_FIELDS = 12;
+
+function sanitizeComponentField(raw: unknown): ComponentField | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const s = raw as Record<string, unknown>;
+  const key =
+    typeof s.key === "string" ? s.key.replace(/[^\w-]/g, "").slice(0, 40) : "";
+  if (!key) return null;
+  const label =
+    typeof s.label === "string" && s.label.trim() ? s.label.slice(0, 40) : key;
+  const type =
+    typeof s.type === "string" &&
+    COMPONENT_FIELD_TYPES.has(s.type as ComponentFieldType)
+      ? (s.type as ComponentFieldType)
+      : "text";
+  const def =
+    typeof s.default === "string" ? s.default.slice(0, 20000) : undefined;
+  const field: ComponentField = { key, label, type };
+  if (def !== undefined) field.default = def;
+  return field;
+}
+
+function sanitizeVariantMatch(raw: unknown): VariantMatch | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const s = raw as Record<string, unknown>;
+  const field =
+    typeof s.field === "string"
+      ? s.field.replace(/[^\w.-]/g, "").slice(0, 40)
+      : "";
+  if (!field) return null;
+  const op =
+    typeof s.op === "string" && VARIANT_MATCH_OPS.has(s.op as VariantMatchOp)
+      ? (s.op as VariantMatchOp)
+      : "eq";
+  const value = typeof s.value === "string" ? s.value.slice(0, 200) : "";
+  return { field, op, value };
+}
+
+function sanitizeVariant(
+  raw: unknown,
+  seed: { n: number },
+): BlockVariant | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const s = raw as Record<string, unknown>;
+  const id =
+    typeof s.id === "string" && s.id.trim()
+      ? s.id.slice(0, 80)
+      : `variant-${seed.n++}`;
+  const name =
+    typeof s.name === "string" && s.name.trim()
+      ? s.name.slice(0, 60)
+      : "未命名卡片";
+  const isDefault = s.isDefault === true;
+  const match = isDefault ? null : sanitizeVariantMatch(s.match);
+  const fields = Array.isArray(s.fields)
+    ? s.fields
+        .map(sanitizeComponentField)
+        .filter((f): f is ComponentField => f !== null)
+        .slice(0, MAX_COMPONENT_FIELDS)
+    : [];
+
+  const values: Record<string, string> = {};
+  if (s.values && typeof s.values === "object" && !Array.isArray(s.values)) {
+    let n = 0;
+    for (const [vk, vv] of Object.entries(s.values as Record<string, unknown>)) {
+      if (n >= 60) break;
+      if (typeof vv === "string") {
+        values[vk.slice(0, 40)] = vv.slice(0, 20000);
+        n += 1;
+      }
+    }
+  }
+
+  const variant: BlockVariant = {
+    id,
+    name,
+    match,
+    fields,
+    values,
+    html: typeof s.html === "string" ? s.html.slice(0, 20000) : "",
+    css: typeof s.css === "string" ? s.css.slice(0, 20000) : "",
+  };
+  if (isDefault) variant.isDefault = true;
+  return variant;
+}
+
+function sanitizeVariants(raw: unknown): BlockVariant[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const seed = { n: 0 };
+  const out = raw
+    .map((v) => sanitizeVariant(v, seed))
+    .filter((v): v is BlockVariant => v !== null)
+    .slice(0, MAX_VARIANTS);
+  return out.length ? out : undefined;
 }
 
 /** Build the default 3-column wiki preset from an ordered module list. */
@@ -285,6 +445,40 @@ export function normalizeWorldLayout(raw: unknown): WorldLayout {
   }
 
   return presetFromLegacy(src);
+}
+
+/** Blocks allowed inside an entry body (flat list, no slots). */
+export const CONTENT_BLOCK_TYPES = [
+  "heading",
+  "text",
+  "image",
+  "gallery",
+  "quote",
+  "divider",
+  "button",
+  "linkList",
+  "relatedEntries",
+  "customHtml",
+] as const;
+
+const CONTENT_BLOCK_SET = new Set<string>(CONTENT_BLOCK_TYPES);
+
+/** Entry page column mode: `two` shows the info card sidebar. */
+export type EntryLayoutMode = "one" | "two";
+export type EntryLayout = WorldLayout & { mode: EntryLayoutMode };
+
+/** Normalize an entry body layout: content blocks only, no nesting. */
+export function normalizeEntryLayout(raw: unknown): EntryLayout {
+  const layout = normalizeWorldLayout(raw);
+  const blocks = layout.blocks.filter(
+    (b) => CONTENT_BLOCK_SET.has(b.type) && !b.slots,
+  );
+  const src =
+    raw && typeof raw === "object" && !Array.isArray(raw)
+      ? (raw as Record<string, unknown>)
+      : {};
+  const mode: EntryLayoutMode = src.mode === "one" ? "one" : "two";
+  return { version: 2, blocks, mode };
 }
 
 /** Anchor sections (for nav / table of contents), in document order. */

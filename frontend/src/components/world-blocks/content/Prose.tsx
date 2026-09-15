@@ -7,7 +7,7 @@ import styles from "../blocks.module.css";
 
 /** Long-form text: binds to the intro entry (or the world description). */
 export function Prose({ block }: { block: Block }) {
-  const { world, entries } = useWorldBlocks();
+  const { world, entries, collections } = useWorldBlocks();
   const source =
     typeof block.props?.source === "string" ? block.props.source : "intro";
   const title =
@@ -25,7 +25,12 @@ export function Prose({ block }: { block: Block }) {
         </div>
       ) : null}
       <div className={styles.prose}>
-        <MarkdownView content={content} />
+        <MarkdownView
+          content={content}
+          worldSlug={world.slug}
+          entries={entries}
+          collections={collections}
+        />
       </div>
     </section>
   );

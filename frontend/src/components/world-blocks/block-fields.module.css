@@ -1,0 +1,286 @@
+/* Shared Inspector field styles for the world layout + entry content editors. */
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.7rem;
+}
+
+.field > span {
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.field input[type="text"],
+.field input:not([type]),
+.field select,
+.field textarea {
+  width: 100%;
+  padding: 0.4rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--ink);
+  resize: vertical;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.5rem;
+}
+
+.empty {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.imageRow {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.thumb {
+  width: 56px;
+  height: 56px;
+  object-fit: cover;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #efe9dc;
+}
+
+.thumbEmpty {
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  font-size: 0.7rem;
+  color: var(--ink-soft);
+}
+
+.miniBtn {
+  flex-shrink: 0;
+  padding: 0.3rem 0.55rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fffef9;
+  font-size: 0.75rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.miniBtn:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.imageGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.imageCell {
+  position: relative;
+}
+
+.removeBadge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--ember);
+  font-size: 0.75rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.entryPicker {
+  max-height: 220px;
+  overflow-y: auto;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  padding: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  background: #fff;
+}
+
+.entryItem,
+.entryOn {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.25rem 0.4rem;
+  border-radius: 5px;
+  font-size: 0.82rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.entryItem:hover {
+  background: rgba(31, 92, 90, 0.06);
+}
+
+.entryOn {
+  background: rgba(31, 92, 90, 0.12);
+  color: var(--sea);
+}
+
+.linkBtn {
+  align-self: flex-start;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--sea);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.inlineCreate {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.3rem;
+}
+
+.inlineCreate input {
+  flex: 1;
+  min-width: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.82rem;
+  color: var(--ink);
+}
+
+.mdWrap {
+  position: relative;
+}
+
+.mdMenu {
+  position: absolute;
+  z-index: 30;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin: 0.15rem 0 0;
+  padding: 0.25rem;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffef9;
+  box-shadow: 0 8px 24px rgba(20, 33, 43, 0.14);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Bottom-anchored variant for tall editors (writing workbench). */
+.mdMenuBottom {
+  position: absolute;
+  z-index: 30;
+  left: 1.2rem;
+  right: 1.2rem;
+  bottom: 0.9rem;
+  margin: 0;
+  padding: 0.25rem;
+  list-style: none;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fffef9;
+  box-shadow: 0 -8px 26px rgba(20, 33, 43, 0.16);
+  max-height: 15rem;
+  overflow-y: auto;
+}
+
+.mdItem,
+.mdItemOn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.32rem 0.5rem;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  font-size: 0.82rem;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.mdItem:hover {
+  background: rgba(31, 92, 90, 0.08);
+}
+
+.mdItemOn {
+  background: rgba(31, 92, 90, 0.14);
+  color: var(--sea);
+}
+
+.mdGroup {
+  padding: 0.35rem 0.5rem 0.2rem;
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  color: var(--sea);
+  opacity: 0.9;
+}
+
+.mdGroup:not(:first-child) {
+  margin-top: 0.15rem;
+  border-top: 1px solid var(--line);
+}
+
+.mdMenu .mdItem,
+.mdMenu .mdItemOn,
+.mdMenuBottom .mdItem,
+.mdMenuBottom .mdItemOn {
+  padding-left: 0.9rem;
+}
+
+/* Inline "this name is an entry" hint that floats above the caret line. */
+.mdChip {
+  position: absolute;
+  z-index: 31;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.22rem 0.6rem;
+  border: 1px solid var(--sea);
+  border-radius: 999px;
+  background: #fffef9;
+  box-shadow: 0 6px 18px rgba(20, 33, 43, 0.16);
+  font-size: 0.74rem;
+  color: var(--sea);
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.mdChip:hover {
+  background: rgba(31, 92, 90, 0.08);
+}
+
+.mdChipKey {
+  padding: 0 0.28rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-size: 0.62rem;
+  color: var(--ink-soft);
+}

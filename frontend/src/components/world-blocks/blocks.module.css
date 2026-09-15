@@ -343,6 +343,18 @@
   transform: translateY(-2px);
 }
 
+.entryTileLink {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+  text-decoration: none;
+  color: inherit;
+}
+
+.entryTileLink:hover {
+  text-decoration: none;
+}
+
 .thumb {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -738,4 +750,273 @@
     grid-template-columns: 1fr;
     gap: 0.35rem;
   }
+}
+
+/* Author-authored HTML block (sandboxed iframe) */
+.customFrame {
+  width: 100%;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+/* ---------- nav grid (归属瓦片) ---------- */
+
+.navGrid {
+  display: grid;
+  grid-template-columns: repeat(var(--nav-cols, 4), minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.navTile {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--wiki-line, var(--line));
+  border-radius: 4px;
+  overflow: hidden;
+  background: #dedede;
+  text-decoration: none;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+
+.navTile:hover {
+  border-color: color-mix(in srgb, var(--wiki-accent) 60%, transparent);
+  transform: translateY(-2px);
+  text-decoration: none;
+}
+
+.navTileIcon {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  image-rendering: pixelated;
+  background: #d2d2d2;
+}
+
+.navTileIconEmpty {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  display: grid;
+  place-items: center;
+  background: #d2d2d2;
+  font-family: var(--font-display);
+  font-size: 2rem;
+  color: color-mix(in srgb, var(--wiki-ink-soft) 60%, transparent);
+}
+
+.navTileLabel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.5rem;
+  border-top: 1px solid var(--wiki-line, var(--line));
+  background: #f3f3f3;
+  font-family: var(--font-display);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--wiki-ink);
+  text-align: center;
+}
+
+.navTileCount {
+  font-family: var(--font-body, inherit);
+  font-size: 0.72rem;
+  font-weight: 400;
+  color: var(--wiki-ink-soft);
+  opacity: 0.7;
+}
+
+@media (max-width: 720px) {
+  .navGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ---------- content blocks ---------- */
+
+.contentHead h2,
+.contentHead h3 {
+  font-family: var(--font-display);
+  color: var(--wiki-ink);
+  letter-spacing: -0.01em;
+}
+
+.contentHead h2 {
+  font-size: 1.4rem;
+  font-weight: 700;
+  padding-bottom: 0.45rem;
+  border-bottom: 2px solid
+    color-mix(in srgb, var(--wiki-accent) 40%, transparent);
+}
+
+.contentHead h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.contentText {
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--wiki-ink);
+}
+
+.figure {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.figure figcaption,
+.caption {
+  font-size: 0.82rem;
+  color: var(--wiki-ink-soft);
+  text-align: center;
+}
+
+.wFull {
+  width: 100%;
+}
+
+.wHalf {
+  width: 50%;
+}
+
+.wThird {
+  width: 33.3333%;
+}
+
+.aLeft {
+  align-self: flex-start;
+}
+
+.aCenter {
+  align-self: center;
+}
+
+.aRight {
+  align-self: flex-end;
+}
+
+.contentImg {
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--wiki-line, var(--line));
+  border-radius: 6px;
+  background: var(--wiki-bg-2, #efe9dc);
+}
+
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(var(--gallery-cols, 3), minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.galleryImg {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border: 1px solid var(--wiki-line, var(--line));
+  border-radius: 6px;
+  background: var(--wiki-bg-2, #efe9dc);
+}
+
+.quote {
+  margin: 0;
+  padding: 0.5rem 0 0.5rem 1.1rem;
+  border-left: 3px solid var(--wiki-accent);
+  font-size: 1.02rem;
+  line-height: 1.7;
+  color: var(--wiki-ink-soft);
+}
+
+.quote p {
+  margin: 0;
+}
+
+.quote cite {
+  display: block;
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  font-style: normal;
+  color: var(--wiki-ink-soft);
+  opacity: 0.85;
+}
+
+.divider {
+  border: none;
+  border-top: 1px solid var(--wiki-line, var(--line));
+  margin: 1.5rem 0;
+}
+
+.spSm {
+  margin: 0.75rem 0;
+}
+
+.spMd {
+  margin: 1.5rem 0;
+}
+
+.spLg {
+  margin: 2.75rem 0;
+}
+
+.buttonWrap {
+  margin: 0;
+}
+
+.btnSolid,
+.btnOutline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.5rem 1.2rem;
+  border-radius: 999px;
+  font-size: 0.92rem;
+  text-decoration: none;
+}
+
+.btnSolid {
+  background: var(--wiki-ink, var(--ink));
+  border: 1px solid var(--wiki-ink, var(--ink));
+  color: var(--wiki-bg, #f4f0e6);
+}
+
+.btnSolid:hover {
+  opacity: 0.9;
+  text-decoration: none;
+}
+
+.btnOutline {
+  border: 1px solid var(--wiki-line, var(--line));
+  color: var(--wiki-ink);
+}
+
+.btnOutline:hover {
+  border-color: var(--wiki-accent);
+  color: var(--wiki-accent);
+  text-decoration: none;
+}
+
+.linkList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.linkList a {
+  font-size: 0.92rem;
+  color: var(--wiki-accent);
+  text-decoration: none;
+}
+
+.linkList a:hover {
+  text-decoration: underline;
 }

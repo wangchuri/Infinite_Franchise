@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import type { HomepageConfig } from "@/lib/homepage-config";
+import type { WorldCollection } from "@/lib/collections";
 import {
   collectSections,
   type LayoutSection,
@@ -21,6 +22,7 @@ export type WorldBlocksData = {
   world: World;
   entries: WikiEntry[];
   byCategory: Record<string, WikiEntry[]>;
+  collections: WorldCollection[];
   timeline: TimelineEvent[];
   works: Work[];
   isOwner: boolean;
@@ -43,6 +45,7 @@ export function useWorldBlocks(): WorldBlocksData {
 export default function WorldBlocksProvider({
   world,
   entries,
+  collections,
   timeline,
   works,
   isOwner,
@@ -52,6 +55,7 @@ export default function WorldBlocksProvider({
 }: {
   world: World;
   entries: WikiEntry[];
+  collections: WorldCollection[];
   timeline: TimelineEvent[];
   works: Work[];
   isOwner: boolean;
@@ -60,15 +64,11 @@ export default function WorldBlocksProvider({
   children: ReactNode;
 }) {
   const byCategory = useMemo(() => {
-    const pick = (c: string) => entries.filter((e) => e.category === c);
-    return {
-      character: pick("character"),
-      location: pick("location"),
-      organization: pick("organization"),
-      concept: pick("concept"),
-      item: pick("item"),
-      event: pick("event"),
-    } satisfies Record<string, WikiEntry[]>;
+    const out: Record<string, WikiEntry[]> = {};
+    for (const entry of entries) {
+      (out[entry.category] ??= []).push(entry);
+    }
+    return out;
   }, [entries]);
 
   const sections = useMemo(() => collectSections(layout.blocks), [layout.blocks]);
@@ -97,6 +97,7 @@ export default function WorldBlocksProvider({
     world,
     entries,
     byCategory,
+    collections,
     timeline,
     works,
     isOwner,

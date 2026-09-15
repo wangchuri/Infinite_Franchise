@@ -1,14 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import type { Block } from "@/lib/world-layout";
 import { useWorldBlocks } from "../WorldBlocksProvider";
 import styles from "../blocks.module.css";
 
 /** Author's own top bar (world name + owner edit entry). */
-export function TopBar() {
+export function TopBar({ block }: { block: Block }) {
   const { world, isOwner } = useWorldBlocks();
   return (
-    <header className={styles.topbar}>
+    <header id={block.id} className={styles.topbar}>
       <div className={styles.topbarInner}>
         <Link href={`/w/${world.slug}`} className={styles.topbarName}>
           {world.name}

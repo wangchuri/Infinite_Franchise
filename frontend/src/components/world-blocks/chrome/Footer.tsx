@@ -10,7 +10,7 @@ export function Footer({ block }: { block: Block }) {
   const { world } = useWorldBlocks();
   const showButton = block.props?.platformButton !== false;
   return (
-    <footer className={styles.footer}>
+    <footer id={block.id} className={styles.footer}>
       <div className={styles.footerInner}>
         <span className={styles.footerMeta}>
           {world.status === "draft" ? "草稿（仅创建者可见） · " : null}

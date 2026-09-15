@@ -29,7 +29,16 @@ import {
   WORK_SUBMIT_MODES,
   type MemberRole,
   type WorkSubmitMode,
+  type WorldRow,
 } from "../services/worlds.js";
+import {
+  countWorldReactionTypes,
+  createWorldReactionType,
+  deleteWorldReactionType,
+  listWorldReactionTypes,
+  updateWorldReactionType,
+  WORLD_REACTION_MAX,
+} from "../services/reactions.js";
 import {
   createEntry,
   createTimelineEvent,
@@ -44,17 +53,15 @@ import {
   updateEntry,
   updateTimelineEvent,
 } from "../services/wiki.js";
-
-const ENTRY_CATEGORIES = new Set([
-  "intro",
-  "character",
-  "location",
-  "item",
-  "organization",
-  "event",
-  "concept",
-  "other",
-]);
+import {
+  createCollection,
+  deleteCollection,
+  isValidCategory,
+  listCollections,
+  toPublicCollection,
+  updateCollection,
+} from "../services/collections.js";
+import { sanitizeAttrFields } from "../config/collections.js";
 
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
@@ -64,6 +71,15 @@ function asNullableString(v: unknown): string | null | undefined {
   if (v === null) return null;
   if (typeof v === "string") return v;
   return undefined;
+}
+
+function asRecord(v: unknown): Record<string, string> | undefined {
+  if (!v || typeof v !== "object" || Array.isArray(v)) return undefined;
+  const out: Record<string, string> = {};
+  for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+    if (typeof val === "string") out[k] = val;
+  }
+  return out;
 }
 
 function asStringArray(v: unknown): string[] | undefined {
@@ -87,6 +103,18 @@ async function loadOwnedWorld(
 ): Promise<ReturnType<typeof findWorldById> extends Promise<infer T> ? T : never> {
   const world = await findWorldById(worldId);
   if (!world || !isWorldCreator(world, userId)) return null;
+  return world;
+}
+
+/** Creator or editor may manage world-level settings (e.g. custom reactions). */
+async function loadManageableWorld(
+  worldId: string,
+  userId: string,
+): Promise<WorldRow | null> {
+  const world = await findWorldById(worldId);
+  if (!world) return null;
+  const role = await getMemberRole(worldId, userId);
+  if (!canReviewWorks({ world, role, userId })) return null;
   return world;
 }
 
@@ -205,6 +233,96 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
+  // —— World custom reactions (creator / editor) ——
+  app.get("/api/worlds/:id/reaction-types", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    return { types: await listWorldReactionTypes(id) };
+  });
+
+  app.post("/api/worlds/:id/reaction-types", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const label = asString(body.label)?.trim().slice(0, 24) ?? "";
+    const icon = asString(body.icon)?.trim().slice(0, 16) ?? "";
+    if (!label || !icon) {
+      return reply.code(400).send({ error: "label 和 icon 不能为空" });
+    }
+    if ((await countWorldReactionTypes(id)) >= WORLD_REACTION_MAX) {
+      return reply
+        .code(400)
+        .send({ error: `自定义反应最多 ${WORLD_REACTION_MAX} 个` });
+    }
+
+    const type = await createWorldReactionType({
+      worldId: id,
+      userId: user.id,
+      label,
+      icon,
+    });
+    return reply.code(201).send({ type });
+  });
+
+  app.patch("/api/worlds/:id/reaction-types/:typeId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, typeId } = req.params as { id: string; typeId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const label = asString(body.label)?.trim().slice(0, 24);
+    const icon = asString(body.icon)?.trim().slice(0, 16);
+    if (label !== undefined && !label) {
+      return reply.code(400).send({ error: "label 不能为空" });
+    }
+    if (icon !== undefined && !icon) {
+      return reply.code(400).send({ error: "icon 不能为空" });
+    }
+    const active =
+      typeof body.active === "boolean" ? body.active : undefined;
+    const sortOrder =
+      typeof body.sortOrder === "number" ? body.sortOrder : undefined;
+
+    const type = await updateWorldReactionType({
+      id: typeId,
+      worldId: id,
+      label,
+      icon,
+      active,
+      sortOrder,
+    });
+    if (!type) return reply.code(404).send({ error: "反应类型不存在" });
+    return { type };
+  });
+
+  app.delete("/api/worlds/:id/reaction-types/:typeId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, typeId } = req.params as { id: string; typeId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const ok = await deleteWorldReactionType(typeId, id);
+    if (!ok) return reply.code(404).send({ error: "反应类型不存在" });
+    return reply.code(204).send();
+  });
+
   app.get("/api/worlds/id/:id", async (req, reply) => {
     const { id } = req.params as { id: string };
     const world = await findWorldById(id);
@@ -216,16 +334,23 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
 
-    const [entries, timeline] = await Promise.all([
+    const isOwner = viewerId != null && isWorldCreator(world, viewerId);
+    const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
+    const canEdit =
+      viewerId != null && canReviewWorks({ world, role, userId: viewerId });
+    const [entries, timeline, collections] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
+      listCollections(world.id, { includeHidden: isOwner }),
     ]);
 
     return {
       world: toPublicWorld(world),
       entries: entries.map(toPublicEntry),
       timeline: timeline.map(toPublicTimeline),
-      isOwner: viewerId != null && isWorldCreator(world, viewerId),
+      collections: collections.map(toPublicCollection),
+      isOwner,
+      canEdit,
     };
   });
 
@@ -240,16 +365,23 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
 
-    const [entries, timeline] = await Promise.all([
+    const isOwner = viewerId != null && isWorldCreator(world, viewerId);
+    const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
+    const canEdit =
+      viewerId != null && canReviewWorks({ world, role, userId: viewerId });
+    const [entries, timeline, collections] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
+      listCollections(world.id, { includeHidden: isOwner }),
     ]);
 
     return {
       world: toPublicWorld(world),
       entries: entries.map(toPublicEntry),
       timeline: timeline.map(toPublicTimeline),
-      isOwner: viewerId != null && isWorldCreator(world, viewerId),
+      collections: collections.map(toPublicCollection),
+      isOwner,
+      canEdit,
     };
   });
 
@@ -329,6 +461,114 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
+  // —— Collections (归属) ——
+  app.get("/api/worlds/:id/collections", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const world = await findWorldById(id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const viewerId = req.authUser?.id ?? null;
+    if (!canViewWorld(world, viewerId)) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const isOwner = viewerId != null && isWorldCreator(world, viewerId);
+    const rows = await listCollections(id, { includeHidden: isOwner });
+    return { collections: rows.map(toPublicCollection) };
+  });
+
+  app.post("/api/worlds/:id/collections", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const name = asString(body.name)?.trim() ?? "";
+    if (!name) {
+      return reply.code(400).send({ error: "name is required" });
+    }
+    const created = await createCollection({
+      worldId: id,
+      name,
+      key: asString(body.key),
+      iconUrl: asNullableString(body.iconUrl) ?? null,
+      color: asNullableString(body.color) ?? null,
+      attrFields: sanitizeAttrFields(body.attrFields),
+    });
+    return reply.code(201).send({ collection: toPublicCollection(created) });
+  });
+
+  app.patch("/api/worlds/:id/collections/:collectionId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, collectionId } = req.params as {
+      id: string;
+      collectionId: string;
+    };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const patch: Parameters<typeof updateCollection>[2] = {};
+    if (body.name !== undefined) {
+      const name = asString(body.name)?.trim() ?? "";
+      if (!name) {
+        return reply.code(400).send({ error: "name cannot be empty" });
+      }
+      patch.name = name;
+    }
+    if (body.iconUrl !== undefined) {
+      patch.iconUrl = asNullableString(body.iconUrl) ?? null;
+    }
+    if (body.color !== undefined) {
+      patch.color = asNullableString(body.color) ?? null;
+    }
+    if (body.attrFields !== undefined) {
+      patch.attrFields = sanitizeAttrFields(body.attrFields);
+    }
+    if (typeof body.sortOrder === "number") {
+      patch.sortOrder = body.sortOrder;
+    }
+    if (typeof body.hidden === "boolean") {
+      patch.hidden = body.hidden;
+    }
+
+    const updated = await updateCollection(collectionId, id, patch);
+    if (!updated) {
+      return reply.code(404).send({ error: "collection not found" });
+    }
+    return { collection: toPublicCollection(updated) };
+  });
+
+  app.delete("/api/worlds/:id/collections/:collectionId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, collectionId } = req.params as {
+      id: string;
+      collectionId: string;
+    };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const result = await deleteCollection(collectionId, id);
+    if (!result.ok) {
+      const errors: Record<string, [number, string]> = {
+        not_found: [404, "collection not found"],
+        builtin: [400, "内置归属不可删除，可改为隐藏"],
+        has_entries: [400, "该归属下仍有词条，请先转移或删除"],
+      };
+      const [code, message] = errors[result.reason];
+      return reply.code(code).send({ error: message });
+    }
+    return reply.code(204).send();
+  });
+
   // —— Entries ——
   app.get("/api/worlds/:id/entries", async (req, reply) => {
     const { id } = req.params as { id: string };
@@ -342,9 +582,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     }
     const q = req.query as { category?: string };
     const category =
-      typeof q.category === "string" && ENTRY_CATEGORIES.has(q.category)
-        ? q.category
-        : undefined;
+      typeof q.category === "string" && q.category ? q.category : undefined;
     const rows = await listEntries(id, category);
     return { entries: rows.map(toPublicEntry) };
   });
@@ -361,7 +599,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     const body = (req.body ?? {}) as Record<string, unknown>;
     const category = asString(body.category) ?? "";
     const title = asString(body.title)?.trim() ?? "";
-    if (!ENTRY_CATEGORIES.has(category) || category === "intro") {
+    if (!(await isValidCategory(id, category))) {
       return reply.code(400).send({ error: "invalid category" });
     }
     if (!title) {
@@ -373,7 +611,9 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       category,
       title,
       content: asString(body.content) ?? "",
+      contentLayout: body.contentLayout,
       imageUrl: asNullableString(body.imageUrl) ?? null,
+      attributes: asRecord(body.attributes),
       userId: user.id,
     });
     return reply.code(201).send({ entry: toPublicEntry(entry) });
@@ -398,10 +638,22 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(400).send({ error: "title cannot be empty" });
     }
 
+    let category: string | undefined;
+    if (typeof body.category === "string") {
+      if (!(await isValidCategory(id, body.category))) {
+        return reply.code(400).send({ error: "invalid category" });
+      }
+      category = body.category;
+    }
+
     const entry = await updateEntry(entryId, user.id, {
       title,
+      category,
       content: asString(body.content),
+      contentLayout:
+        body.contentLayout !== undefined ? body.contentLayout : undefined,
       imageUrl: asNullableString(body.imageUrl),
+      attributes: asRecord(body.attributes),
     });
     return { entry: toPublicEntry(entry!) };
   });

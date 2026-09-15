@@ -5,8 +5,36 @@ import path from "node:path";
 import { requireAuth } from "../auth/auth-guard.js";
 import { getStorage } from "../storage/index.js";
 
-const ALLOWED = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
-const MAX_BYTES = 5 * 1024 * 1024;
+const ALLOWED = new Set([
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "font/ttf",
+  "font/otf",
+  "font/woff",
+  "font/woff2",
+  "application/font-woff",
+  "application/x-font-ttf",
+  "application/x-font-opentype",
+  "application/vnd.ms-opentype",
+]);
+const FONT_EXT = new Set([".ttf", ".otf", ".woff", ".woff2"]);
+const MAX_BYTES = 15 * 1024 * 1024;
+const MAX_MB = Math.round(MAX_BYTES / 1024 / 1024);
+
+const tooLarge = () => ({ error: `文件过大（上限 ${MAX_MB}MB）` });
+
+function fileExt(mime: string, filename: string): string {
+  const lower = filename.toLowerCase();
+  const dot = lower.lastIndexOf(".");
+  const fext = dot >= 0 ? lower.slice(dot) : "";
+  if (FONT_EXT.has(fext)) return fext;
+  if (mime === "image/png") return ".png";
+  if (mime === "image/webp") return ".webp";
+  if (mime === "image/gif") return ".gif";
+  return ".jpg";
+}
 
 export async function registerUploadRoutes(app: FastifyInstance) {
   await app.register(async (scoped) => {
@@ -18,31 +46,36 @@ export async function registerUploadRoutes(app: FastifyInstance) {
       const user = await requireAuth(req, reply);
       if (!user) return;
 
-      const file = await req.file();
+      let file;
+      try {
+        file = await req.file();
+      } catch {
+        return reply.code(400).send(tooLarge());
+      }
       if (!file) {
         return reply.code(400).send({ error: "file is required" });
       }
 
       const mime = file.mimetype;
-      if (!ALLOWED.has(mime)) {
-        return reply
-          .code(400)
-          .send({ error: "only jpeg, png, webp, gif images are allowed" });
+      const lower = file.filename.toLowerCase();
+      const fext = lower.slice(lower.lastIndexOf("."));
+      if (!ALLOWED.has(mime) && !FONT_EXT.has(fext)) {
+        return reply.code(400).send({
+          error: "只支持图片或字体（jpeg/png/webp/gif/ttf/otf/woff/woff2）",
+        });
       }
 
-      const buf = await file.toBuffer();
+      let buf: Buffer;
+      try {
+        buf = await file.toBuffer();
+      } catch {
+        return reply.code(400).send(tooLarge());
+      }
       if (buf.length > MAX_BYTES) {
-        return reply.code(400).send({ error: "file too large (max 5MB)" });
+        return reply.code(400).send(tooLarge());
       }
 
-      const ext =
-        mime === "image/png"
-          ? ".png"
-          : mime === "image/webp"
-            ? ".webp"
-            : mime === "image/gif"
-              ? ".gif"
-              : ".jpg";
+      const ext = fileExt(mime, file.filename);
 
       const key = path.posix.join(
         "worlds",
