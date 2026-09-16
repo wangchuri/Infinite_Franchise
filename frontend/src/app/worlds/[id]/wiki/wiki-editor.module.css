@@ -89,6 +89,35 @@
   border-bottom: 1px solid var(--line);
 }
 
+.pageCss {
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.pageCss summary {
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.pageCss .muted {
+  margin-bottom: 0.4rem;
+}
+
+.cssInput {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: #fffef9;
+  padding: 0.5rem 0.6rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--ink);
+  resize: vertical;
+}
+
 .tree {
   display: flex;
   flex-direction: column;

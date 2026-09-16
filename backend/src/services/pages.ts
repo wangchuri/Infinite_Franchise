@@ -3,6 +3,7 @@ import {
   normalizeWorldLayout,
   type WorldLayout,
 } from "../config/world-layout.js";
+import { sanitizePageCss } from "../config/page-css.js";
 
 export const PAGE_KINDS = ["home", "collection", "custom"] as const;
 export type PageKind = (typeof PAGE_KINDS)[number];
@@ -122,7 +123,7 @@ export async function createWorldPage(input: {
       (input.slug ?? "").slice(0, 80),
       JSON.stringify(layout?.blocks ?? []),
       JSON.stringify(layout?.theme ?? {}),
-      (input.css ?? "").slice(0, 100000),
+      sanitizePageCss(input.css),
       input.status ?? "published",
       input.sortOrder ?? 0,
     ],
@@ -156,7 +157,7 @@ export async function updateWorldPage(
   }
   if (patch.css !== undefined) {
     fields.push(`css = $${i++}`);
-    values.push(patch.css.slice(0, 100000));
+    values.push(sanitizePageCss(patch.css));
   }
   if (patch.status !== undefined) {
     fields.push(`status = $${i++}`);

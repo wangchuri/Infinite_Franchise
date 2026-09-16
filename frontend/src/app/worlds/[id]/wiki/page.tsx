@@ -159,6 +159,7 @@ export default function WikiLayoutEditorPage() {
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [layout, setLayout] = useState<WorldLayout | null>(null);
   const [pageId, setPageId] = useState<string | null>(null);
+  const [pageCss, setPageCss] = useState("");
   const [selectedId, setSelectedId] = useState<string>("");
   const [dragId, setDragId] = useState<string>("");
   const [dropTarget, setDropTarget] = useState<{
@@ -195,6 +196,7 @@ export default function WikiLayoutEditorPage() {
         const home = data.pages.find((p) => p.kind === "home");
         if (home) {
           setPageId(home.id);
+          setPageCss(home.css);
           if (home.layout.blocks.length) {
             setLayout(home.layout);
           } else {
@@ -233,11 +235,12 @@ export default function WikiLayoutEditorPage() {
         setSaving(true);
         try {
           if (pageId) {
-            await updateWorldPage(world.id, pageId, { layout });
+            await updateWorldPage(world.id, pageId, { layout, css: pageCss });
           } else {
             const created = await createWorldPage(world.id, {
               kind: "home",
               layout,
+              css: pageCss,
             });
             setPageId(created.id);
           }
@@ -253,7 +256,7 @@ export default function WikiLayoutEditorPage() {
       })();
     }, 700);
     return () => window.clearTimeout(t);
-  }, [dirty, layout, world, pageId]);
+  }, [dirty, layout, world, pageId, pageCss]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -968,6 +971,23 @@ export default function WikiLayoutEditorPage() {
               aspect="wide"
             />
           </div>
+          <details className={styles.pageCss}>
+            <summary>页面 CSS</summary>
+            <p className={styles.muted}>
+              作用于整个页面，自动限制在本页范围内。
+            </p>
+            <textarea
+              className={styles.cssInput}
+              rows={8}
+              spellCheck={false}
+              value={pageCss}
+              placeholder={"/* 例：.hero { --tone: #b5651d; } */"}
+              onChange={(e) => {
+                setPageCss(e.target.value);
+                setDirty(true);
+              }}
+            />
+          </details>
           {renderInspector()}
           {error ? <p className={styles.error}>{error}</p> : null}
         </aside>

@@ -9,6 +9,7 @@ import {
   themeCssVars,
 } from "@/lib/homepage-config";
 import { EMPTY_LAYOUT, normalizeWorldLayout } from "@/lib/world-layout";
+import { PAGE_ROOT_ID, scopePageCss } from "@/lib/page-css";
 import { decodeParam } from "@/lib/url";
 import {
   fetchWorldBySlug,
@@ -120,8 +121,14 @@ export default function WorldWikiPage() {
 
   const cssVars = themeCssVars(config) as CSSProperties;
 
+  const homeCss = pages.find((p) => p.kind === "home")?.css ?? "";
+  const scopedCss = scopePageCss(homeCss);
+
   return (
-    <div className={styles.page} style={cssVars}>
+    <div id={PAGE_ROOT_ID} className={styles.page} style={cssVars}>
+      {scopedCss ? (
+        <style dangerouslySetInnerHTML={{ __html: scopedCss }} />
+      ) : null}
       <WorldBlocksProvider
         world={world}
         entries={entries}
