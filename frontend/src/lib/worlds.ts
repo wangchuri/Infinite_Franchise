@@ -42,6 +42,13 @@ export type World = {
   layout: WorldLayout;
   createdAt: string;
   updatedAt: string;
+  /** Present on list endpoints (cards): creator identity + counts. */
+  creatorName?: string | null;
+  creatorUsername?: string | null;
+  creatorAvatarUrl?: string | null;
+  workCount?: number;
+  entryCount?: number;
+  followerCount?: number;
 };
 
 function withConfig(world: World): World {

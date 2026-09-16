@@ -34,6 +34,14 @@ export default function WorldCard({
   const image = worldCoverImage(world);
   const gradient = coverGradientFor(world.id || world.slug);
   const uniqueTags = [...new Set(world.tags.filter(Boolean))].slice(0, 4);
+  const creator = world.creatorName || world.creatorUsername || "";
+  const stats = [
+    typeof world.workCount === "number" ? `作品 ${world.workCount}` : null,
+    typeof world.entryCount === "number" ? `词条 ${world.entryCount}` : null,
+    typeof world.followerCount === "number"
+      ? `关注 ${world.followerCount}`
+      : null,
+  ].filter((s): s is string => s !== null);
 
   return (
     <article className={styles.card}>
@@ -59,6 +67,30 @@ export default function WorldCard({
                 <span key={`${t}-${i}`} className={styles.tag}>
                   #{t}
                 </span>
+              ))}
+            </div>
+          ) : null}
+          {creator ? (
+            <div className={styles.creator}>
+              {world.creatorAvatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={world.creatorAvatarUrl}
+                  alt=""
+                  className={styles.creatorAvatar}
+                />
+              ) : (
+                <span className={styles.creatorAvatarFallback}>
+                  {creator.slice(0, 1).toUpperCase()}
+                </span>
+              )}
+              <span className={styles.creatorName}>{creator}</span>
+            </div>
+          ) : null}
+          {stats.length > 0 ? (
+            <div className={styles.stats}>
+              {stats.map((s) => (
+                <span key={s}>{s}</span>
               ))}
             </div>
           ) : null}

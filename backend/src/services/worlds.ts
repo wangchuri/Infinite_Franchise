@@ -48,7 +48,29 @@ export type WorldRow = {
   deleted_at: Date | null;
   /** Attached from world_permissions by attachWorkSubmitMode; not a DB column of worlds. */
   work_submit_mode?: WorkSubmitMode;
+  /** Attached by the list queries for richer cards; not DB columns of worlds. */
+  creator_name?: string | null;
+  creator_username?: string | null;
+  creator_avatar_url?: string | null;
+  work_count?: number;
+  entry_count?: number;
+  follower_count?: number;
 };
+
+/**
+ * Extra card columns: creator identity plus published work / entry / follower
+ * counts. Requires the worlds table to be aliased as `w`.
+ */
+const WORLD_CARD_COLUMNS = `
+  u.display_name AS creator_name,
+  u.username     AS creator_username,
+  u.avatar_url   AS creator_avatar_url,
+  (SELECT count(*)::int FROM works wk
+     WHERE wk.world_id = w.id AND wk.deleted_at IS NULL AND wk.status = 'published') AS work_count,
+  (SELECT count(*)::int FROM wiki_entries we
+     WHERE we.world_id = w.id AND we.status = 'published') AS entry_count,
+  (SELECT count(*)::int FROM world_follows wf
+     WHERE wf.world_id = w.id) AS follower_count`;
 
 export type PublicWorld = {
   id: string;
@@ -70,6 +92,13 @@ export type PublicWorld = {
   layout: WorldLayout;
   createdAt: string;
   updatedAt: string;
+  /** Present when the query attached card columns. */
+  creatorName?: string | null;
+  creatorUsername?: string | null;
+  creatorAvatarUrl?: string | null;
+  workCount?: number;
+  entryCount?: number;
+  followerCount?: number;
 };
 
 export function toPublicWorld(row: WorldRow): PublicWorld {
@@ -93,6 +122,20 @@ export function toPublicWorld(row: WorldRow): PublicWorld {
     layout: normalizeWorldLayout(row.world_layout),
     createdAt: row.created_at.toISOString(),
     updatedAt: row.updated_at.toISOString(),
+    ...(row.creator_username !== undefined
+      ? {
+          creatorName: row.creator_name ?? null,
+          creatorUsername: row.creator_username,
+          creatorAvatarUrl: row.creator_avatar_url ?? null,
+        }
+      : {}),
+    ...(row.work_count !== undefined
+      ? {
+          workCount: row.work_count,
+          entryCount: row.entry_count ?? 0,
+          followerCount: row.follower_count ?? 0,
+        }
+      : {}),
   };
 }
 
@@ -226,9 +269,11 @@ export async function findWorldBySlug(slug: string): Promise<WorldRow | null> {
 
 export async function listMyWorlds(creatorId: string): Promise<WorldRow[]> {
   const result = await pool.query<WorldRow>(
-    `SELECT * FROM worlds
-     WHERE creator_id = $1 AND deleted_at IS NULL
-     ORDER BY updated_at DESC`,
+    `SELECT w.*, ${WORLD_CARD_COLUMNS}
+       FROM worlds w
+       LEFT JOIN users u ON u.id = w.creator_id
+      WHERE w.creator_id = $1 AND w.deleted_at IS NULL
+      ORDER BY w.updated_at DESC`,
     [creatorId],
   );
   await attachWorkSubmitMode(result.rows);
@@ -239,12 +284,14 @@ export async function listMyWorlds(creatorId: string): Promise<WorldRow[]> {
 export async function listPublicWorlds(limit = 48): Promise<WorldRow[]> {
   const safeLimit = Math.min(Math.max(limit, 1), 100);
   const result = await pool.query<WorldRow>(
-    `SELECT * FROM worlds
-     WHERE status = 'published'
-       AND visibility = 'public'
-       AND deleted_at IS NULL
-     ORDER BY updated_at DESC
-     LIMIT $1`,
+    `SELECT w.*, ${WORLD_CARD_COLUMNS}
+       FROM worlds w
+       LEFT JOIN users u ON u.id = w.creator_id
+      WHERE w.status = 'published'
+        AND w.visibility = 'public'
+        AND w.deleted_at IS NULL
+      ORDER BY w.updated_at DESC
+      LIMIT $1`,
     [safeLimit],
   );
   await attachWorkSubmitMode(result.rows);
@@ -258,12 +305,13 @@ export async function listFollowedWorlds(
 ): Promise<WorldRow[]> {
   const safeLimit = Math.min(Math.max(limit, 1), 50);
   const result = await pool.query<WorldRow>(
-    `SELECT w.*
-       FROM world_follows f
-       JOIN worlds w ON w.id = f.world_id
-      WHERE f.user_id = $1
+    `SELECT w.*, ${WORLD_CARD_COLUMNS}
+       FROM world_follows wf0
+       JOIN worlds w ON w.id = wf0.world_id
+       LEFT JOIN users u ON u.id = w.creator_id
+      WHERE wf0.user_id = $1
         AND w.deleted_at IS NULL
-      ORDER BY f.created_at DESC
+      ORDER BY wf0.created_at DESC
       LIMIT $2`,
     [userId, safeLimit],
   );
