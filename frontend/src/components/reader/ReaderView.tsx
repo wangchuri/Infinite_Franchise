@@ -47,6 +47,7 @@ type Prefs = { size: Size; leading: Leading; night: boolean };
 const MODE_KEY = "if_read_mode";
 const NOTES_KEY = "if_read_notes";
 const PREFS_KEY = "if_reader_prefs";
+const SPOILER_KEY = "if_read_spoiler";
 
 const SIZE_V: Record<Size, string> = {
   s: "0.98rem",
@@ -95,6 +96,7 @@ export default function ReaderView({
 
   const [mode, setMode] = useState<ReadMode>("scroll");
   const [showNotes, setShowNotes] = useState(true);
+  const [spoilerFree, setSpoilerFree] = useState(true);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [page, setPage] = useState(0);
   const [activeNote, setActiveNote] = useState<WorkAnnotation | null>(null);
@@ -113,6 +115,7 @@ export default function ReaderView({
     const n = localStorage.getItem(NOTES_KEY);
     if (n === "0") setShowNotes(false);
     if (n === "1") setShowNotes(true);
+    if (localStorage.getItem(SPOILER_KEY) === "0") setSpoilerFree(false);
     const raw = localStorage.getItem(PREFS_KEY);
     if (raw) {
       try {
@@ -227,7 +230,7 @@ export default function ReaderView({
       const doc = document.documentElement;
       const max = doc.scrollHeight - window.innerHeight;
       setScrollProgress(
-        max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 0,
+        max > 0 ? Math.min(1, Math.max(0, window.scrollY / max)) : 1,
       );
     }
     function scheduleSave() {
@@ -294,6 +297,14 @@ export default function ReaderView({
     });
   }
 
+  function toggleSpoiler() {
+    setSpoilerFree((v) => {
+      const next = !v;
+      localStorage.setItem(SPOILER_KEY, next ? "1" : "0");
+      return next;
+    });
+  }
+
   async function onSetSticker() {
     if (!getAccessToken()) {
       router.push("/login");
@@ -343,6 +354,11 @@ export default function ReaderView({
         ? (page + 1) / pages.length
         : 0
       : scrollProgress;
+
+  /** Finished the piece? Then spoilers (wiki + comments) may be revealed. */
+  const finished =
+    mode === "pages" ? page >= pages.length - 1 : scrollProgress >= 0.985;
+  const gated = spoilerFree && !finished;
 
   return (
     <div
@@ -464,6 +480,14 @@ export default function ReaderView({
                 </div>
               </>
             ) : null}
+            <button
+              type="button"
+              className={spoilerFree ? styles.modeOn : styles.modeBtn}
+              onClick={toggleSpoiler}
+              title="读完前隐藏相关 Wiki 与评论"
+            >
+              防剧透{spoilerFree ? " · 开" : " · 关"}
+            </button>
             {data.canEdit ? (
               <Link href={`/works/${work.id}/edit`} className={styles.modeBtn}>
                 编辑
@@ -474,7 +498,7 @@ export default function ReaderView({
               className={showNotes ? styles.modeOn : styles.modeBtn}
               onClick={toggleNotes}
             >
-              Wiki 注释{annotations.length ? ` · ${annotations.length}` : ""}
+              侧栏
             </button>
           </div>
         </header>
@@ -512,14 +536,6 @@ export default function ReaderView({
           </p>
 
           <h1 className={styles.title}>{work.title}</h1>
-
-          <p className={styles.byline}>
-            {work.authorDisplayName || work.authorUsername}
-          </p>
-
-          {work.summary && !isChapter ? (
-            <p className={styles.summary}>{work.summary}</p>
-          ) : null}
 
           {work.mediaUrl ? (
             work.category === "video" ? (
@@ -647,7 +663,7 @@ export default function ReaderView({
 
           {hasTextBody && !isNovelToc ? (
             mode === "scroll" ? (
-              <div className={styles.body}>
+              <div className={`${styles.body} ${styles.paper}`}>
                 <MarkdownView
                   content={work.content ?? ""}
                   className={styles.readerMd}
@@ -658,7 +674,7 @@ export default function ReaderView({
               </div>
             ) : (
               <div className={styles.pagePane}>
-                <div className={styles.body}>
+                <div className={`${styles.body} ${styles.paper}`}>
                   <MarkdownView
                     content={pages[page] ?? ""}
                     className={styles.readerMd}
@@ -755,56 +771,97 @@ export default function ReaderView({
             </ul>
           </section>
         ) : null}
-
-        <section className={styles.foot}>
-          <div className={styles.footBar}>
-            <ReactionBar targetType="work" targetId={work.id} />
-          </div>
-          <div className={styles.footComments}>
-            <CommentSection targetType="work" targetId={work.id} />
-          </div>
-        </section>
       </div>
 
       {showNotes ? (
-        <aside className={styles.notes} aria-label="Wiki 注释">
-          <p className={styles.notesTitle}>Wiki 注释</p>
-          {annotations.length === 0 ? (
-            <p className={styles.muted}>
-              正文中暂未匹配到本世界词条。写作时关联词条后会出现在这里。
+        <aside className={styles.rail} aria-label="作品信息">
+          {work.summary ? (
+            <section className={styles.railSection}>
+              <h2 className={styles.railTitle}>简介</h2>
+              <p className={styles.railSummary}>{work.summary}</p>
+            </section>
+          ) : null}
+
+          <section className={styles.railSection}>
+            <h2 className={styles.railTitle}>作者</h2>
+            <p className={styles.railAuthor}>
+              {work.authorDisplayName || work.authorUsername}
             </p>
+          </section>
+
+          {gated ? (
+            <section className={styles.railSection}>
+              <p className={styles.spoilerHint}>
+                防剧透阅读中——读完本文后显示相关 Wiki 与评论。
+              </p>
+              <button
+                type="button"
+                className={styles.spoilerBtn}
+                onClick={() => setSpoilerFree(false)}
+              >
+                直接展开
+              </button>
+            </section>
           ) : (
-            <ul className={styles.noteList}>
-              {annotations.map((a) => (
-                <li key={a.id}>
-                  <button
-                    type="button"
-                    className={
-                      activeNote?.id === a.id
-                        ? styles.noteItemOn
-                        : styles.noteItem
-                    }
-                    onClick={() =>
-                      setActiveNote((cur) => (cur?.id === a.id ? null : a))
-                    }
-                  >
-                    <strong>{a.title}</strong>
-                    <span className={styles.noteSource}>
-                      {a.source === "link" ? "关联" : "文中提及"}
-                    </span>
-                  </button>
-                  {activeNote?.id === a.id ? (
-                    <div className={styles.noteDetail}>
-                      <p>{a.excerpt || "暂无简介"}</p>
-                      <Link href={`/w/${work.worldSlug}`}>
-                        在 Wiki 中查看 →
-                      </Link>
-                    </div>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
+            <>
+              <section className={styles.railSection}>
+                <h2 className={styles.railTitle}>Wiki</h2>
+                <p className={styles.railWorld}>
+                  <Link href={`/w/${work.worldSlug}`}>{work.worldName}</Link>
+                  <span className={styles.railSep} aria-hidden="true">
+                    ·
+                  </span>
+                  <Link href={`/w/${work.worldSlug}/wiki`}>进入 Wiki</Link>
+                </p>
+                {annotations.length === 0 ? (
+                  <p className={styles.muted}>正文中暂未匹配到本世界词条。</p>
+                ) : (
+                  <ul className={styles.noteList}>
+                    {annotations.map((a) => (
+                      <li key={a.id}>
+                        <button
+                          type="button"
+                          className={
+                            activeNote?.id === a.id
+                              ? styles.noteItemOn
+                              : styles.noteItem
+                          }
+                          onClick={() =>
+                            setActiveNote((cur) =>
+                              cur?.id === a.id ? null : a,
+                            )
+                          }
+                        >
+                          <strong>{a.title}</strong>
+                          <span className={styles.noteSource}>
+                            {a.source === "link" ? "关联" : "文中提及"}
+                          </span>
+                        </button>
+                        {activeNote?.id === a.id ? (
+                          <div className={styles.noteDetail}>
+                            <p>{a.excerpt || "暂无简介"}</p>
+                            <Link href={`/w/${work.worldSlug}/entry/${a.slug}`}>
+                              查看词条 →
+                            </Link>
+                          </div>
+                        ) : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+
+              <section className={styles.railSection}>
+                <h2 className={styles.railTitle}>评论</h2>
+                <CommentSection targetType="work" targetId={work.id} />
+              </section>
+            </>
           )}
+
+          <section className={styles.railSection}>
+            <h2 className={styles.railTitle}>反应</h2>
+            <ReactionBar targetType="work" targetId={work.id} compact />
+          </section>
         </aside>
       ) : null}
 

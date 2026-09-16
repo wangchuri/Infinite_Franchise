@@ -100,6 +100,8 @@
   justify-content: space-between;
   gap: 1rem;
   padding: 0.9rem 4vw;
+  /* Keep the bar the same height on every route (the plaza adds a search box). */
+  min-height: 3.95rem;
   border-bottom: 1px solid var(--line);
   background: rgba(243, 239, 230, 0.82);
   backdrop-filter: blur(12px);

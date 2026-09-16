@@ -33,7 +33,7 @@
 }
 
 .withNotes {
-  grid-template-columns: minmax(0, 1fr) 260px;
+  grid-template-columns: minmax(0, 1fr) 320px;
 }
 
 @media (max-width: 900px) {
@@ -162,6 +162,26 @@
   margin-top: 1rem;
 }
 
+/* Reading sheet: soft paper with a faint fibre texture. */
+.paper {
+  padding: clamp(1.3rem, 3.5vw, 2.4rem);
+  background-color: #fcfaf3;
+  background-image:
+    radial-gradient(rgba(20, 33, 43, 0.022) 1px, transparent 1.2px),
+    radial-gradient(rgba(20, 33, 43, 0.015) 1px, transparent 1.2px);
+  background-size:
+    17px 17px,
+    29px 29px;
+  background-position:
+    0 0,
+    8px 11px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5) inset,
+    0 10px 26px rgba(20, 33, 43, 0.05);
+}
+
 .readerMd {
   font-size: var(--reader-size, 1.08rem) !important;
   line-height: var(--reader-line, 1.85) !important;
@@ -278,17 +298,20 @@
   font-size: 0.92rem;
 }
 
-.notes {
+.rail {
   border-left: 1px solid var(--line);
-  padding-left: 1.1rem;
+  padding-left: 1.25rem;
   position: sticky;
   top: 4.5rem;
   max-height: calc(100vh - 6rem);
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 @media (max-width: 900px) {
-  .notes {
+  .rail {
     border-left: none;
     border-top: 1px solid var(--line);
     padding-left: 0;
@@ -298,12 +321,69 @@
   }
 }
 
-.notesTitle {
+.railSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.railTitle {
   font-size: 0.72rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--ink-soft);
-  margin-bottom: 0.85rem;
+}
+
+.railSummary {
+  font-size: 0.92rem;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.railAuthor {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.railWorld {
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.railWorld a {
+  color: var(--sea);
+}
+
+.railSep {
+  margin: 0 0.4rem;
+  opacity: 0.6;
+}
+
+.spoilerHint {
+  padding: 0.85rem 0.9rem;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+.spoilerBtn {
+  align-self: flex-start;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--sea);
+  border-radius: 999px;
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--sea);
+  cursor: pointer;
+}
+
+.spoilerBtn:hover {
+  background: var(--sea);
+  color: var(--paper);
 }
 
 .noteList {
@@ -667,21 +747,6 @@
   color: var(--ink-soft);
 }
 
-/* --- Reactions & comments (below the article) ---- */
-.foot {
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 1px solid var(--line);
-  display: flex;
-  flex-direction: column;
-  gap: 1.75rem;
-}
-
-.footBar {
-  display: flex;
-  justify-content: flex-start;
-}
-
 /* --- Night theme ---- */
 .night {
   background: #14181c;
@@ -723,12 +788,33 @@
   color: #14181c;
 }
 
-.night .notes {
+.night .rail {
   border-left-color: rgba(243, 239, 230, 0.14);
 }
 
-.night .notesTitle {
+.night .railTitle,
+.night .railSummary,
+.night .railAuthor,
+.night .railWorld {
   color: #a49e91;
+}
+
+.night .railAuthor {
+  color: #ebe5d8;
+}
+
+.night .spoilerHint {
+  border-color: rgba(243, 239, 230, 0.18);
+  color: #a49e91;
+}
+
+.night .paper {
+  background-color: #171c21;
+  background-image:
+    radial-gradient(rgba(243, 239, 230, 0.02) 1px, transparent 1.2px),
+    radial-gradient(rgba(243, 239, 230, 0.014) 1px, transparent 1.2px);
+  border-color: rgba(243, 239, 230, 0.12);
+  box-shadow: none;
 }
 
 .night .noteItem,
