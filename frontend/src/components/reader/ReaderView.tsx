@@ -102,7 +102,7 @@ export default function ReaderView({
   const [wikiOpen, setWikiOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [page, setPage] = useState(0);
-  const [activeNote, setActiveNote] = useState<WorkAnnotation | null>(null);
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   const [sticker, setSticker] = useState<WorkStickerInfo | null>(null);
   const [stickerBusy, setStickerBusy] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -136,7 +136,7 @@ export default function ReaderView({
 
   useEffect(() => {
     setPage(0);
-    setActiveNote(null);
+    setCollapsed({});
     setLightbox(false);
     setSettingsOpen(false);
   }, [work.id]);
@@ -165,6 +165,27 @@ export default function ReaderView({
     [work.content],
   );
   const stats = useMemo(() => textStats(work.content), [work.content]);
+
+  /** Matched entries grouped by their collection (归属), in world order. */
+  const entryGroups = useMemo(() => {
+    const byCat = new Map<string, WorkAnnotation[]>();
+    for (const a of annotations) {
+      const arr = byCat.get(a.category);
+      if (arr) arr.push(a);
+      else byCat.set(a.category, [a]);
+    }
+    const ordered: { key: string; name: string; items: WorkAnnotation[] }[] =
+      [];
+    for (const c of collections) {
+      const items = byCat.get(c.key);
+      if (items && items.length) {
+        ordered.push({ key: c.key, name: c.name, items });
+      }
+      byCat.delete(c.key);
+    }
+    for (const [key, items] of byCat) ordered.push({ key, name: key, items });
+    return ordered;
+  }, [annotations, collections]);
 
   useEffect(() => {
     if (mode !== "pages") return;
@@ -898,45 +919,65 @@ export default function ReaderView({
                     </span>
                     <Link href={`/w/${work.worldSlug}/wiki`}>进入 Wiki</Link>
                   </p>
-                  {annotations.length === 0 ? (
+                  {entryGroups.length === 0 ? (
                     <p className={styles.muted}>
                       正文中暂未匹配到本世界词条。
                     </p>
                   ) : (
-                    <ul className={styles.noteList}>
-                      {annotations.map((a) => (
-                        <li key={a.id}>
+                    entryGroups.map((g) => {
+                      const open = !collapsed[g.key];
+                      return (
+                        <div key={g.key} className={styles.entryGroup}>
                           <button
                             type="button"
-                            className={
-                              activeNote?.id === a.id
-                                ? styles.noteItemOn
-                                : styles.noteItem
-                            }
+                            className={styles.entryGroupHead}
+                            aria-expanded={open}
                             onClick={() =>
-                              setActiveNote((cur) =>
-                                cur?.id === a.id ? null : a,
-                              )
+                              setCollapsed((prev) => ({
+                                ...prev,
+                                [g.key]: !prev[g.key],
+                              }))
                             }
                           >
-                            <strong>{a.title}</strong>
-                            <span className={styles.noteSource}>
-                              {a.source === "link" ? "关联" : "文中提及"}
+                            <span className={styles.entryGroupName}>
+                              {g.name}
+                              <span className={styles.entryGroupCount}>
+                                {g.items.length}
+                              </span>
+                            </span>
+                            <span className={styles.entryGroupSign}>
+                              {open ? "收起" : "展开"}
                             </span>
                           </button>
-                          {activeNote?.id === a.id ? (
-                            <div className={styles.noteDetail}>
-                              <p>{a.excerpt || "暂无简介"}</p>
-                              <Link
-                                href={`/w/${work.worldSlug}/entry/${a.slug}`}
-                              >
-                                查看词条 →
-                              </Link>
-                            </div>
+
+                          {open ? (
+                            <ul className={styles.entryList}>
+                              {g.items.map((a) => (
+                                <li key={a.id} className={styles.entry}>
+                                  <div className={styles.entryHead}>
+                                    <strong>{a.title}</strong>
+                                    <span className={styles.noteSource}>
+                                      {a.source === "link"
+                                        ? "关联"
+                                        : "文中提及"}
+                                    </span>
+                                  </div>
+                                  <p className={styles.entryExcerpt}>
+                                    {a.excerpt || "暂无简介"}
+                                  </p>
+                                  <Link
+                                    href={`/w/${work.worldSlug}/entry/${a.slug}`}
+                                    className={styles.entryLink}
+                                  >
+                                    查看词条 →
+                                  </Link>
+                                </li>
+                              ))}
+                            </ul>
                           ) : null}
-                        </li>
-                      ))}
-                    </ul>
+                        </div>
+                      );
+                    })
                   )}
                 </>
               )
