@@ -1,4 +1,5 @@
 import type { Work } from "@/lib/works";
+import type { WorldCollection } from "@/lib/collections";
 import type { TimelineEvent, WikiEntry, World } from "@/lib/worlds";
 
 /** Prevent injected JSON from closing the wrapping <script> tag. */
@@ -15,6 +16,7 @@ export type WorldDataContext = {
   byCategory: Record<string, WikiEntry[]>;
   timeline: TimelineEvent[];
   works: Work[];
+  collections?: WorldCollection[];
 };
 
 /** Shape injected into every sandboxed author frame as `window.WORLD`. */
@@ -24,8 +26,10 @@ export function buildWorldData(ctx: WorldDataContext) {
     category: e.category,
     title: e.title,
     slug: e.slug,
+    aliases: e.aliases ?? [],
     content: e.content,
     imageUrl: e.imageUrl,
+    attributes: e.attributes ?? {},
   });
 
   return {
@@ -47,6 +51,13 @@ export function buildWorldData(ctx: WorldDataContext) {
         list.map(slimEntry),
       ]),
     ),
+    collections: (ctx.collections ?? []).map((c: WorldCollection) => ({
+      key: c.key,
+      name: c.name,
+      iconUrl: c.iconUrl,
+      color: c.color,
+      attrFields: c.attrFields,
+    })),
     timeline: ctx.timeline.map((t) => ({
       id: t.id,
       title: t.title,

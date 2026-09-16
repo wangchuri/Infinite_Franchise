@@ -14,7 +14,7 @@ import styles from "../blocks.module.css";
  *   WORLD.timeline, WORLD.works
  */
 export function CustomHtml({ block }: { block: Block }) {
-  const { world, entries, byCategory, timeline, works, pageCss } =
+  const { world, entries, byCategory, collections, timeline, works, pageCss } =
     useWorldBlocks();
 
   const html = typeof block.props?.html === "string" ? block.props.html : "";
@@ -28,7 +28,7 @@ export function CustomHtml({ block }: { block: Block }) {
         : 360;
 
   const srcDoc = useMemo(() => {
-    const data = buildWorldData({ world, entries, byCategory, timeline, works });
+    const data = buildWorldData({ world, entries, byCategory, collections, timeline, works });
     return [
       '<!doctype html><html><head><meta charset="utf-8" />',
       "<style>html,body{margin:0;padding:0;",
@@ -42,7 +42,7 @@ export function CustomHtml({ block }: { block: Block }) {
       html,
       "</body></html>",
     ].join("");
-  }, [world, entries, byCategory, timeline, works, html, css, pageCss]);
+  }, [world, entries, byCategory, collections, timeline, works, html, css, pageCss]);
 
   return (
     <section id={block.id} className={styles.section}>

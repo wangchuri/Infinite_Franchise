@@ -119,6 +119,7 @@ export function VariantGrid({
     world,
     entries: allEntries,
     byCategory,
+    collections,
     timeline,
     works,
     pageCss,
@@ -199,6 +200,7 @@ export function VariantGrid({
       world,
       entries: allEntries,
       byCategory,
+      collections,
       timeline,
       works,
     });
@@ -225,6 +227,7 @@ export function VariantGrid({
     world,
     allEntries,
     byCategory,
+    collections,
     timeline,
     works,
     pageCss,
