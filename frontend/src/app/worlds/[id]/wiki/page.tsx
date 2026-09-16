@@ -51,16 +51,20 @@ import {
 } from "@/lib/world-layout";
 import {
   createWorldPage,
+  deleteWorldAsset,
   fetchPageRevisions,
+  fetchWorldAssets,
   fetchWorldById,
+  recordWorldAsset,
   restorePageRevision,
   updateWorld,
   updateWorldPage,
-  uploadFont,
   uploadImage,
+  uploadFont,
   type TimelineEvent,
   type WikiEntry,
   type World,
+  type WorldAsset,
   type WorldPage,
   type WorldPageRevision,
 } from "@/lib/worlds";
@@ -249,6 +253,8 @@ export default function WikiLayoutEditorPage() {
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [revisions, setRevisions] = useState<WorldPageRevision[]>([]);
+  const [assets, setAssets] = useState<WorldAsset[]>([]);
+  const [assetsOpen, setAssetsOpen] = useState(false);
   const [previewKey, setPreviewKey] = useState(0);
   const [device, setDevice] = useState<DeviceKey>("desktop");
   const [availW, setAvailW] = useState(0);
@@ -257,6 +263,7 @@ export default function WikiLayoutEditorPage() {
   const viewportRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const importRef = useRef<HTMLInputElement>(null);
+  const assetRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -271,6 +278,11 @@ export default function WikiLayoutEditorPage() {
         setTimeline(data.timeline);
         setPages(data.pages);
         setActiveKey(null);
+        void fetchWorldAssets(data.world.id)
+          .then((list) => {
+            if (!cancelled) setAssets(list);
+          })
+          .catch(() => {});
         const home = pageFor(data.pages, null);
         if (home && home.layout.blocks.length) {
           setPageId(home.id);
@@ -477,6 +489,36 @@ export default function WikiLayoutEditorPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "还原失败");
     }
+  }
+
+  async function uploadAsset(file: File | undefined) {
+    if (!file || !world) return;
+    try {
+      const url = await uploadImage(file);
+      const asset = await recordWorldAsset(world.id, {
+        url,
+        filename: file.name,
+        size: file.size,
+      });
+      setAssets((prev) => [asset, ...prev.filter((a) => a.url !== asset.url)]);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "上传失败");
+    }
+  }
+
+  async function removeAsset(assetId: string) {
+    if (!world) return;
+    try {
+      await deleteWorldAsset(world.id, assetId);
+      setAssets((prev) => prev.filter((a) => a.id !== assetId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "删除失败");
+    }
+  }
+
+  function copyAsset(url: string) {
+    void navigator.clipboard?.writeText(url).catch(() => {});
   }
 
   useEffect(() => {
@@ -1252,6 +1294,13 @@ export default function WikiLayoutEditorPage() {
           >
             导入
           </button>
+          <button
+            type="button"
+            className={styles.ioBtn}
+            onClick={() => setAssetsOpen(true)}
+          >
+            素材库
+          </button>
         </span>
         <input
           ref={importRef}
@@ -1411,6 +1460,64 @@ export default function WikiLayoutEditorPage() {
           {error ? <p className={styles.error}>{error}</p> : null}
         </aside>
       </div>
+
+      {assetsOpen ? (
+        <div
+          className={styles.assetOverlay}
+          onClick={() => setAssetsOpen(false)}
+        >
+          <div className={styles.assetPanel} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.assetHead}>
+              <strong>素材库</strong>
+              <span className={styles.assetCount}>{assets.length}</span>
+              <button
+                type="button"
+                className={styles.ioBtn}
+                onClick={() => assetRef.current?.click()}
+              >
+                上传
+              </button>
+              <button
+                type="button"
+                className={styles.ioBtn}
+                onClick={() => setAssetsOpen(false)}
+              >
+                关闭
+              </button>
+            </div>
+            {assets.length === 0 ? (
+              <p className={styles.muted}>还没有素材，先上传图片。</p>
+            ) : (
+              <div className={styles.assetGrid}>
+                {assets.map((a) => (
+                  <div key={a.id} className={styles.assetCell}>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={a.url} alt={a.filename} />
+                    <div className={styles.assetBtns}>
+                      <button type="button" onClick={() => copyAsset(a.url)}>
+                        复制链接
+                      </button>
+                      <button type="button" onClick={() => void removeAsset(a.id)}>
+                        删除
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+            <input
+              ref={assetRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => {
+                void uploadAsset(e.target.files?.[0]);
+                e.target.value = "";
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -103,6 +103,83 @@
   margin-bottom: 0.6rem;
 }
 
+.assetOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 2rem;
+  background: rgba(20, 33, 43, 0.4);
+}
+
+.assetPanel {
+  width: min(720px, 100%);
+  max-height: 80vh;
+  overflow: auto;
+  padding: 1rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(20, 33, 43, 0.28);
+}
+
+.assetHead {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.assetHead strong {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+}
+
+.assetCount {
+  margin-right: auto;
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+}
+
+.assetGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.assetCell {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  background: #fffef9;
+}
+
+.assetCell img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+}
+
+.assetBtns {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.25rem;
+  padding: 0.3rem;
+}
+
+.assetBtns button {
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  padding: 0;
+  cursor: pointer;
+}
+
+.assetBtns button:hover {
+  color: var(--sea);
+}
+
 .body {
   flex: 1;
   min-height: 0;

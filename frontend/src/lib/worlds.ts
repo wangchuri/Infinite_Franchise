@@ -278,6 +278,52 @@ export async function restorePageRevision(
   return withPage(data.page);
 }
 
+export type WorldAsset = {
+  id: string;
+  url: string;
+  kind: string;
+  filename: string;
+  size: number | null;
+  width: number | null;
+  height: number | null;
+  createdAt: string;
+};
+
+export async function fetchWorldAssets(
+  worldId: string,
+): Promise<WorldAsset[]> {
+  const data = await apiFetch<{ assets: WorldAsset[] }>(
+    `/api/worlds/${worldId}/assets`,
+  );
+  return data.assets ?? [];
+}
+
+export async function recordWorldAsset(
+  worldId: string,
+  input: {
+    url: string;
+    filename?: string;
+    size?: number | null;
+    width?: number | null;
+    height?: number | null;
+  },
+): Promise<WorldAsset> {
+  const data = await apiFetch<{ asset: WorldAsset }>(
+    `/api/worlds/${worldId}/assets`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return data.asset;
+}
+
+export async function deleteWorldAsset(
+  worldId: string,
+  assetId: string,
+): Promise<void> {
+  await apiFetch(`/api/worlds/${worldId}/assets/${assetId}`, {
+    method: "DELETE",
+  });
+}
+
 export async function updateWorld(
   id: string,
   patch: Partial<{

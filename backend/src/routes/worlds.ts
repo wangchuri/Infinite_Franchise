@@ -74,9 +74,21 @@ import {
   type PageKind,
 } from "../services/pages.js";
 import { sanitizeAttrFields } from "../config/collections.js";
+import {
+  createWorldAsset,
+  deleteWorldAsset,
+  listWorldAssets,
+  toPublicAsset,
+} from "../services/assets.js";
 
 function asString(v: unknown): string | undefined {
   return typeof v === "string" ? v : undefined;
+}
+
+function asInt(v: unknown): number | null {
+  if (typeof v === "number" && Number.isFinite(v)) return Math.trunc(v);
+  if (typeof v === "string" && /^\d+$/.test(v.trim())) return Number(v);
+  return null;
 }
 
 function asNullableString(v: unknown): string | null | undefined {
@@ -714,6 +726,62 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply
         .code(400)
         .send({ error: "page not found or home page cannot be deleted" });
+    }
+    return reply.code(204).send();
+  });
+
+  // —— Assets (素材库) ——
+  app.get("/api/worlds/:id/assets", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const world = await findWorldById(id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const viewerId = req.authUser?.id ?? null;
+    if (!canViewWorld(world, viewerId)) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const rows = await listWorldAssets(id);
+    return { assets: rows.map(toPublicAsset) };
+  });
+
+  app.post("/api/worlds/:id/assets", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const url = asString(body.url)?.trim();
+    if (!url) {
+      return reply.code(400).send({ error: "url is required" });
+    }
+    const created = await createWorldAsset({
+      worldId: id,
+      url,
+      kind: asString(body.kind),
+      filename: asString(body.filename),
+      size: asInt(body.size),
+      width: asInt(body.width),
+      height: asInt(body.height),
+      uploadedBy: user.id,
+    });
+    return reply.code(201).send({ asset: toPublicAsset(created) });
+  });
+
+  app.delete("/api/worlds/:id/assets/:assetId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, assetId } = req.params as { id: string; assetId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const ok = await deleteWorldAsset(assetId, id);
+    if (!ok) {
+      return reply.code(404).send({ error: "asset not found" });
     }
     return reply.code(204).send();
   });
