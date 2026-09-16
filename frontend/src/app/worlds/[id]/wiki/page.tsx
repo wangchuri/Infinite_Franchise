@@ -1436,6 +1436,14 @@ export default function WikiLayoutEditorPage() {
               ))}
             </span>
             <span className={styles.zoom}>{Math.round(scale * 100)}%</span>
+            <button
+              type="button"
+              className={styles.deviceBtn}
+              title="重新加载预览"
+              onClick={() => setPreviewKey(previewStamp())}
+            >
+              刷新预览
+            </button>
           </div>
           <div className={styles.canvasViewport} ref={viewportRef}>
             <div
@@ -1483,7 +1491,7 @@ export default function WikiLayoutEditorPage() {
           <details className={styles.pageCss}>
             <summary>页面 CSS</summary>
             <p className={styles.muted}>
-              作用于整个页面，自动限制在本页范围内。
+              按页保存：首页与各归属页各自独立；自动限制在本页范围内。
             </p>
             <textarea
               className={styles.cssInput}

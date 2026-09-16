@@ -89,6 +89,9 @@ export default function WikiDocsPage() {
           <code>javascript:</code>、<code>@scope</code>），渲染时自动包进{" "}
           <code>@scope (#wiki-root)</code>，不会泄漏到平台界面；同时会下发到区域沙箱。
         </p>
+        <p className={styles.note}>
+          注意：页面 CSS <b>按页保存</b>——首页与每个归属页各自独立，切换页签时编辑框显示的是该页自己的值。
+        </p>
       </section>
 
       <section className={styles.section}>
