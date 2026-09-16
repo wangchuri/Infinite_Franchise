@@ -17,6 +17,7 @@ import BlockFields from "@/components/world-blocks/BlockFields";
 import ImageUpload from "@/components/world-editor/ImageUpload";
 import {
   createCollection,
+  collectionName,
   type WorldCollection,
 } from "@/lib/collections";
 import {
@@ -48,6 +49,7 @@ import {
   type TimelineEvent,
   type WikiEntry,
   type World,
+  type WorldPage,
 } from "@/lib/worlds";
 import styles from "./wiki-editor.module.css";
 
@@ -62,6 +64,36 @@ const CONTAINER_SLOTS: Partial<Record<BlockType, string[]>> = {
   columns: SLOT_ORDER,
   bgRegion: ["content"],
 };
+
+function pageFor(
+  pages: WorldPage[],
+  key: string | null,
+): WorldPage | undefined {
+  return key === null
+    ? pages.find((p) => p.kind === "home")
+    : pages.find((p) => p.kind === "collection" && p.collectionKey === key);
+}
+
+/** Default layout for a collection (归属) page. */
+function buildCollectionLayout(title: string, key: string): WorldLayout {
+  return {
+    version: 2,
+    blocks: [
+      { id: "topbar", type: "topBar" },
+      {
+        id: `grid-${key}`,
+        type: "entryGrid",
+        props: { category: key, title, withImage: true, style: "grid" },
+      },
+    ],
+  };
+}
+
+function layoutFor(key: string | null, collections: WorldCollection[]): WorldLayout {
+  if (key === null) return buildDefaultLayout();
+  const name = collections.find((c) => c.key === key)?.name ?? key;
+  return buildCollectionLayout(name, key);
+}
 
 const OP_LABEL: Record<VariantMatchOp, string> = {
   eq: "=",
@@ -167,6 +199,9 @@ export default function WikiLayoutEditorPage() {
   const [layout, setLayout] = useState<WorldLayout | null>(null);
   const [pageId, setPageId] = useState<string | null>(null);
   const [pageCss, setPageCss] = useState("");
+  const [pages, setPages] = useState<WorldPage[]>([]);
+  /** null = home page, otherwise the collection key. */
+  const [activeKey, setActiveKey] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
   const [dragId, setDragId] = useState<string>("");
   const [dropTarget, setDropTarget] = useState<{
@@ -200,17 +235,17 @@ export default function WikiLayoutEditorPage() {
         setEntries(data.entries);
         setCollections(data.collections);
         setTimeline(data.timeline);
-        const home = data.pages.find((p) => p.kind === "home");
-        if (home) {
+        setPages(data.pages);
+        setActiveKey(null);
+        const home = pageFor(data.pages, null);
+        if (home && home.layout.blocks.length) {
           setPageId(home.id);
           setPageCss(home.css);
-          if (home.layout.blocks.length) {
-            setLayout(home.layout);
-          } else {
-            setLayout(buildDefaultLayout());
-            setDirty(true);
-          }
+          setLayout(home.layout);
+          setDirty(false);
         } else {
+          setPageId(home?.id ?? null);
+          setPageCss(home?.css ?? "");
           setLayout(buildDefaultLayout());
           setDirty(true);
         }
@@ -245,11 +280,13 @@ export default function WikiLayoutEditorPage() {
             await updateWorldPage(world.id, pageId, { layout, css: pageCss });
           } else {
             const created = await createWorldPage(world.id, {
-              kind: "home",
+              kind: activeKey === null ? "home" : "collection",
+              collectionKey: activeKey,
               layout,
               css: pageCss,
             });
             setPageId(created.id);
+            setPages((prev) => [...prev, created]);
           }
           setSavedAt(new Date());
           setDirty(false);
@@ -263,7 +300,50 @@ export default function WikiLayoutEditorPage() {
       })();
     }, 700);
     return () => window.clearTimeout(t);
-  }, [dirty, layout, world, pageId, pageCss]);
+  }, [dirty, layout, world, pageId, pageCss, activeKey]);
+
+  /** Persist the current page (used before switching pages). */
+  async function flushPage() {
+    if (!world || !layout || !dirty) return;
+    try {
+      if (pageId) {
+        await updateWorldPage(world.id, pageId, { layout, css: pageCss });
+      } else {
+        const created = await createWorldPage(world.id, {
+          kind: activeKey === null ? "home" : "collection",
+          collectionKey: activeKey,
+          layout,
+          css: pageCss,
+        });
+        setPageId(created.id);
+        setPages((prev) => [...prev, created]);
+      }
+      setDirty(false);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存失败");
+    }
+  }
+
+  async function selectPage(key: string | null) {
+    if (key === activeKey) return;
+    await flushPage();
+    setActiveKey(key);
+    setSelectedId("");
+    setEditingVariant(null);
+    const page = pageFor(pages, key);
+    if (page && page.layout.blocks.length) {
+      setPageId(page.id);
+      setPageCss(page.css);
+      setLayout(page.layout);
+      setDirty(false);
+    } else {
+      setPageId(page?.id ?? null);
+      setPageCss(page?.css ?? "");
+      setLayout(layoutFor(key, collections));
+      setDirty(true);
+    }
+  }
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -998,7 +1078,12 @@ export default function WikiLayoutEditorPage() {
         <Link href={`/worlds/${world.id}/edit`} className={styles.back}>
           ← 返回编辑器
         </Link>
-        <strong className={styles.docName}>{world.name} · Wiki 界面</strong>
+        <strong className={styles.docName}>
+          {world.name} ·{" "}
+          {activeKey === null
+            ? "Wiki 界面"
+            : collectionName(collections, activeKey)}
+        </strong>
         {usingSample ? (
           <span className={styles.sampleBadge} title="空区域以示例数据呈现">
             示例数据
@@ -1011,6 +1096,25 @@ export default function WikiLayoutEditorPage() {
 
       <div className={styles.body}>
         <aside className={styles.paneLeft}>
+          <div className={styles.pageTabs}>
+            <button
+              type="button"
+              className={activeKey === null ? styles.pageTabOn : styles.pageTab}
+              onClick={() => void selectPage(null)}
+            >
+              首页
+            </button>
+            {collections.map((c) => (
+              <button
+                key={c.key}
+                type="button"
+                className={activeKey === c.key ? styles.pageTabOn : styles.pageTab}
+                onClick={() => void selectPage(c.key)}
+              >
+                {c.name}
+              </button>
+            ))}
+          </div>
           <p className={styles.paneTitle}>结构 / Hierarchy</p>
           <div className={styles.tree}>{renderHierarchy(layout.blocks)}</div>
         </aside>
