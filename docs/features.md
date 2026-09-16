@@ -73,10 +73,14 @@
 
 ### 3.3 世界观 Wiki（区块系统）
 
-- **区块布局** `world_layout.blocks`：`topBar / hero / columns / section / divider / spacer / footer`（骨架），
+- **区块布局**（`world_pages.blocks`，按页存储）：`topBar / hero / columns / section / bgRegion / divider / spacer / footer`（骨架），
   `nav / navGrid / prose / entryGrid / glossary / timeline / eventAxis / workList / infoBox / stats / tagCloud`（数据区域），
   `platformButton`（平台按钮）、`customHtml`（**沙箱 iframe** 内渲染，注入世界数据）。
+- **多页面**：`world_pages`（迁移 017）分 `home / collection / custom`；排版编辑器顶部页签在「首页 + 各归属」间切换，归属页首次保存自动创建。公开侧 `/w/[slug]/c/[key]` 有页面布局就渲染布局，否则回退词条列表。
 - **内容区块**（词条正文与世界页通用）：`heading / text(Markdown) / image / gallery / quote / divider / button / linkList / relatedEntries`。
+- **背景区域 `bgRegion`**：每个块可设背景图 / 渐变 / 背景色 / 暗色遮罩 / 最小高度 / 内边距 / 固定视差，并可嵌套内容区——一页可放多个背景带。
+- **元组件（卡片变体）内置属性**：`box`（宽 / 高 / 背景图 / 背景色 / 圆角 / 透明度）+ `defaultImage`（词条无图时的默认图）；可按词条属性匹配不同变体。CSS 优先级：内置 box < 页面 CSS < 变体 CSS。
+- **页面级 CSS**：每页可写自定义 CSS（前后端 sanitize，禁 `@import`/`expression`/`javascript:`/`@scope`），公开页以 `@scope (#wiki-root)` 注入，不泄漏到平台 UI；同时下发到区域沙箱 iframe。
 - **归属系统 `world_collections`**：取代写死的分类；每世界内置 7 类（人物/地点/物品/组织/事件/概念/其他），可新建、改名、图标、隐藏、排序；有词条的内置归属不可删。
 - **词条**：标题 / slug / 归属 / 别名 / 属性（按归属的 `attr_fields` 动态表单）/ 封面 / 正文（Markdown 或内容区块）/ 状态 / 版本。
 - **词条库 `/worlds/[id]/entries`**：三栏（归属页签 + 词条列表 / 结构列表 + 设备框 iframe 预览 / 属性·组件检查器），支持内联新建归属、拖拽排序、点选联动、自动保存。
@@ -182,7 +186,7 @@
 
 ## 6. 已实现 vs 规划
 
-**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面区块编辑器、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
+**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
 
 **规划中 / 待补**（`feasibility-analysis.md` 为远期路线）：
 
@@ -194,4 +198,4 @@
 6. **搜索完善**：站内搜索目前覆盖作品/世界标题。
 7. **相关词条自动模式**：按同归属/同属性自动生成。
 8. **隐藏归属的公开页 404**。
-9. **Wiki 界面重做**：多背景区域、元组件内置属性（背景/尺寸/默认图）+ 优先级链、世界级 CSS、富文本块、对 Agent/HTML 友好的数据接口、归属页可编辑 —— 见 [`wiki-plan.md`](./wiki-plan.md)。
+9. **Wiki 界面 Phase 2/3**：富文本块（所见即所得 + HTML 源码）、上传 HTML→`customHtml`、`window.WORLD` 补全 + 文档、layout 导入/导出（Agent 友好）、版本回滚、响应式、素材库 —— 见 [`wiki-plan.md`](./wiki-plan.md)。

@@ -1,6 +1,6 @@
 # Wiki 界面的规划（排版编辑器重做）
 
-> 状态：规划中 · Phase 0 进行中
+> 状态：Phase 0 完成 · Phase 1 完成 · Phase 2/3 待做
 > 相关：`docs/features.md`、`docs/design.md`
 
 ## 1. 三层模型与术语
@@ -43,11 +43,11 @@
 - 0b 后端 pages 服务与路由；世界 payload 带 pages。
 - 0b 前端接入：公开 Wiki 读 home page；排版编辑器改用 page API。
 
-### Phase 1（核心）
-- 多背景区域块。
-- 组件内置属性（背景图 / 尺寸 / 默认图）+ 优先级链。
-- 世界/页面级 CSS（作用域 + 校验）。
-- 归属页可编辑 + 编辑页页面切换。
+### Phase 1（核心）— ✅ 已完成
+- 页面级 CSS（`world_pages.css`）：前后端 `sanitizePageCss` + 公开页 `@scope (#wiki-root)` 注入 + 编辑器「页面 CSS」面板。
+- 元组件内置属性：`BlockVariant.box`（宽/高/背景图/背景色/圆角/透明度）+ `defaultImage`；优先级 内置 box < 页面 CSS < 变体 CSS。
+- 多背景区域块 `bgRegion`（背景图/渐变/暗色遮罩/最小高度/内边距/固定视差，含 content 子槽）。
+- 归属页可编辑：编辑器页面切换（首页 + 各归属），公开 `/w/[slug]/c/[key]` 渲染归属页布局。
 
 ### Phase 2（富文本 / HTML）
 - `richText` 块（图文混排 + HTML 源码切换，存 HTML 并 sanitize）。
