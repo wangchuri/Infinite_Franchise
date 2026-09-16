@@ -22,12 +22,14 @@ type Swipe = {
   mode: Mode;
   /** Full href to push (path + query + hash). */
   href: string;
-  /** Normalized destination pathname, used to detect arrival. */
+  /** Normalized path we came from. */
+  from: string;
+  /** Normalized destination pathname (best guess for `back`). */
   to: string;
-  /** Whether this swipe still has to trigger the navigation. */
-  pending: boolean;
   /** Destination has no platform chrome, so the panel covers the whole screen. */
   full: boolean;
+  /** Use history.back() instead of pushing `href`. */
+  back: boolean;
 };
 
 function normalize(path: string): string {
@@ -106,6 +108,9 @@ function pageUrl(anchor: HTMLAnchorElement): URL | null {
  * ↔ 创作) get the full ceremonial sweep; every other hop gets a quick cover +
  * cross-fade so it hides the load without dragging. Chrome-less destinations
  * (the wiki) are covered full-screen, chrome pages start under the topbar.
+ *
+ * While the destination is still loading the covered panel keeps looping a
+ * shimmer; it only sweeps/fades away once the route has rendered.
  */
 export default function RouteSwipe() {
   const pathname = usePathname();
@@ -113,13 +118,17 @@ export default function RouteSwipe() {
   const [swipe, setSwipe] = useState<Swipe | null>(null);
   const active = useRef(false);
   const prevPath = useRef(pathname);
+  /** Guards against pushing twice (e.g. Strict Mode double effects). */
+  const pushGuard = useRef(false);
 
   useEffect(() => {
     prevPath.current = pathname;
   }, [pathname]);
 
-  // `cover` becomes `out` the moment the destination route has rendered.
-  const arrived = swipe ? normalize(pathname) === swipe.to : false;
+  const current = normalize(pathname);
+  // The destination rendered as soon as the path left `from` (a redirect
+  // counts too, so `/me` → `/u/…` no longer gets stuck under the panel).
+  const arrived = swipe ? current !== swipe.from : false;
   const phase: Phase | null = swipe
     ? swipe.phase === "cover" && arrived
       ? "out"
@@ -132,6 +141,22 @@ export default function RouteSwipe() {
   }, [phase]);
 
   useEffect(() => {
+    function start(href: string, from: string, to: string, back: boolean) {
+      if (to === from) return;
+      active.current = true;
+      pushGuard.current = false;
+      setSwipe({
+        dir: directionFor(from, to),
+        phase: "in",
+        mode: isZoneHop(from, to) ? "sweep" : "light",
+        href,
+        from,
+        to,
+        full: isChromeLess(to),
+        back,
+      });
+    }
+
     function onClick(e: MouseEvent) {
       if (active.current) return;
       if (e.defaultPrevented || e.button !== 0) return;
@@ -148,19 +173,32 @@ export default function RouteSwipe() {
       const to = normalize(url.pathname);
       if (to === from) return;
 
-      const zoneHop = isZoneHop(from, to);
       // Capture phase: mark the event handled so <Link> skips its own push.
       e.preventDefault();
-      active.current = true;
-      setSwipe({
-        dir: directionFor(from, to),
-        phase: "in",
-        mode: zoneHop ? "sweep" : "light",
-        href: url.pathname + url.search + url.hash,
-        to,
-        pending: true,
-        full: isChromeLess(to),
-      });
+      start(url.pathname + url.search + url.hash, from, to, false);
+    }
+
+    function onCustom(e: Event) {
+      const detail = (e as CustomEvent).detail as
+        | { href?: string; back?: boolean; to?: string }
+        | undefined;
+      if (!detail?.href) return;
+      if (prefersReducedMotion() || active.current) {
+        if (detail.back) router.back();
+        else router.push(detail.href);
+        return;
+      }
+      const from = normalize(pathname);
+      let to = detail.to ? normalize(detail.to) : "";
+      if (!to) {
+        try {
+          to = normalize(new URL(detail.href, window.location.href).pathname);
+        } catch {
+          return;
+        }
+      }
+      if (to === from) return;
+      start(detail.href, from, to, detail.back === true);
     }
 
     function onPopState() {
@@ -170,35 +208,42 @@ export default function RouteSwipe() {
       if (to === from) return;
       // The route already changed: start covered and sweep out to reveal it.
       active.current = true;
+      pushGuard.current = true;
       setSwipe({
         dir: directionFor(from, to, "rtl"),
         phase: "cover",
         mode: isZoneHop(from, to) ? "sweep" : "light",
         href: window.location.pathname + window.location.search,
+        from,
         to,
-        pending: false,
         full: isChromeLess(to),
+        back: false,
       });
     }
 
     document.addEventListener("click", onClick, true);
     window.addEventListener("popstate", onPopState);
+    window.addEventListener("if:navigate", onCustom as EventListener);
     return () => {
       document.removeEventListener("click", onClick, true);
       window.removeEventListener("popstate", onPopState);
+      window.removeEventListener("if:navigate", onCustom as EventListener);
     };
-  }, [pathname]);
+  }, [pathname, router]);
 
   // Once the panel fully covers the viewport, swap the page underneath it.
   useEffect(() => {
-    if (swipe?.phase !== "cover" || !swipe.pending) return;
-    router.push(swipe.href);
+    if (swipe?.phase !== "cover" || pushGuard.current) return;
+    pushGuard.current = true;
+    if (swipe.back) router.back();
+    else router.push(swipe.href);
   }, [swipe, router]);
 
   // Safety net: never leave the panel stuck if an animation event is missed.
+  // `cover` waits (looping) for the destination, so its fallback is generous.
   useEffect(() => {
     if (!phase) return;
-    const ms = phase === "in" ? 700 : phase === "cover" ? 1300 : 900;
+    const ms = phase === "in" ? 700 : phase === "cover" ? 12000 : 900;
     const t = window.setTimeout(() => {
       if (phase === "in") {
         setSwipe((s) => (s && s.phase === "in" ? { ...s, phase: "cover" } : s));

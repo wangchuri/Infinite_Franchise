@@ -179,8 +179,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const showBack = !isWorldWiki && !isNavRoot;
 
   function goBack() {
-    if (prevEntry) router.back();
-    else router.push(backHref);
+    // Route through the swipe layer so the back button animates too.
+    window.dispatchEvent(
+      new CustomEvent("if:navigate", {
+        detail: {
+          href: backHref,
+          to: prevEntry ? prevEntry.href : undefined,
+          back: Boolean(prevEntry),
+        },
+      }),
+    );
   }
 
   if (isWorldWiki) {
@@ -250,7 +258,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 创作
               </Link>
               <Link
-                href="/me"
+                href={`/u/${user.username}`}
                 className={
                   pathname.startsWith("/me") ||
                   pathname.startsWith(`/u/${user.username}`)
@@ -288,7 +296,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <strong>{user.displayName}</strong>
                       <span>@{user.username}</span>
                     </div>
-                    <Link href="/me" className={styles.menuLink} role="menuitem">
+                    <Link
+                      href={`/u/${user.username}`}
+                      className={styles.menuLink}
+                      role="menuitem"
+                    >
                       个人主页
                     </Link>
                     <Link
