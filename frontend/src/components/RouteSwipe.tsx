@@ -108,9 +108,6 @@ function pageUrl(anchor: HTMLAnchorElement): URL | null {
  * ↔ 创作) get the full ceremonial sweep; every other hop gets a quick cover +
  * cross-fade so it hides the load without dragging. Chrome-less destinations
  * (the wiki) are covered full-screen, chrome pages start under the topbar.
- *
- * While the destination is still loading the covered panel keeps looping a
- * shimmer; it only sweeps/fades away once the route has rendered.
  */
 export default function RouteSwipe() {
   const pathname = usePathname();
@@ -240,10 +237,9 @@ export default function RouteSwipe() {
   }, [swipe, router]);
 
   // Safety net: never leave the panel stuck if an animation event is missed.
-  // `cover` waits (looping) for the destination, so its fallback is generous.
   useEffect(() => {
     if (!phase) return;
-    const ms = phase === "in" ? 700 : phase === "cover" ? 12000 : 900;
+    const ms = phase === "in" ? 700 : phase === "cover" ? 1300 : 900;
     const t = window.setTimeout(() => {
       if (phase === "in") {
         setSwipe((s) => (s && s.phase === "in" ? { ...s, phase: "cover" } : s));

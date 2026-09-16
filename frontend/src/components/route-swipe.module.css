@@ -36,18 +36,6 @@
 
 .cover {
   transform: skewX(-13deg) translateX(0);
-  /* Keep covering while the next route loads, with a looping sheen. */
-  background-size: 220% 100%;
-  animation: coverWait 1.5s linear infinite;
-}
-
-@keyframes coverWait {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 220% 50%;
-  }
 }
 
 .inLtr {
