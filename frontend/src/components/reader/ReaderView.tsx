@@ -367,6 +367,7 @@ export default function ReaderView({
       }`}
       style={readerVars}
     >
+      <div className={styles.paperBg} aria-hidden="true" />
       <div className={styles.progressTrack} aria-hidden="true">
         <span
           className={styles.progressFill}
@@ -663,7 +664,7 @@ export default function ReaderView({
 
           {hasTextBody && !isNovelToc ? (
             mode === "scroll" ? (
-              <div className={`${styles.body} ${styles.paper}`}>
+              <div className={styles.body}>
                 <MarkdownView
                   content={work.content ?? ""}
                   className={styles.readerMd}
@@ -674,7 +675,7 @@ export default function ReaderView({
               </div>
             ) : (
               <div className={styles.pagePane}>
-                <div className={`${styles.body} ${styles.paper}`}>
+                <div className={styles.body}>
                   <MarkdownView
                     content={pages[page] ?? ""}
                     className={styles.readerMd}

@@ -162,9 +162,12 @@
   margin-top: 1rem;
 }
 
-/* Reading sheet: soft paper with a faint fibre texture. */
-.paper {
-  padding: clamp(1.3rem, 3.5vw, 2.4rem);
+/* Reading page background: the whole viewport reads as a paper sheet. */
+.paperBg {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
   background-color: #fcfaf3;
   background-image:
     radial-gradient(rgba(20, 33, 43, 0.022) 1px, transparent 1.2px),
@@ -175,11 +178,6 @@
   background-position:
     0 0,
     8px 11px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.5) inset,
-    0 10px 26px rgba(20, 33, 43, 0.05);
 }
 
 .readerMd {
@@ -747,12 +745,9 @@
   color: var(--ink-soft);
 }
 
-/* --- Night theme ---- */
+/* --- Night theme (page background goes dark via .night .paperBg) ---- */
 .night {
-  background: #14181c;
-  padding: 1.5rem clamp(1rem, 3vw, 2rem);
-  border-radius: 10px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.22);
+  color: #d8d2c5;
 }
 
 .night .title,
@@ -808,13 +803,11 @@
   color: #a49e91;
 }
 
-.night .paper {
+.night .paperBg {
   background-color: #171c21;
   background-image:
     radial-gradient(rgba(243, 239, 230, 0.02) 1px, transparent 1.2px),
     radial-gradient(rgba(243, 239, 230, 0.014) 1px, transparent 1.2px);
-  border-color: rgba(243, 239, 230, 0.12);
-  box-shadow: none;
 }
 
 .night .noteItem,
