@@ -6,6 +6,7 @@
  *
  * Mirrors frontend/src/lib/world-layout.ts — keep the two files in sync.
  */
+import { sanitizeRichHtml } from "./rich-html.js";
 
 export const BLOCK_TYPES = [
   // chrome / scaffolding
@@ -36,6 +37,7 @@ export const BLOCK_TYPES = [
   // content blocks (entry bodies + world pages)
   "heading",
   "text",
+  "richText",
   "image",
   "gallery",
   "quote",
@@ -235,6 +237,9 @@ function sanitizeBlock(
       ? src.id.slice(0, 80)
       : `${src.type}-${seed.n++}`;
   const props = sanitizeProps(src.props);
+  if (src.type === "richText" && props && typeof props.html === "string") {
+    props.html = sanitizeRichHtml(props.html);
+  }
 
   let slots: Record<string, Block[]> | undefined;
   if (
@@ -501,6 +506,7 @@ export function normalizeWorldLayout(raw: unknown): WorldLayout {
 export const CONTENT_BLOCK_TYPES = [
   "heading",
   "text",
+  "richText",
   "image",
   "gallery",
   "quote",

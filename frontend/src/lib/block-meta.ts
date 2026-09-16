@@ -10,6 +10,9 @@ import type { BlockType } from "./world-layout";
 export type PropFieldType =
   | "text"
   | "textarea"
+  | "html"
+  | "css"
+  | "richtext"
   | "markdown"
   | "boolean"
   | "select"
@@ -219,8 +222,8 @@ export const BLOCK_META: Partial<Record<BlockType, BlockMeta>> = {
     },
     fields: [
       { key: "height", label: "高度（px）", type: "text" },
-      { key: "html", label: "HTML", type: "textarea", placeholder: "<div>…</div>" },
-      { key: "css", label: "CSS", type: "textarea", placeholder: ".card { … }" },
+      { key: "html", label: "HTML", type: "html", placeholder: "<div>…</div>" },
+      { key: "css", label: "CSS", type: "css", placeholder: ".card { … }" },
     ],
   },
   // —— content blocks (entry bodies + world pages) ——
@@ -254,6 +257,13 @@ export const BLOCK_META: Partial<Record<BlockType, BlockMeta>> = {
         placeholder: "支持 Markdown；输入 [[ 可链接词条",
       },
     ],
+  },
+  richText: {
+    label: "富文本",
+    hint: "所见即所得排版，可插入图片、切换 HTML 源码",
+    addable: true,
+    defaultProps: { html: "<p>在这里写内容…</p>" },
+    fields: [{ key: "html", label: "内容", type: "richtext" }],
   },
   image: {
     label: "图片",

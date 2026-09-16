@@ -18,6 +18,7 @@ import {
   LinkList,
   Quote,
   RelatedEntries,
+  RichTextBlock,
   TextBlock,
 } from "./content/ContentBlocks";
 import { Prose } from "./content/Prose";
@@ -53,6 +54,7 @@ export const registry: Partial<Record<BlockType, BlockComponent>> = {
   customHtml: CustomHtml,
   heading: Heading,
   text: TextBlock,
+  richText: RichTextBlock,
   image: ImageBlock,
   gallery: GalleryBlock,
   quote: Quote,

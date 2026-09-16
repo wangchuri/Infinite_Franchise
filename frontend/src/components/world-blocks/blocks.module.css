@@ -1038,3 +1038,53 @@
 .bgRegion:empty {
   min-height: 120px;
 }
+
+/* —— rich text block (sanitized inline HTML) —— */
+.richText {
+  line-height: 1.75;
+  color: var(--wiki-ink, var(--ink));
+}
+
+.richText h2,
+.richText h3,
+.richText h4 {
+  font-family: var(--font-display);
+  margin: 0.8rem 0 0.4rem;
+}
+
+.richText p {
+  margin: 0 0 0.7rem;
+}
+
+.richText ul,
+.richText ol {
+  margin: 0 0 0.7rem;
+  padding-left: 1.4rem;
+}
+
+.richText blockquote {
+  margin: 0.6rem 0;
+  padding-left: 0.9rem;
+  border-left: 3px solid var(--wiki-accent, var(--sea));
+  color: var(--wiki-ink-soft, var(--ink-soft));
+}
+
+.richText img {
+  max-width: 100%;
+  height: auto;
+}
+
+.richText a {
+  color: var(--wiki-accent, var(--sea));
+}
+
+.richText table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.richText th,
+.richText td {
+  border: 1px solid var(--line);
+  padding: 0.4rem 0.6rem;
+}

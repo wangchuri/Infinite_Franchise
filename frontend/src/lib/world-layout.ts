@@ -36,6 +36,7 @@ export const BLOCK_TYPES = [
   // content blocks (entry bodies + world pages)
   "heading",
   "text",
+  "richText",
   "image",
   "gallery",
   "quote",
@@ -500,6 +501,7 @@ export function normalizeWorldLayout(raw: unknown): WorldLayout {
 export const CONTENT_BLOCK_TYPES = [
   "heading",
   "text",
+  "richText",
   "image",
   "gallery",
   "quote",

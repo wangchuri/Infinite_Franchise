@@ -5,6 +5,7 @@ import { BLOCK_META, type PropField } from "@/lib/block-meta";
 import type { WorldCollection } from "@/lib/collections";
 import { uploadImage, type WikiEntry } from "@/lib/worlds";
 import MarkdownEditor from "./MarkdownEditor";
+import RichTextEditor from "./RichTextEditor";
 import styles from "./block-fields.module.css";
 
 type Props = {
@@ -109,6 +110,58 @@ function Field({
           onChange={(e) => onChange(e.target.value)}
         />
       </label>
+    );
+  }
+
+  if (field.type === "html" || field.type === "css") {
+    const accept = field.type === "html" ? ".html,.htm,text/html" : ".css,text/css";
+    const uploadLabel = field.type === "html" ? "上传 .html" : "上传 .css";
+    return (
+      <div className={styles.field}>
+        <span>{field.label}</span>
+        <textarea
+          rows={8}
+          spellCheck={false}
+          value={asString(value)}
+          placeholder={field.placeholder}
+          onChange={(e) => onChange(e.target.value)}
+        />
+        <div className={styles.imageRow}>
+          <button
+            type="button"
+            className={styles.miniBtn}
+            onClick={() => fileRef.current?.click()}
+          >
+            {uploadLabel}
+          </button>
+        </div>
+        <input
+          ref={fileRef}
+          type="file"
+          accept={accept}
+          hidden
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            e.target.value = "";
+            if (!file) return;
+            void file.text().then((text) => onChange(text));
+          }}
+        />
+      </div>
+    );
+  }
+
+  if (field.type === "richtext") {
+    return (
+      <div className={styles.field}>
+        <span>{field.label}</span>
+        <RichTextEditor
+          value={asString(value)}
+          onChange={onChange}
+          placeholder={field.placeholder}
+          onError={onError}
+        />
+      </div>
     );
   }
 

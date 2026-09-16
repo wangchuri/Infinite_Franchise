@@ -1,0 +1,91 @@
+.wrap {
+  border: 1px solid var(--line);
+  background: #fffef9;
+}
+
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+  padding: 0.35rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(31, 92, 90, 0.04);
+}
+
+.tool,
+.mode {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  min-width: 1.7rem;
+  padding: 0.2rem 0.4rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.tool:hover,
+.mode:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.mode {
+  margin-left: auto;
+}
+
+.canvas {
+  min-height: 8rem;
+  padding: 0.7rem 0.8rem;
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--ink);
+  outline: none;
+}
+
+.canvas:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-soft);
+  opacity: 0.6;
+}
+
+.canvas :global(h2) {
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+  margin: 0.6rem 0 0.3rem;
+}
+
+.canvas :global(h3) {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.canvas :global(blockquote) {
+  margin: 0.5rem 0;
+  padding-left: 0.8rem;
+  border-left: 3px solid var(--sea);
+  color: var(--ink-soft);
+}
+
+.canvas :global(img) {
+  max-width: 100%;
+  height: auto;
+}
+
+.canvas :global(a) {
+  color: var(--sea);
+}
+
+.source {
+  width: 100%;
+  min-height: 10rem;
+  border: none;
+  padding: 0.7rem 0.8rem;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--ink);
+  resize: vertical;
+  outline: none;
+}

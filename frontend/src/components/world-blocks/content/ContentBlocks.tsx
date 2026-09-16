@@ -1,7 +1,8 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { useMemo, type CSSProperties } from "react";
 import MarkdownView from "@/components/MarkdownView";
+import { sanitizeRichHtml } from "@/lib/rich-html";
 import type { Block } from "@/lib/world-layout";
 import { useWorldBlocks } from "../WorldBlocksProvider";
 import styles from "../blocks.module.css";
@@ -61,8 +62,21 @@ export function TextBlock({ block }: { block: Block }) {
   );
 }
 
-export function ImageBlock({ block }: { block: Block }) {
-  const url = str(block.props?.url);
+export function RichTextBlock({ block }: { block: Block }) {
+  const html = str(block.props?.html);
+  const clean = useMemo(() => sanitizeRichHtml(html), [html]);
+  if (!clean.trim()) return null;
+  return (
+    <Section block={block}>
+      <div
+        className={styles.richText}
+        dangerouslySetInnerHTML={{ __html: clean }}
+      />
+    </Section>
+  );
+}
+
+export function ImageBlock({ block }: { block: Block }) {  const url = str(block.props?.url);
   if (!url) return null;
   const caption = str(block.props?.caption);
   const width = str(block.props?.width, "full");
