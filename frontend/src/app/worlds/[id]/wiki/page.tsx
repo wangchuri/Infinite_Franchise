@@ -17,6 +17,10 @@ import {
   exportWorldFile,
   parsePageImport,
 } from "@/lib/layout-io";
+import {
+  LAYOUT_TEMPLATES,
+  type LayoutTemplate,
+} from "@/lib/layout-templates";
 import { BLOCK_META, SLOT_LABELS, SLOT_ORDER } from "@/lib/block-meta";
 import { entryAttributeFields } from "@/lib/entry-schema";
 import BlockFields from "@/components/world-blocks/BlockFields";
@@ -438,6 +442,17 @@ export default function WikiLayoutEditorPage() {
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
     }
+  }
+
+  function applyTemplate(template: LayoutTemplate) {
+    if (!window.confirm(`套用「${template.name}」会替换当前页的布局，确定？`)) {
+      return;
+    }
+    mutate(template.build());
+    setSelectedId("");
+    setEditingVariant(null);
+    setDirty(true);
+    setError(null);
   }
 
   async function restoreRevision(revisionId: string) {
@@ -1238,6 +1253,22 @@ export default function WikiLayoutEditorPage() {
 
       <div className={styles.body}>
         <aside className={styles.paneLeft}>
+          <details className={styles.templateBox}>
+            <summary>套用模板</summary>
+            <div className={styles.templateList}>
+              {LAYOUT_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  type="button"
+                  className={styles.templateItem}
+                  onClick={() => applyTemplate(t)}
+                >
+                  <strong>{t.name}</strong>
+                  <span>{t.description}</span>
+                </button>
+              ))}
+            </div>
+          </details>
           <div className={styles.pageTabs}>
             <button
               type="button"

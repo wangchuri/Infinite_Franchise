@@ -113,6 +113,51 @@
   border-bottom: 1px solid var(--line);
 }
 
+.templateBox {
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.templateBox summary {
+  font-size: 0.8rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  margin-bottom: 0.5rem;
+}
+
+.templateList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.templateItem {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  text-align: left;
+  border: 1px solid var(--line);
+  background: #fffef9;
+  padding: 0.4rem 0.55rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.templateItem:hover {
+  border-color: var(--sea);
+}
+
+.templateItem strong {
+  font-size: 0.85rem;
+  color: var(--ink);
+}
+
+.templateItem span {
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+}
+
 .pageTab,
 .pageTabOn {
   border: 1px solid var(--line);
