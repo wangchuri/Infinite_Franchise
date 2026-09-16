@@ -1,7 +1,7 @@
 .plaza {
   display: grid;
-  grid-template-columns: 200px minmax(0, 1fr) 210px;
-  grid-template-areas: "left feed right";
+  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-areas: "left feed";
   gap: 1.75rem;
   align-items: stretch;
   flex: 1;
@@ -11,8 +11,7 @@
 }
 
 .left,
-.feed,
-.right {
+.feed {
   min-height: 0;
   height: 100%;
   overflow-x: hidden;
@@ -31,16 +30,12 @@
   padding-right: 0.25rem;
 }
 
-.right {
-  grid-area: right;
-}
-
 @media (max-width: 1024px) {
   .plaza {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     grid-template-areas:
-      "feed feed"
-      "left right";
+      "feed"
+      "left";
     gap: 1.25rem;
     height: auto;
     overflow: visible;
@@ -48,21 +43,10 @@
   }
 
   .left,
-  .feed,
-  .right {
+  .feed {
     height: auto;
     max-height: none;
     overflow: visible;
-  }
-}
-
-@media (max-width: 640px) {
-  .plaza {
-    grid-template-columns: 1fr;
-    grid-template-areas:
-      "feed"
-      "left"
-      "right";
   }
 }
 
@@ -71,17 +55,22 @@
   padding-right: 0.5rem;
 }
 
-.railRight {
-  border-left: 1px solid var(--line);
-  padding-left: 1rem;
+.railSecondary {
+  margin-top: 1.5rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--line);
 }
 
 @media (max-width: 1024px) {
   .rail,
-  .railRight {
+  .railSecondary {
     border: 1px solid var(--line);
     background: rgba(255, 255, 255, 0.4);
     padding: 1rem;
+  }
+
+  .railSecondary {
+    margin-top: 1.25rem;
   }
 }
 

@@ -224,6 +224,29 @@ function PlazaPage() {
             </>
           )}
         </div>
+
+        <div className={styles.railSecondary}>
+          <p className={styles.railTitle}>活跃作者</p>
+          {!ready ? (
+            <p className={styles.muted}>加载中…</p>
+          ) : authors.length === 0 ? (
+            <p className={styles.railEmpty}>暂无活跃作者</p>
+          ) : (
+            authors.map((a) => (
+              <div key={a.id} className={styles.authorItem}>
+                <span className={styles.authorAvatar} aria-hidden>
+                  {(a.name || "?").slice(0, 1)}
+                </span>
+                <span>
+                  <strong>{a.name}</strong>
+                  <span className={styles.sub}>
+                    {a.worldName} · 更新了「{a.lastTitle}」
+                  </span>
+                </span>
+              </div>
+            ))
+          )}
+        </div>
       </aside>
 
       <section className={styles.feed} aria-label="最新作品">
@@ -311,31 +334,6 @@ function PlazaPage() {
           </ul>
         )}
       </section>
-
-      <aside className={styles.right} aria-label="活跃作者">
-        <div className={styles.railRight}>
-          <p className={styles.railTitle}>活跃作者</p>
-          {!ready ? (
-            <p className={styles.muted}>加载中…</p>
-          ) : authors.length === 0 ? (
-            <p className={styles.railEmpty}>暂无活跃作者</p>
-          ) : (
-            authors.map((a) => (
-              <div key={a.id} className={styles.authorItem}>
-                <span className={styles.authorAvatar} aria-hidden>
-                  {(a.name || "?").slice(0, 1)}
-                </span>
-                <span>
-                  <strong>{a.name}</strong>
-                  <span className={styles.sub}>
-                    {a.worldName} · 更新了「{a.lastTitle}」
-                  </span>
-                </span>
-              </div>
-            ))
-          )}
-        </div>
-      </aside>
     </div>
   );
 }
