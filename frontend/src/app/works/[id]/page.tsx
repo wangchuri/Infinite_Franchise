@@ -12,6 +12,7 @@ import {
 } from "@/lib/works";
 import { fetchWorldBySlug, type WikiEntry, type World } from "@/lib/worlds";
 import type { WorldCollection } from "@/lib/collections";
+import { usePageLabel } from "@/lib/nav-trail";
 import styles from "./work.module.css";
 
 export default function WorkDetailPage() {
@@ -23,6 +24,8 @@ export default function WorkDetailPage() {
   const [others, setOthers] = useState<Work[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+
+  usePageLabel(data?.work.title ?? null);
 
   useEffect(() => {
     let cancelled = false;

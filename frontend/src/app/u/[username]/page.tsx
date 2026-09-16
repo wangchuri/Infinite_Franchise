@@ -14,6 +14,7 @@ import {
 import { workTypeLabel } from "@/lib/works";
 import { coverGradientFor } from "@/lib/world-cover";
 import { decodeParam } from "@/lib/url";
+import { usePageLabel } from "@/lib/nav-trail";
 import styles from "./profile.module.css";
 
 export default function UserProfilePage() {
@@ -24,6 +25,8 @@ export default function UserProfilePage() {
   const [data, setData] = useState<UserProfilePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+
+  usePageLabel(data?.profile.displayName || data?.profile.username || null);
 
   useEffect(() => {
     let cancelled = false;

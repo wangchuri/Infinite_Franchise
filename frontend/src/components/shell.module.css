@@ -134,6 +134,61 @@
   font-weight: 400;
 }
 
+.brandRow {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.backBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  max-width: 12rem;
+  padding: 0.3rem 0.75rem 0.3rem 0.6rem;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 254, 249, 0.7);
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.backBtn:hover {
+  color: var(--sea);
+  border-color: var(--sea);
+  background: rgba(31, 92, 90, 0.08);
+}
+
+.backArrow {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.backLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shellLab .backBtn {
+  background: rgba(243, 239, 230, 0.08);
+  border-color: rgba(243, 239, 230, 0.16);
+  color: rgba(243, 239, 230, 0.74);
+}
+
+.shellLab .backBtn:hover {
+  color: var(--paper);
+  border-color: rgba(243, 239, 230, 0.4);
+  background: rgba(243, 239, 230, 0.14);
+}
+
 .nav {
   display: flex;
   align-items: center;

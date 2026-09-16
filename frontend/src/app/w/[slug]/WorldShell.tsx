@@ -11,6 +11,7 @@ import Link from "next/link";
 import MarkdownView from "@/components/MarkdownView";
 import { coverGradientFor, worldCoverImage } from "@/lib/world-cover";
 import { fetchWorldBySlug, type World } from "@/lib/worlds";
+import { usePageLabel } from "@/lib/nav-trail";
 import styles from "./world.module.css";
 
 export type WorldTab = "works" | "topics";
@@ -35,6 +36,8 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
   const [headH, setHeadH] = useState(0);
 
   const headRef = useRef<HTMLDivElement>(null);
+
+  usePageLabel(world?.name ?? null);
 
   useEffect(() => {
     let cancelled = false;

@@ -11,6 +11,12 @@ import {
 } from "@/lib/auth";
 import TopSearch from "./TopSearch";
 import RouteSwipe from "./RouteSwipe";
+import {
+  defaultLabel,
+  parentHref,
+  recordVisit,
+  useNavTrail,
+} from "@/lib/nav-trail";
 import styles from "./shell.module.css";
 
 function initials(name: string): string {
@@ -29,10 +35,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const topbarRef = useRef<HTMLElement>(null);
+  const trail = useNavTrail();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Remember where the user has been so the header can offer a named back link.
+  useEffect(() => {
+    recordVisit(pathname, defaultLabel(pathname));
+  }, [pathname]);
 
   // Expose the real topbar height so sticky world headers can offset correctly.
   useEffect(() => {
@@ -153,6 +165,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   /** Editing a work fills the viewport like a tool. */
   const isWorkBench = /^\/works\/[^/]+\/edit(?:\/|$)/.test(pathname);
 
+  /** Routes already covered by the top nav need no back link. */
+  const isNavRoot =
+    pathname === "/" ||
+    pathname === "/discover" ||
+    pathname === "/create" ||
+    pathname === "/me";
+  const prevEntry = trail.length >= 2 ? trail[trail.length - 2] : null;
+  const backHref = prevEntry ? prevEntry.href : parentHref(pathname);
+  const backLabel = prevEntry
+    ? prevEntry.label || defaultLabel(prevEntry.href)
+    : defaultLabel(parentHref(pathname));
+  const showBack = !isWorldWiki && !isNavRoot;
+
+  function goBack() {
+    if (prevEntry) router.back();
+    else router.push(backHref);
+  }
+
   if (isWorldWiki) {
     return <>{children}</>;
   }
@@ -171,9 +201,24 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         .join(" ")}
     >
       <header className={styles.topbar} ref={topbarRef}>
-        <Link href="/" className={styles.brand}>
-          无限企划 <span>Infinite Franchise</span>
-        </Link>
+        <div className={styles.brandRow}>
+          <Link href="/" className={styles.brand}>
+            无限企划 <span>Infinite Franchise</span>
+          </Link>
+          {showBack ? (
+            <button
+              type="button"
+              className={styles.backBtn}
+              onClick={goBack}
+              title={`返回${backLabel}`}
+            >
+              <span className={styles.backArrow} aria-hidden="true">
+                ←
+              </span>
+              <span className={styles.backLabel}>{backLabel}</span>
+            </button>
+          ) : null}
+        </div>
         <Suspense fallback={<span className={styles.topSearchSlot} />}>
           <TopSearch />
         </Suspense>
