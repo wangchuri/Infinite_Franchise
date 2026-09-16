@@ -309,9 +309,9 @@ export default function EditWorldPage() {
         <section className={styles.section}>
           <div className={styles.sectionHead}>
             <div>
-              <h2>Wiki 内容</h2>
+              <h2>世界观内容</h2>
               <p className={styles.sectionLead}>
-                归属与词条、Wiki 主页排版各自独立维护。
+                词条与归属、Wiki 界面各自独立维护。
               </p>
             </div>
           </div>

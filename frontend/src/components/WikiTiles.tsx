@@ -86,8 +86,8 @@ const TILES = [
   },
   {
     key: "layout",
-    label: "编辑页面",
-    desc: "安排 Wiki 主页的区域、导航面板与整体排版",
+    label: "编辑 Wiki 界面",
+    desc: "安排 Wiki 门面的区域、导航面板与整体排版",
     icon: <PageIcon />,
   },
 ] as const;

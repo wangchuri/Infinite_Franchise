@@ -53,7 +53,7 @@ export default function WikiHubPage() {
         <Link href={`/w/${world.slug}`} className={styles.back}>
           ← {world.name}
         </Link>
-        <h1 className={styles.title}>编辑 Wiki</h1>
+        <h1 className={styles.title}>编辑世界观</h1>
         <p className={styles.lead}>选择要编辑的部分。</p>
       </header>
 

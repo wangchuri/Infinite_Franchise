@@ -100,7 +100,7 @@ export function defaultLabel(pathname: string): string {
   if (/^\/w\/[^/]+/.test(pathname)) return "世界";
   if (pathname.startsWith("/worlds/new")) return "创建世界观";
   if (/^\/worlds\/[^/]+\/edit/.test(pathname)) return "编辑世界观";
-  if (/^\/worlds\/[^/]+\/wiki/.test(pathname)) return "Wiki 布局";
+  if (/^\/worlds\/[^/]+\/wiki/.test(pathname)) return "Wiki 界面";
   if (/^\/worlds\/[^/]+\/entries/.test(pathname)) return "词条库";
   if (pathname.startsWith("/worlds")) return "我的世界观";
   if (pathname.startsWith("/u/")) return "个人主页";

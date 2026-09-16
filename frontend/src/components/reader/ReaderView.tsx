@@ -509,7 +509,7 @@ export default function ReaderView({
               type="button"
               className={spoilerFree ? styles.modeOn : styles.modeBtn}
               onClick={toggleSpoiler}
-              title="读完前隐藏相关 Wiki 与评论"
+              title="读完前隐藏世界观内容与评论"
             >
               防剧透{spoilerFree ? " · 开" : " · 关"}
             </button>
@@ -890,7 +890,7 @@ export default function ReaderView({
               aria-expanded={wikiOpen}
               onClick={() => setWikiOpen((v) => !v)}
             >
-              <span className={styles.railTitle}>Wiki</span>
+              <span className={styles.railTitle}>世界观内容</span>
               <span className={styles.railSign}>
                 {wikiOpen ? "收起" : "展开"}
               </span>
@@ -900,7 +900,7 @@ export default function ReaderView({
               gated ? (
                 <div className={styles.gateBlock}>
                   <p className={styles.spoilerHint}>
-                    防剧透阅读中——读完本文后显示相关 Wiki。
+                    防剧透阅读中——读完本文后显示世界观内容。
                   </p>
                   <button
                     type="button"
