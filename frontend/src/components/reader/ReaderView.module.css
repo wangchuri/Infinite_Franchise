@@ -1,7 +1,7 @@
 .shell {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 1.5rem;
+  gap: 2rem;
   align-items: start;
   width: 100%;
 }
@@ -51,6 +51,7 @@
 
 .withNotes .main {
   margin: 0;
+  max-width: 800px;
 }
 
 .toolbar {
@@ -296,25 +297,19 @@
   font-size: 0.92rem;
 }
 
+/* The rail flows with the page — no inner scrollbar, no oversized box. */
 .rail {
   border-left: 1px solid var(--line);
-  padding-left: 1.25rem;
-  position: sticky;
-  top: 4.5rem;
-  max-height: calc(100vh - 6rem);
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.railScroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
+  padding-left: 1.5rem;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
-  scrollbar-gutter: stable;
+}
+
+.railScroll {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
 }
 
 @media (max-width: 900px) {
