@@ -47,7 +47,9 @@ import {
 } from "@/lib/world-layout";
 import {
   createWorldPage,
+  fetchPageRevisions,
   fetchWorldById,
+  restorePageRevision,
   updateWorld,
   updateWorldPage,
   uploadFont,
@@ -56,6 +58,7 @@ import {
   type WikiEntry,
   type World,
   type WorldPage,
+  type WorldPageRevision,
 } from "@/lib/worlds";
 import styles from "./wiki-editor.module.css";
 
@@ -99,6 +102,19 @@ function layoutFor(key: string | null, collections: WorldCollection[]): WorldLay
   if (key === null) return buildDefaultLayout();
   const name = collections.find((c) => c.key === key)?.name ?? key;
   return buildCollectionLayout(name, key);
+}
+
+/** Stable across SSR/CSR (avoid locale/timezone mismatch). */
+function formatRevTime(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return iso;
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getMonth() + 1}/${d.getDate()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+/** Cache-buster for the preview iframe (kept outside render for the linter). */
+function previewStamp(): number {
+  return Date.now();
 }
 
 const OP_LABEL: Record<VariantMatchOp, string> = {
@@ -223,6 +239,7 @@ export default function WikiLayoutEditorPage() {
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
   const [savedAt, setSavedAt] = useState<Date | null>(null);
+  const [revisions, setRevisions] = useState<WorldPageRevision[]>([]);
   const [previewKey, setPreviewKey] = useState(0);
   const [availW, setAvailW] = useState(0);
   const [availH, setAvailH] = useState(0);
@@ -308,6 +325,23 @@ export default function WikiLayoutEditorPage() {
     }, 700);
     return () => window.clearTimeout(t);
   }, [dirty, layout, world, pageId, pageCss, activeKey]);
+
+  // Revision history for the current page (refreshed after each save).
+  useEffect(() => {
+    if (!world || !pageId) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const list = await fetchPageRevisions(world.id, pageId);
+        if (!cancelled) setRevisions(list);
+      } catch {
+        if (!cancelled) setRevisions([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [world, pageId, savedAt]);
 
   /** Persist the current page (used before switching pages). */
   async function flushPage() {
@@ -403,6 +437,24 @@ export default function WikiLayoutEditorPage() {
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
+    }
+  }
+
+  async function restoreRevision(revisionId: string) {
+    if (!world || !pageId) return;
+    if (!window.confirm("还原到该版本？当前版本会先存入历史。")) return;
+    try {
+      const page = await restorePageRevision(world.id, pageId, revisionId);
+      setLayout(page.layout);
+      setPageCss(page.css);
+      setDirty(false);
+      setSelectedId("");
+      setEditingVariant(null);
+      setPreviewKey(previewStamp());
+      setSavedAt(new Date());
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "还原失败");
     }
   }
 
@@ -1274,6 +1326,27 @@ export default function WikiLayoutEditorPage() {
                 setDirty(true);
               }}
             />
+          </details>
+          <details className={styles.pageCss}>
+            <summary>历史版本（{revisions.length}）</summary>
+            {revisions.length === 0 ? (
+              <p className={styles.muted}>还没有历史版本。</p>
+            ) : (
+              <ul className={styles.revList}>
+                {revisions.map((r) => (
+                  <li key={r.id} className={styles.revItem}>
+                    <span>{formatRevTime(r.createdAt)}</span>
+                    <button
+                      type="button"
+                      className={styles.ioBtn}
+                      onClick={() => void restoreRevision(r.id)}
+                    >
+                      还原
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </details>
           {renderInspector()}
           {error ? <p className={styles.error}>{error}</p> : null}

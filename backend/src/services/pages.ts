@@ -142,7 +142,20 @@ export async function updateWorldPage(
     status?: "draft" | "published";
     sortOrder?: number;
   },
+  createdBy: string | null = null,
 ): Promise<WorldPageRow | null> {
+  const willChange =
+    patch.title !== undefined ||
+    patch.slug !== undefined ||
+    patch.css !== undefined ||
+    patch.status !== undefined ||
+    patch.sortOrder !== undefined ||
+    patch.layout !== undefined;
+  if (willChange) {
+    // Best-effort history; ignore failures so saves still succeed.
+    await snapshotPageRevision(pageId, worldId, createdBy).catch(() => {});
+  }
+
   const fields: string[] = [];
   const values: unknown[] = [];
   let i = 1;
@@ -200,4 +213,127 @@ export async function softDeleteWorldPage(
     [pageId, worldId],
   );
   return (result.rowCount ?? 0) > 0;
+}
+
+// —— Revisions (version history) ——
+
+const MAX_REVISIONS = 20;
+
+export type WorldPageRevisionRow = {
+  id: string;
+  page_id: string;
+  world_id: string;
+  blocks: unknown;
+  theme: unknown;
+  css: string;
+  created_by: string | null;
+  created_at: Date;
+};
+
+export type PublicPageRevision = {
+  id: string;
+  layout: WorldLayout;
+  css: string;
+  createdAt: string;
+};
+
+export function toPublicPageRevision(
+  row: WorldPageRevisionRow,
+): PublicPageRevision {
+  return {
+    id: row.id,
+    layout: normalizeWorldLayout({
+      version: 2,
+      blocks: row.blocks ?? [],
+      theme: row.theme ?? {},
+    }),
+    css: row.css ?? "",
+    createdAt: row.created_at.toISOString(),
+  };
+}
+
+/** Snapshot a page's current content into its revision history (pruned). */
+export async function snapshotPageRevision(
+  pageId: string,
+  worldId: string,
+  createdBy: string | null,
+): Promise<void> {
+  const page = await findWorldPage(worldId, pageId);
+  if (!page) return;
+  await pool.query(
+    `INSERT INTO world_page_revisions (page_id, world_id, blocks, theme, css, created_by)
+     VALUES ($1, $2, $3::jsonb, $4::jsonb, $5, $6)`,
+    [
+      pageId,
+      worldId,
+      JSON.stringify(page.blocks ?? []),
+      JSON.stringify(page.theme ?? {}),
+      page.css ?? "",
+      createdBy,
+    ],
+  );
+  await pool.query(
+    `DELETE FROM world_page_revisions
+      WHERE id IN (
+        SELECT id FROM world_page_revisions
+         WHERE page_id = $1
+         ORDER BY created_at DESC
+         OFFSET $2
+      )`,
+    [pageId, MAX_REVISIONS],
+  );
+}
+
+export async function listPageRevisions(
+  pageId: string,
+  worldId: string,
+): Promise<WorldPageRevisionRow[]> {
+  const result = await pool.query<WorldPageRevisionRow>(
+    `SELECT * FROM world_page_revisions
+      WHERE page_id = $1 AND world_id = $2
+      ORDER BY created_at DESC
+      LIMIT $3`,
+    [pageId, worldId, MAX_REVISIONS],
+  );
+  return result.rows;
+}
+
+export async function findPageRevision(
+  revisionId: string,
+  pageId: string,
+  worldId: string,
+): Promise<WorldPageRevisionRow | null> {
+  const result = await pool.query<WorldPageRevisionRow>(
+    `SELECT * FROM world_page_revisions
+      WHERE id = $1 AND page_id = $2 AND world_id = $3
+      LIMIT 1`,
+    [revisionId, pageId, worldId],
+  );
+  return result.rows[0] ?? null;
+}
+
+/** Restore a page to a revision (snapshots the current state first). */
+export async function restorePageRevision(
+  revisionId: string,
+  pageId: string,
+  worldId: string,
+  createdBy: string | null,
+): Promise<WorldPageRow | null> {
+  const rev = await findPageRevision(revisionId, pageId, worldId);
+  if (!rev) return null;
+  await snapshotPageRevision(pageId, worldId, createdBy);
+  const result = await pool.query<WorldPageRow>(
+    `UPDATE world_pages
+        SET blocks = $1::jsonb, theme = $2::jsonb, css = $3, updated_at = now()
+      WHERE id = $4 AND world_id = $5 AND deleted_at IS NULL
+      RETURNING *`,
+    [
+      JSON.stringify(rev.blocks ?? []),
+      JSON.stringify(rev.theme ?? {}),
+      rev.css ?? "",
+      pageId,
+      worldId,
+    ],
+  );
+  return result.rows[0] ?? null;
 }

@@ -63,8 +63,11 @@ import {
 } from "../services/collections.js";
 import {
   createWorldPage,
+  listPageRevisions,
   listWorldPages,
+  restorePageRevision,
   softDeleteWorldPage,
+  toPublicPageRevision,
   toPublicWorldPage,
   updateWorldPage,
   PAGE_KINDS,
@@ -655,12 +658,48 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     if (body.layout !== undefined) {
       patch.layout = body.layout as WorldLayout;
     }
-    const updated = await updateWorldPage(pageId, id, patch);
+    const updated = await updateWorldPage(pageId, id, patch, user.id);
     if (!updated) {
       return reply.code(404).send({ error: "page not found" });
     }
     return { page: toPublicWorldPage(updated) };
   });
+
+  app.get("/api/worlds/:id/pages/:pageId/revisions", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, pageId } = req.params as { id: string; pageId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const rows = await listPageRevisions(pageId, id);
+    return { revisions: rows.map(toPublicPageRevision) };
+  });
+
+  app.post(
+    "/api/worlds/:id/pages/:pageId/revisions/:revId/restore",
+    async (req, reply) => {
+      const user = await requireAuth(req, reply);
+      if (!user) return;
+      const { id, pageId, revId } = req.params as {
+        id: string;
+        pageId: string;
+        revId: string;
+      };
+      const world = await loadManageableWorld(id, user.id);
+      if (!world) {
+        return reply
+          .code(404)
+          .send({ error: "world not found or no permission" });
+      }
+      const restored = await restorePageRevision(revId, pageId, id, user.id);
+      if (!restored) {
+        return reply.code(404).send({ error: "revision not found" });
+      }
+      return { page: toPublicWorldPage(restored) };
+    },
+  );
 
   app.delete("/api/worlds/:id/pages/:pageId", async (req, reply) => {
     const user = await requireAuth(req, reply);

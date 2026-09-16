@@ -246,6 +246,38 @@ export async function deleteWorldPage(
   });
 }
 
+export type WorldPageRevision = {
+  id: string;
+  layout: WorldLayout;
+  css: string;
+  createdAt: string;
+};
+
+export async function fetchPageRevisions(
+  worldId: string,
+  pageId: string,
+): Promise<WorldPageRevision[]> {
+  const data = await apiFetch<{ revisions: WorldPageRevision[] }>(
+    `/api/worlds/${worldId}/pages/${pageId}/revisions`,
+  );
+  return (data.revisions ?? []).map((r) => ({
+    ...r,
+    layout: normalizeWorldLayout(r.layout),
+  }));
+}
+
+export async function restorePageRevision(
+  worldId: string,
+  pageId: string,
+  revisionId: string,
+): Promise<WorldPage> {
+  const data = await apiFetch<{ page: WorldPage }>(
+    `/api/worlds/${worldId}/pages/${pageId}/revisions/${revisionId}/restore`,
+    { method: "POST" },
+  );
+  return withPage(data.page);
+}
+
 export async function updateWorld(
   id: string,
   patch: Partial<{
