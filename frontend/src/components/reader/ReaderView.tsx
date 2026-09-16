@@ -840,6 +840,28 @@ export default function ReaderView({
             </p>
           </section>
 
+          {world ? (
+            <section className={styles.railSection}>
+              <h3 className={styles.railTitle}>世界观</h3>
+              <Link href={`/w/${world.slug}`} className={styles.worldCard}>
+                <span className={styles.worldLogo} aria-hidden="true">
+                  {world.logoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={world.logoUrl} alt="" />
+                  ) : (
+                    world.name.slice(0, 1)
+                  )}
+                </span>
+                <span className={styles.worldText}>
+                  <strong>{world.name}</strong>
+                  <span className={styles.worldDesc}>
+                    {world.tagline || world.description}
+                  </span>
+                </span>
+              </Link>
+            </section>
+          ) : null}
+
           <section className={styles.railSection}>
             <button
               type="button"
@@ -848,8 +870,8 @@ export default function ReaderView({
               onClick={() => setWikiOpen((v) => !v)}
             >
               <span className={styles.railTitle}>Wiki</span>
-              <span className={styles.railSign} aria-hidden="true">
-                {wikiOpen ? "−" : "+"}
+              <span className={styles.railSign}>
+                {wikiOpen ? "收起" : "展开"}
               </span>
             </button>
 
@@ -921,25 +943,6 @@ export default function ReaderView({
             ) : null}
           </section>
           </div>
-
-          {world ? (
-            <Link href={`/w/${world.slug}`} className={styles.worldCard}>
-              <span className={styles.worldLogo} aria-hidden="true">
-                {world.logoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={world.logoUrl} alt="" />
-                ) : (
-                  world.name.slice(0, 1)
-                )}
-              </span>
-              <span className={styles.worldText}>
-                <strong>{world.name}</strong>
-                <span className={styles.worldDesc}>
-                  {world.tagline || world.description}
-                </span>
-              </span>
-            </Link>
-          ) : null}
         </aside>
       ) : null}
 
