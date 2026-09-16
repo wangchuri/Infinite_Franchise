@@ -97,6 +97,7 @@ export default function ReaderView({
   const [mode, setMode] = useState<ReadMode>("scroll");
   const [showNotes, setShowNotes] = useState(true);
   const [spoilerFree, setSpoilerFree] = useState(true);
+  const [wikiOpen, setWikiOpen] = useState(false);
   const [prefs, setPrefs] = useState<Prefs>(DEFAULT_PREFS);
   const [page, setPage] = useState(0);
   const [activeNote, setActiveNote] = useState<WorkAnnotation | null>(null);
@@ -742,6 +743,30 @@ export default function ReaderView({
           ) : null}
         </article>
 
+        <section className={styles.foot} aria-label="评论与反应">
+          <div className={styles.footBar}>
+            <ReactionBar targetType="work" targetId={work.id} />
+          </div>
+          {gated ? (
+            <div className={styles.gateBlock}>
+              <p className={styles.spoilerHint}>
+                防剧透阅读中——读完本文后显示评论。
+              </p>
+              <button
+                type="button"
+                className={styles.spoilerBtn}
+                onClick={() => setSpoilerFree(false)}
+              >
+                直接展开
+              </button>
+            </div>
+          ) : (
+            <div className={styles.footComments}>
+              <CommentSection targetType="work" targetId={work.id} />
+            </div>
+          )}
+        </section>
+
         {others.length > 0 ? (
           <section className={styles.more}>
             <h2 className={styles.moreTitle}>同世界的其他作品</h2>
@@ -778,90 +803,97 @@ export default function ReaderView({
         <aside className={styles.rail} aria-label="作品信息">
           {work.summary ? (
             <section className={styles.railSection}>
-              <h2 className={styles.railTitle}>简介</h2>
+              <h3 className={styles.railTitle}>简介</h3>
               <p className={styles.railSummary}>{work.summary}</p>
             </section>
           ) : null}
 
           <section className={styles.railSection}>
-            <h2 className={styles.railTitle}>作者</h2>
+            <h3 className={styles.railTitle}>作者</h3>
             <p className={styles.railAuthor}>
               {work.authorDisplayName || work.authorUsername}
             </p>
           </section>
 
-          {gated ? (
-            <section className={styles.railSection}>
-              <p className={styles.spoilerHint}>
-                防剧透阅读中——读完本文后显示相关 Wiki 与评论。
-              </p>
-              <button
-                type="button"
-                className={styles.spoilerBtn}
-                onClick={() => setSpoilerFree(false)}
-              >
-                直接展开
-              </button>
-            </section>
-          ) : (
-            <>
-              <section className={styles.railSection}>
-                <h2 className={styles.railTitle}>Wiki</h2>
-                <p className={styles.railWorld}>
-                  <Link href={`/w/${work.worldSlug}`}>{work.worldName}</Link>
-                  <span className={styles.railSep} aria-hidden="true">
-                    ·
-                  </span>
-                  <Link href={`/w/${work.worldSlug}/wiki`}>进入 Wiki</Link>
-                </p>
-                {annotations.length === 0 ? (
-                  <p className={styles.muted}>正文中暂未匹配到本世界词条。</p>
-                ) : (
-                  <ul className={styles.noteList}>
-                    {annotations.map((a) => (
-                      <li key={a.id}>
-                        <button
-                          type="button"
-                          className={
-                            activeNote?.id === a.id
-                              ? styles.noteItemOn
-                              : styles.noteItem
-                          }
-                          onClick={() =>
-                            setActiveNote((cur) =>
-                              cur?.id === a.id ? null : a,
-                            )
-                          }
-                        >
-                          <strong>{a.title}</strong>
-                          <span className={styles.noteSource}>
-                            {a.source === "link" ? "关联" : "文中提及"}
-                          </span>
-                        </button>
-                        {activeNote?.id === a.id ? (
-                          <div className={styles.noteDetail}>
-                            <p>{a.excerpt || "暂无简介"}</p>
-                            <Link href={`/w/${work.worldSlug}/entry/${a.slug}`}>
-                              查看词条 →
-                            </Link>
-                          </div>
-                        ) : null}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </section>
-
-              <section className={styles.railSection}>
-                <h2 className={styles.railTitle}>评论</h2>
-                <CommentSection targetType="work" targetId={work.id} />
-              </section>
-            </>
-          )}
-
           <section className={styles.railSection}>
-            <h2 className={styles.railTitle}>反应</h2>
-            <ReactionBar targetType="work" targetId={work.id} compact />
+            <button
+              type="button"
+              className={styles.railToggle}
+              aria-expanded={wikiOpen}
+              onClick={() => setWikiOpen((v) => !v)}
+            >
+              <span className={styles.railTitle}>Wiki</span>
+              <span className={styles.railSign} aria-hidden="true">
+                {wikiOpen ? "−" : "+"}
+              </span>
+            </button>
+
+            {wikiOpen || gated ? (
+              gated ? (
+                <div className={styles.gateBlock}>
+                  <p className={styles.spoilerHint}>
+                    防剧透阅读中——读完本文后显示相关 Wiki。
+                  </p>
+                  <button
+                    type="button"
+                    className={styles.spoilerBtn}
+                    onClick={() => setSpoilerFree(false)}
+                  >
+                    直接展开
+                  </button>
+                </div>
+              ) : (
+                <>
+                  <p className={styles.railWorld}>
+                    <Link href={`/w/${work.worldSlug}`}>{work.worldName}</Link>
+                    <span className={styles.railSep} aria-hidden="true">
+                      ·
+                    </span>
+                    <Link href={`/w/${work.worldSlug}/wiki`}>进入 Wiki</Link>
+                  </p>
+                  {annotations.length === 0 ? (
+                    <p className={styles.muted}>
+                      正文中暂未匹配到本世界词条。
+                    </p>
+                  ) : (
+                    <ul className={styles.noteList}>
+                      {annotations.map((a) => (
+                        <li key={a.id}>
+                          <button
+                            type="button"
+                            className={
+                              activeNote?.id === a.id
+                                ? styles.noteItemOn
+                                : styles.noteItem
+                            }
+                            onClick={() =>
+                              setActiveNote((cur) =>
+                                cur?.id === a.id ? null : a,
+                              )
+                            }
+                          >
+                            <strong>{a.title}</strong>
+                            <span className={styles.noteSource}>
+                              {a.source === "link" ? "关联" : "文中提及"}
+                            </span>
+                          </button>
+                          {activeNote?.id === a.id ? (
+                            <div className={styles.noteDetail}>
+                              <p>{a.excerpt || "暂无简介"}</p>
+                              <Link
+                                href={`/w/${work.worldSlug}/entry/${a.slug}`}
+                              >
+                                查看词条 →
+                              </Link>
+                            </div>
+                          ) : null}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </>
+              )
+            ) : null}
           </section>
         </aside>
       ) : null}

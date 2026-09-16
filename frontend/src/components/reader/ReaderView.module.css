@@ -305,7 +305,7 @@
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.25rem;
 }
 
 @media (max-width: 900px) {
@@ -323,6 +323,36 @@
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
+}
+
+.railSection + .railSection {
+  border-top: 1px dashed var(--line);
+  padding-top: 1.25rem;
+}
+
+.railToggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+
+.railSign {
+  font-size: 0.95rem;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
+.gateBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
 }
 
 .railTitle {
@@ -743,6 +773,25 @@
 .moreMeta {
   font-size: 0.76rem;
   color: var(--ink-soft);
+}
+
+/* --- Reactions & comments (below the article) ---- */
+.foot {
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.footBar {
+  display: flex;
+  justify-content: flex-start;
+}
+
+.footComments {
+  min-width: 0;
 }
 
 /* --- Night theme (page background goes dark via .night .paperBg) ---- */
