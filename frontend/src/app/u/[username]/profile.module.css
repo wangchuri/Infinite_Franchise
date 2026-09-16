@@ -1,85 +1,80 @@
 .page {
-  width: min(960px, 92vw);
+  width: min(1080px, 94vw);
   margin: 0 auto;
-  padding: 2rem 0 4rem;
+  padding: 1.75rem 0 5rem;
 }
 
-.head {
+/* --- Hero --- */
+.hero {
+  margin-bottom: 2.5rem;
+}
+
+.cover {
+  height: clamp(200px, 26vw, 320px);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background-color: var(--paper-2);
+  background-size: cover;
+  background-position: center;
+}
+
+.heroBody {
   display: flex;
   align-items: flex-start;
-  gap: 1.25rem;
-  padding-bottom: 1.25rem;
-  border-bottom: 1px solid var(--line);
+  gap: 1.5rem;
+  margin-top: -3.5rem;
+  padding: 0 2rem;
 }
 
 .avatar {
   flex-shrink: 0;
-  width: 5rem;
-  height: 5rem;
+  width: 7rem;
+  height: 7rem;
   border-radius: 50%;
-  border: 1px solid var(--line);
+  border: 4px solid var(--paper);
   background-color: var(--paper-2);
   background-size: cover;
   background-position: center;
   display: grid;
   place-items: center;
   font-family: var(--font-display);
-  font-size: 1.8rem;
+  font-size: 2.2rem;
   color: var(--sea);
   line-height: 1;
+  box-shadow: 0 8px 22px rgba(20, 33, 43, 0.14);
 }
 
-.headText {
+.heroMain {
   flex: 1;
+  min-width: 0;
+  padding-top: 3.9rem;
+}
+
+.heroTop {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.identity {
   min-width: 0;
 }
 
 .name {
   font-family: var(--font-display);
-  font-size: 1.7rem;
+  font-size: clamp(1.6rem, 3vw, 2.1rem);
   font-weight: 700;
   color: var(--ink);
+  line-height: 1.2;
 }
 
 .handle {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   color: var(--ink-soft);
 }
 
-.bio {
-  margin-top: 0.5rem;
-  font-size: 0.92rem;
-  line-height: 1.65;
-  color: var(--ink-soft);
-  max-width: 46em;
-}
-
-.contacts {
-  margin-top: 0.5rem;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem 1rem;
-  font-size: 0.85rem;
-}
-
-.contacts a {
-  color: var(--sea);
-}
-
-.stats {
-  margin-top: 0.7rem;
-  display: flex;
-  gap: 1.25rem;
-  font-size: 0.85rem;
-  color: var(--ink-soft);
-}
-
-.stats strong {
-  color: var(--ink);
-  font-size: 0.95rem;
-}
-
-.headAction {
+.actions {
   flex-shrink: 0;
 }
 
@@ -88,10 +83,10 @@
 .edit {
   display: inline-flex;
   align-items: center;
-  padding: 0.45rem 1.2rem;
+  padding: 0.5rem 1.4rem;
   border-radius: 999px;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: 0.92rem;
   cursor: pointer;
   text-decoration: none;
 }
@@ -131,25 +126,82 @@
   text-decoration: none;
 }
 
+.bio {
+  margin-top: 0.9rem;
+  font-size: 1rem;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  max-width: 54em;
+}
+
+.metaRow {
+  margin-top: 1.1rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 2rem;
+}
+
+.stats {
+  display: flex;
+  gap: 1.75rem;
+  font-size: 0.92rem;
+  color: var(--ink-soft);
+}
+
+.stats strong {
+  color: var(--ink);
+  font-size: 1.05rem;
+  margin-right: 0.1rem;
+}
+
+.contacts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 1.25rem;
+  font-size: 0.9rem;
+}
+
+.contacts a {
+  color: var(--sea);
+}
+
 @media (max-width: 640px) {
-  .head {
-    flex-wrap: wrap;
+  .heroBody {
+    margin-top: -2.6rem;
+    padding: 0 1rem;
+    gap: 1rem;
   }
 
-  .headAction {
-    width: 100%;
+  .avatar {
+    width: 5rem;
+    height: 5rem;
+    font-size: 1.6rem;
+  }
+
+  .heroMain {
+    padding-top: 2.9rem;
+  }
+
+  .heroTop {
+    flex-direction: column;
+    gap: 0.75rem;
   }
 }
 
+/* --- Works --- */
 .works {
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .sectionTitle {
   font-family: var(--font-display);
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   color: var(--ink);
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line);
 }
 
 .grid {
@@ -157,15 +209,15 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  gap: 1.1rem 0.9rem;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 1.4rem 1.1rem;
 }
 
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.45rem;
   min-width: 0;
 }
 
@@ -179,7 +231,7 @@
 .cardTitle {
   position: relative;
   z-index: 2;
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 600;
   color: var(--ink);
   display: -webkit-box;
@@ -194,7 +246,7 @@
 }
 
 .cardMeta {
-  font-size: 0.76rem;
+  font-size: 0.78rem;
   color: var(--ink-soft);
 }
 

@@ -244,7 +244,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <span>@{user.username}</span>
                     </div>
                     <Link href="/me" className={styles.menuLink} role="menuitem">
-                      个人资料
+                      个人主页
+                    </Link>
+                    <Link
+                      href="/me/edit"
+                      className={styles.menuLink}
+                      role="menuitem"
+                    >
+                      编辑资料
                     </Link>
                     <button
                       type="button"

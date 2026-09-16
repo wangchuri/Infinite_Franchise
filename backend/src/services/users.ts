@@ -12,6 +12,7 @@ export type UserRow = {
   bio: string | null;
   contact_email: string | null;
   link_url: string | null;
+  cover_url: string | null;
   status: string;
   last_login_at: Date | null;
   created_at: Date;
@@ -28,6 +29,7 @@ export type PublicUser = {
   bio: string | null;
   contactEmail: string | null;
   linkUrl: string | null;
+  coverUrl: string | null;
   emailVerified: boolean;
   createdAt: string;
 };
@@ -42,6 +44,7 @@ export function toPublicUser(row: UserRow): PublicUser {
     bio: row.bio,
     contactEmail: row.contact_email,
     linkUrl: row.link_url,
+    coverUrl: row.cover_url,
     emailVerified: row.email_verified_at != null,
     createdAt: row.created_at.toISOString(),
   };
@@ -128,6 +131,7 @@ export type UserProfile = {
   bio: string | null;
   contactEmail: string | null;
   linkUrl: string | null;
+  coverUrl: string | null;
   createdAt: string;
   works: number;
   followers: number;
@@ -146,6 +150,7 @@ export function toUserProfile(
     bio: row.bio,
     contactEmail: row.contact_email,
     linkUrl: row.link_url,
+    coverUrl: row.cover_url,
     createdAt: row.created_at.toISOString(),
     ...stats,
   };
@@ -185,6 +190,7 @@ export async function updateUserProfile(
     contactEmail?: string | null;
     linkUrl?: string | null;
     avatarUrl?: string | null;
+    coverUrl?: string | null;
   },
 ): Promise<UserRow> {
   const fields: string[] = [];
@@ -199,6 +205,7 @@ export async function updateUserProfile(
   if (patch.contactEmail !== undefined) set("contact_email", patch.contactEmail);
   if (patch.linkUrl !== undefined) set("link_url", patch.linkUrl);
   if (patch.avatarUrl !== undefined) set("avatar_url", patch.avatarUrl);
+  if (patch.coverUrl !== undefined) set("cover_url", patch.coverUrl);
 
   if (fields.length === 0) {
     const current = await findUserById(userId);

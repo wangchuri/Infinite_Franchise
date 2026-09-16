@@ -23,6 +23,7 @@ export type UserProfile = {
   bio: string | null;
   contactEmail: string | null;
   linkUrl: string | null;
+  coverUrl: string | null;
   createdAt: string;
   works: number;
   followers: number;

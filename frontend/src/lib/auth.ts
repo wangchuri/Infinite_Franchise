@@ -13,6 +13,7 @@ export type AuthUser = {
   bio: string | null;
   contactEmail: string | null;
   linkUrl: string | null;
+  coverUrl: string | null;
   emailVerified: boolean;
   createdAt: string;
 };
@@ -98,6 +99,7 @@ export async function updateMe(
     contactEmail: string | null;
     linkUrl: string | null;
     avatarUrl: string | null;
+    coverUrl: string | null;
   }>,
 ): Promise<AuthUser> {
   const token = getAccessToken();

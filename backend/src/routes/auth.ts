@@ -159,6 +159,9 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (body.avatarUrl !== undefined) {
       patch.avatarUrl = str(body.avatarUrl) || null;
     }
+    if (body.coverUrl !== undefined) {
+      patch.coverUrl = str(body.coverUrl) || null;
+    }
 
     const updated = await updateUserProfile(user.id, patch);
     return { user: toPublicUser(updated) };

@@ -12,6 +12,7 @@ import {
   type UserProfilePayload,
 } from "@/lib/users";
 import { workTypeLabel } from "@/lib/works";
+import { coverGradientFor } from "@/lib/world-cover";
 import { decodeParam } from "@/lib/url";
 import styles from "./profile.module.css";
 
@@ -84,65 +85,84 @@ export default function UserProfilePage() {
 
   return (
     <div className={styles.page}>
-      <header className={styles.head}>
-        <span
-          className={styles.avatar}
+      <div className={styles.hero}>
+        <div
+          className={styles.cover}
           style={
-            profile.avatarUrl
-              ? { backgroundImage: `url(${profile.avatarUrl})` }
-              : undefined
+            profile.coverUrl
+              ? { backgroundImage: `url(${profile.coverUrl})` }
+              : { background: coverGradientFor(profile.username) }
           }
-          aria-hidden="true"
-        >
-          {profile.avatarUrl ? "" : initial}
-        </span>
+        />
 
-        <div className={styles.headText}>
-          <h1 className={styles.name}>{profile.displayName}</h1>
-          <p className={styles.handle}>@{profile.username}</p>
-          {profile.bio ? <p className={styles.bio}>{profile.bio}</p> : null}
-          <p className={styles.contacts}>
-            {profile.contactEmail ? (
-              <a href={`mailto:${profile.contactEmail}`}>
-                {profile.contactEmail}
-              </a>
-            ) : null}
-            {profile.linkUrl ? (
-              <a href={profile.linkUrl} target="_blank" rel="noreferrer">
-                {profile.linkUrl.replace(/^https?:\/\//, "")}
-              </a>
-            ) : null}
-          </p>
-          <p className={styles.stats}>
-            <span>
-              <strong>{profile.works}</strong> 作品
-            </span>
-            <span>
-              <strong>{profile.following}</strong> 关注
-            </span>
-            <span>
-              <strong>{profile.followers}</strong> 粉丝
-            </span>
-          </p>
-        </div>
+        <div className={styles.heroBody}>
+          <span
+            className={styles.avatar}
+            style={
+              profile.avatarUrl
+                ? { backgroundImage: `url(${profile.avatarUrl})` }
+                : undefined
+            }
+            aria-hidden="true"
+          >
+            {profile.avatarUrl ? "" : initial}
+          </span>
 
-        <div className={styles.headAction}>
-          {data.isSelf ? (
-            <Link href="/me" className={styles.edit}>
-              编辑资料
-            </Link>
-          ) : (
-            <button
-              type="button"
-              className={data.isFollowing ? styles.following : styles.follow}
-              disabled={busy}
-              onClick={() => void toggleFollow()}
-            >
-              {data.isFollowing ? "已关注" : "关注"}
-            </button>
-          )}
+          <div className={styles.heroMain}>
+            <div className={styles.heroTop}>
+              <div className={styles.identity}>
+                <h1 className={styles.name}>{profile.displayName}</h1>
+                <p className={styles.handle}>@{profile.username}</p>
+              </div>
+
+              <div className={styles.actions}>
+                {data.isSelf ? (
+                  <Link href="/me/edit" className={styles.edit}>
+                    编辑资料
+                  </Link>
+                ) : (
+                  <button
+                    type="button"
+                    className={data.isFollowing ? styles.following : styles.follow}
+                    disabled={busy}
+                    onClick={() => void toggleFollow()}
+                  >
+                    {data.isFollowing ? "已关注" : "关注"}
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {profile.bio ? <p className={styles.bio}>{profile.bio}</p> : null}
+
+            <div className={styles.metaRow}>
+              <p className={styles.stats}>
+                <span>
+                  <strong>{profile.works}</strong> 作品
+                </span>
+                <span>
+                  <strong>{profile.following}</strong> 关注
+                </span>
+                <span>
+                  <strong>{profile.followers}</strong> 粉丝
+                </span>
+              </p>
+              <p className={styles.contacts}>
+                {profile.contactEmail ? (
+                  <a href={`mailto:${profile.contactEmail}`}>
+                    {profile.contactEmail}
+                  </a>
+                ) : null}
+                {profile.linkUrl ? (
+                  <a href={profile.linkUrl} target="_blank" rel="noreferrer">
+                    {profile.linkUrl.replace(/^https?:\/\//, "")}
+                  </a>
+                ) : null}
+              </p>
+            </div>
+          </div>
         </div>
-      </header>
+      </div>
 
       <section className={styles.works}>
         <h2 className={styles.sectionTitle}>作品 · {works.length}</h2>
