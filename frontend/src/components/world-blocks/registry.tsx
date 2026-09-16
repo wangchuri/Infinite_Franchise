@@ -3,6 +3,7 @@
 import type { ComponentType } from "react";
 import type { Block, BlockType } from "@/lib/world-layout";
 import { Columns } from "./chrome/Columns";
+import { BgRegion } from "./chrome/BgRegion";
 import { Footer } from "./chrome/Footer";
 import { Hero } from "./chrome/Hero";
 import { PlatformButton } from "./chrome/PlatformButton";
@@ -38,6 +39,7 @@ export const registry: Partial<Record<BlockType, BlockComponent>> = {
   topBar: TopBar,
   hero: Hero,
   columns: Columns,
+  bgRegion: BgRegion,
   footer: Footer,
   platformButton: PlatformButton,
   nav: Nav,

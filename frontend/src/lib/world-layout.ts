@@ -13,6 +13,7 @@ export const BLOCK_TYPES = [
   "hero",
   "columns",
   "section",
+  "bgRegion",
   "divider",
   "spacer",
   "footer",

@@ -57,6 +57,12 @@ const FRAME_GUTTER = 32;
 
 const VARIANT_BLOCKS = new Set<BlockType>(["entryGrid", "glossary"]);
 
+/** Container blocks whose child slots are editable in the hierarchy. */
+const CONTAINER_SLOTS: Partial<Record<BlockType, string[]>> = {
+  columns: SLOT_ORDER,
+  bgRegion: ["content"],
+};
+
 const OP_LABEL: Record<VariantMatchOp, string> = {
   eq: "=",
   neq: "≠",
@@ -599,7 +605,11 @@ export default function WikiLayoutEditorPage() {
 
   function renderHierarchy(blocks: Block[]): ReactNode {
     return blocks.map((b) => {
-      if (b.type === "columns" && b.slots) {
+      const containerKeys = CONTAINER_SLOTS[b.type];
+      if (containerKeys) {
+        const slots = b.slots ?? {};
+        const present = containerKeys.filter((k) => (slots[k] ?? []).length > 0);
+        const keys = present.length ? present : [containerKeys[0]];
         return (
           <div key={b.id} className={styles.group}>
             <button
@@ -607,15 +617,15 @@ export default function WikiLayoutEditorPage() {
               className={b.id === selectedId ? styles.groupHeadOn : styles.groupHead}
               onClick={() => selectBlock(b.id)}
             >
-              {BLOCK_META.columns?.label}
+              {BLOCK_META[b.type]?.label ?? b.type}
             </button>
-            {SLOT_ORDER.filter((k) => b.slots?.[k]).map((k) => (
+            {keys.map((k) => (
               <div key={k} className={styles.slot}>
                 <div className={styles.slotHead}>
-                  <span>{SLOT_LABELS[k]}</span>
+                  <span>{SLOT_LABELS[k] ?? k}</span>
                   <AddRegionMenu onAdd={(t) => onAdd(b.id, k, t)} />
                 </div>
-                {(b.slots?.[k] ?? []).map((child) => renderRow(child, 1))}
+                {(slots[k] ?? []).map((child) => renderRow(child, 1))}
               </div>
             ))}
           </div>

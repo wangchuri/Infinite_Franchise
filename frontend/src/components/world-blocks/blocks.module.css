@@ -1020,3 +1020,21 @@
 .linkList a:hover {
   text-decoration: underline;
 }
+
+/* —— background region (multi background image bands) —— */
+.bgRegion {
+  position: relative;
+  width: 100%;
+  display: flow-root;
+}
+
+.bgRegionInner {
+  width: min(1120px, 92%);
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+.bgRegion:empty {
+  min-height: 120px;
+}

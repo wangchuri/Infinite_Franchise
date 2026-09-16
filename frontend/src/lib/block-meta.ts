@@ -83,13 +83,40 @@ export const BLOCK_META: Partial<Record<BlockType, BlockMeta>> = {
       },
     ],
   },
+  bgRegion: {
+    label: "背景区域",
+    hint: "带背景图/渐变的区块，可在里面放其他区域",
+    addable: true,
+    defaultProps: {
+      image: "",
+      color: "",
+      gradient: "",
+      overlay: "0.35",
+      minHeight: "320",
+      padding: "2rem",
+      fixed: false,
+    },
+    fields: [
+      { key: "image", label: "背景图", type: "image" },
+      { key: "color", label: "背景色", type: "text", placeholder: "#101820" },
+      {
+        key: "gradient",
+        label: "渐变（CSS）",
+        type: "text",
+        placeholder: "linear-gradient(160deg,#17262c,#0e1a20)",
+      },
+      { key: "overlay", label: "暗色遮罩 0–1", type: "text", placeholder: "0.35" },
+      { key: "minHeight", label: "最小高度", type: "text", placeholder: "320 或 60vh" },
+      { key: "padding", label: "内边距", type: "text", placeholder: "2rem" },
+      { key: "fixed", label: "背景固定（视差）", type: "boolean" },
+    ],
+  },
   footer: {
     label: "页脚",
     addable: false,
     fields: [{ key: "platformButton", label: "显示平台按钮", type: "boolean" }],
   },
-  nav: { label: "侧边导航", addable: true, fields: [] },
-  navGrid: {
+  nav: { label: "侧边导航", addable: true, fields: [] },  navGrid: {
     label: "导航面板",
     hint: "归属瓦片网格，点击进入对应分类页",
     addable: true,
@@ -368,6 +395,7 @@ export const SLOT_LABELS: Record<string, string> = {
   left: "左栏",
   main: "主栏",
   right: "右栏",
+  content: "内容",
 };
 
 export const SLOT_ORDER = ["left", "main", "right"];
