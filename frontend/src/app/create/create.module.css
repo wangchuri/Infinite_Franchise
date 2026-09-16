@@ -95,12 +95,6 @@
   place-items: center;
 }
 
-.icon {
-  display: block;
-  width: 100%;
-  height: 100%;
-}
-
 .tileText {
   position: absolute;
   left: 0.9rem;
@@ -583,22 +577,6 @@
   transform: translateY(-2px);
   box-shadow: 0 12px 26px rgba(20, 33, 43, 0.1);
   text-decoration: none;
-}
-
-.workCover {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 4 / 3;
-  background-color: rgba(31, 92, 90, 0.08);
-  background-size: cover;
-  background-position: center;
-  border-bottom: 1px solid var(--line);
-}
-
-.workCoverGlyph {
-  font-family: var(--font-display);
-  font-size: 1.8rem;
-  color: color-mix(in srgb, var(--sea) 60%, transparent);
 }
 
 .workInfo {

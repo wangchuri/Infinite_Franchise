@@ -1,0 +1,67 @@
+/* Work cover: image or type-styled placeholder. */
+
+.cover {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: var(--paper-2);
+  border: 1px solid var(--line);
+}
+
+.rounded {
+  border-radius: 8px;
+}
+
+.image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.placeholder {
+  --tone: #a29c8f;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.head {
+  position: absolute;
+  left: 0.7rem;
+  top: 0.65rem;
+  right: 3.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.name {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--ink);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rule {
+  width: 2.1rem;
+  height: 1px;
+  background: rgba(20, 33, 43, 0.28);
+}
+
+.glyph {
+  position: absolute;
+  right: -8%;
+  bottom: -12%;
+  width: 62%;
+  aspect-ratio: 1 / 1;
+  opacity: 0.85;
+}

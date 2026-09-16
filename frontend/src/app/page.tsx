@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Suspense, useEffect, useMemo, useState, type CSSProperties } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { getAccessToken } from "@/lib/auth";
 import { coverGradientFor } from "@/lib/world-cover";
@@ -20,6 +20,7 @@ import {
   workTypeLabel,
   type Work,
 } from "@/lib/works";
+import WorkCover from "@/components/WorkCover";
 import styles from "./page.module.css";
 
 type ActiveAuthor = {
@@ -30,17 +31,6 @@ type ActiveAuthor = {
   worldSlug: string;
   lastTitle: string;
 };
-
-function workThumbStyle(work: Work): CSSProperties {
-  if (work.mediaUrl) {
-    return {
-      backgroundImage: `url(${work.mediaUrl})`,
-      backgroundSize: "cover",
-      backgroundPosition: "center",
-    };
-  }
-  return { background: coverGradientFor(work.id) };
-}
 
 function worldDotColor(world: World): string {
   const g = coverGradientFor(world.id || world.slug);
@@ -245,14 +235,12 @@ function PlazaPage() {
         ) : null}
 
         {!ready ? (
-          <ul className={styles.feedSkeleton} aria-hidden="true">
-            {[0, 1, 2].map((i) => (
-              <li key={i} className={styles.workItem}>
-                <div className={styles.workThumb} />
-                <div className={styles.skelText}>
-                  <div className={styles.feedLineWide} />
-                  <div className={styles.feedLine} />
-                </div>
+          <ul className={styles.workGrid} aria-hidden="true">
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <li key={i} className={styles.workCard}>
+                <div className={styles.skelCover} />
+                <div className={styles.feedLineWide} />
+                <div className={styles.feedLine} />
               </li>
             ))}
           </ul>
@@ -271,58 +259,52 @@ function PlazaPage() {
             <p>没有匹配「{query.trim()}」的作品。</p>
           </div>
         ) : (
-          <ul className={styles.feedList}>
+          <ul className={styles.workGrid}>
             {filteredWorks.map((w) => {
               const hot = topReactions(w.reactionCounts ?? {}, reactionTypes);
               return (
-                <li key={w.id} className={styles.workItem}>
+                <li key={w.id} className={styles.workCard}>
                   <Link
                     href={`/works/${w.id}`}
-                    className={styles.workHit}
+                    className={styles.cardHit}
                     aria-label={w.title}
                   />
-                  <div
-                    className={styles.workThumb}
-                    style={workThumbStyle(w)}
-                    aria-hidden="true"
-                  />
-                  <div className={styles.workBody}>
-                    <div className={styles.typeTag}>
-                      {workTypeLabel(w)}
-                    </div>
-                    <span className={styles.workTitle}>{w.title}</span>
-                    {w.summary ? (
-                      <p className={styles.workSummary}>{w.summary}</p>
-                    ) : null}
-                    <div className={styles.workMeta}>
+                  <WorkCover work={w} />
+                  <div className={styles.cardBody}>
+                    <span className={styles.cardTitle}>{w.title}</span>
+                    <div className={styles.cardMeta}>
+                      <span className={styles.cardType}>
+                        {workTypeLabel(w)}
+                      </span>
                       <Link
                         href={`/w/${w.worldSlug}`}
                         className={styles.worldLink}
                       >
                         {w.worldName}
                       </Link>
-                      <span>· {w.authorDisplayName || w.authorUsername}</span>
-                      <time
-                        className={styles.when}
-                        dateTime={w.publishedAt ?? w.createdAt}
-                      >
+                      <span>{w.authorDisplayName || w.authorUsername}</span>
+                      <time dateTime={w.publishedAt ?? w.createdAt}>
                         {formatWorkTime(w.publishedAt ?? w.createdAt)}
                       </time>
                     </div>
+                    {hot.length > 0 ? (
+                      <div
+                        className={styles.cardReactions}
+                        aria-label="热门回应"
+                      >
+                        {hot.map((r) => (
+                          <span
+                            key={r.key}
+                            className={styles.chip}
+                            title={`${r.label} · ${r.count}`}
+                          >
+                            <span aria-hidden="true">{r.icon}</span>
+                            <span className={styles.chipCount}>{r.count}</span>
+                          </span>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
-                  {hot.length > 0 ? (
-                    <div className={styles.workReactions} aria-label="热门回应">
-                      {hot.map((r) => (
-                        <span
-                          key={r.key}
-                          className={styles.reactionBadge}
-                          title={`${r.label} · ${r.count}`}
-                        >
-                          {r.icon}
-                        </span>
-                      ))}
-                    </div>
-                  ) : null}
                 </li>
               );
             })}
