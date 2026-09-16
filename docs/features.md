@@ -32,6 +32,7 @@
 | `/works/[id]` | 作品阅读页 |
 | `/works/[id]/edit` | 作品编辑（同一工作台，编辑模式，自动保存） |
 | `/worlds` · `/worlds/new` · `/worlds/[id]/edit` | 我参与/创建的世界、新建世界、编辑世界观（设置） |
+| `/docs/wiki` | Wiki 接口文档（`window.WORLD` / 布局 JSON / 页面 CSS） |
 | `/login` · `/register` | 账号 |
 
 ### 世界观层
@@ -83,6 +84,11 @@
 - **背景区域 `bgRegion`**：每个块可设背景图 / 渐变 / 背景色 / 暗色遮罩 / 最小高度 / 内边距 / 固定视差，并可嵌套内容区——一页可放多个背景带。
 - **元组件（卡片变体）内置属性**：`box`（宽 / 高 / 背景图 / 背景色 / 圆角 / 透明度）+ `defaultImage`（词条无图时的默认图）；可按词条属性匹配不同变体。CSS 优先级：内置 box < 页面 CSS < 变体 CSS。
 - **页面级 CSS**：每页可写自定义 CSS（前后端 sanitize，禁 `@import`/`expression`/`javascript:`/`@scope`），公开页以 `@scope (#wiki-root)` 注入，不泄漏到平台 UI；同时下发到区域沙箱 iframe。
+- **导入 / 导出**：当前页或整世界的布局 JSON（`lib/layout-io.ts`），导入重走 `normalizeWorldLayout` 校验；契约见 `/docs/wiki`。
+- **版本历史**：`world_page_revisions`（迁移 018，每页留 20 版），保存前快照，编辑器「历史版本」可一键还原。
+- **模板**：`lib/layout-templates.ts`（标准三栏 / 杂志首页 / 极简单栏 / SCP 词条风 / 空白），编辑器一键套用（替换当前页）。
+- **响应式**：编辑器预览设备切换（桌面 1280 / 平板 834 / 手机 390）；任意区块可设 `props.hideOnMobile`（≤640px 隐藏，`display:contents` 外壳不破坏布局）。
+- **素材库**：`world_assets`（迁移 019）+ `GET/POST/DELETE /api/worlds/:id/assets`；编辑器「素材库」抽屉（上传 / 预览 / 复制 URL / 删除）。
 - **归属系统 `world_collections`**：取代写死的分类；每世界内置 7 类（人物/地点/物品/组织/事件/概念/其他），可新建、改名、图标、隐藏、排序；有词条的内置归属不可删。
 - **词条**：标题 / slug / 归属 / 别名 / 属性（按归属的 `attr_fields` 动态表单）/ 封面 / 正文（Markdown 或内容区块）/ 状态 / 版本。
 - **词条库 `/worlds/[id]/entries`**：三栏（归属页签 + 词条列表 / 结构列表 + 设备框 iframe 预览 / 属性·组件检查器），支持内联新建归属、拖拽排序、点选联动、自动保存。
@@ -159,6 +165,8 @@
 | 015 | `user_profile_social` | 个人资料扩展 + 关注 |
 | 016 | `user_cover` | 主页背景图 |
 | 017 | `world_pages` | 多页面（home/归属/自定义）+ 从 `world_layout` 回填 home |
+| 018 | `world_page_revisions` | 页面版本历史（每页留 20 版） |
+| 019 | `world_assets` | 世界素材库 |
 
 应用：`cd backend && npm run db:migrate`。
 
@@ -172,8 +180,10 @@
   - 成员：`GET/POST /api/worlds/:id/members`、`DELETE .../:userId`
   - 反应类型：`GET/POST /api/worlds/:id/reaction-types`、`PATCH/DELETE .../:typeId`
   - **归属**：`GET/POST /api/worlds/:id/collections`、`PATCH/DELETE .../:collectionId`
-   - **词条**：`GET/POST /api/worlds/:id/entries`、`PATCH/DELETE .../:entryId`
-   - **页面**：`GET/POST /api/worlds/:id/pages`、`PATCH/DELETE .../:pageId`
+  - **词条**：`GET/POST /api/worlds/:id/entries`、`PATCH/DELETE .../:entryId`
+  - **页面**：`GET/POST /api/worlds/:id/pages`、`PATCH/DELETE .../:pageId`
+    - 版本：`GET .../pages/:pageId/revisions`、`POST .../revisions/:revId/restore`
+  - **素材库**：`GET/POST /api/worlds/:id/assets`、`DELETE .../:assetId`
   - 时间线：`GET/POST /api/worlds/:id/timeline`、`PATCH/DELETE .../:eventId`
 - **works**：`GET /api/works`、`GET /api/works/mine`、`POST /api/works`、`GET /api/works/:id`、`GET /api/works/:id/read`、`PATCH/DELETE /api/works/:id`
   - 章节：`GET /api/works/:id/chapters`、`PATCH /api/works/:id/chapters/order`
@@ -188,7 +198,7 @@
 
 ## 6. 已实现 vs 规划
 
-**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性 / 富文本 / 自定义 HTML）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
+**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性 / 富文本 / 自定义 HTML / 导入导出 / 版本历史 / 模板 / 响应式 / 素材库）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
 
 **规划中 / 待补**（`feasibility-analysis.md` 为远期路线）：
 
@@ -200,4 +210,3 @@
 6. **搜索完善**：站内搜索目前覆盖作品/世界标题。
 7. **相关词条自动模式**：按同归属/同属性自动生成。
 8. **隐藏归属的公开页 404**。
-9. **Wiki 界面 Phase 3**：layout 导入/导出（Agent 友好）、模板/一键套用、版本回滚、响应式、素材库 —— 见 [`wiki-plan.md`](./wiki-plan.md)。

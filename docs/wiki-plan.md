@@ -1,6 +1,6 @@
 # Wiki 界面的规划（排版编辑器重做）
 
-> 状态：Phase 0/1/2 完成 · Phase 3 待做
+> 状态：Phase 0 / 1 / 2 / 3 全部完成
 > 相关：`docs/features.md`、`docs/design.md`
 
 ## 1. 三层模型与术语
@@ -55,8 +55,12 @@
 - `customHtml` 支持上传 `.html` / `.css` 文件。
 - `window.WORLD` 补全（词条 `aliases`/`attributes`、`collections` 元数据）+ 文档页 `/docs/wiki`。
 
-### Phase 3（生态）
-- layout 导入/导出（Agent 友好）、模板/一键套用、版本回滚、响应式、素材库。
+### Phase 3（生态）— ✅ 已完成
+- **导入/导出**：当前页 / 整世界的布局 JSON（`lib/layout-io.ts`），导入重走 `normalizeWorldLayout` 校验；契约见 `/docs/wiki`。
+- **版本回滚**：迁移 `018_world_page_revisions`，保存前快照（每页 20 版），编辑器「历史版本」可还原。
+- **模板**：`lib/layout-templates.ts`（标准三栏 / 杂志首页 / 极简单栏 / SCP 词条风 / 空白），编辑器一键套用。
+- **响应式**：编辑器预览设备切换（桌面/平板/手机）+ 区块 `props.hideOnMobile`（≤640px 隐藏，`display:contents` 外壳不破坏布局）。
+- **素材库**：迁移 `019_world_assets` + `GET/POST/DELETE /api/worlds/:id/assets`，编辑器「素材库」抽屉（上传/预览/复制 URL/删除）。
 
 ## 5. 已定的关键决策
 
