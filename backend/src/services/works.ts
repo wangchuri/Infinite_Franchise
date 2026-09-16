@@ -309,6 +309,28 @@ async function listPublishedChapters(
   return res.rows;
 }
 
+/** Published works by one author (chapters hidden), newest first. */
+export async function listPublicWorksByAuthor(
+  authorId: string,
+  limit = 24,
+): Promise<WorkFeedRow[]> {
+  const capped = Math.min(Math.max(limit, 1), 100);
+  const res = await pool.query<WorkFeedRow>(
+    `${FEED_SELECT}
+     WHERE w.author_id = $1
+       AND w.status = 'published'
+       AND w.deleted_at IS NULL
+       AND w.type <> 'chapter'
+       AND worlds.status = 'published'
+       AND worlds.visibility = 'public'
+       AND worlds.deleted_at IS NULL
+     ORDER BY COALESCE(w.published_at, w.created_at) DESC
+     LIMIT $2`,
+    [authorId, capped],
+  );
+  return res.rows;
+}
+
 /**
  * Chapters of a novel for the author's outline. Drafts/review copies are only
  * included when the viewer may edit the novel.

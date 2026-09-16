@@ -233,7 +233,11 @@ function PlazaPage() {
             <p className={styles.railEmpty}>暂无活跃作者</p>
           ) : (
             authors.map((a) => (
-              <div key={a.id} className={styles.authorItem}>
+              <Link
+                key={a.id}
+                href={`/u/${a.username}`}
+                className={styles.authorItem}
+              >
                 <span className={styles.authorAvatar} aria-hidden>
                   {(a.name || "?").slice(0, 1)}
                 </span>
@@ -243,7 +247,7 @@ function PlazaPage() {
                     {a.worldName} · 更新了「{a.lastTitle}」
                   </span>
                 </span>
-              </div>
+              </Link>
             ))
           )}
         </div>

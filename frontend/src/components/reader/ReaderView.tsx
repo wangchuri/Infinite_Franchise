@@ -825,12 +825,15 @@ export default function ReaderView({
                   )
                 )}
               </span>
-              <span className={styles.authorText}>
+              <Link
+                href={`/u/${work.authorUsername}`}
+                className={styles.authorText}
+              >
                 <strong>{work.authorDisplayName || work.authorUsername}</strong>
                 <span className={styles.authorHandle}>
                   @{work.authorUsername}
                 </span>
-              </span>
+              </Link>
             </div>
             <p className={styles.authorBio}>
               {work.authorBio || "这位作者还没有填写介绍。"}

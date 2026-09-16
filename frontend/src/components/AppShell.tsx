@@ -190,7 +190,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               pathname.startsWith("/discover") ? styles.navActive : undefined
             }
           >
-            发现世界
+            世界
           </Link>
           {!mounted || !ready ? (
             <span className={styles.navSlot} aria-hidden="true" />
@@ -203,6 +203,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 }
               >
                 创作
+              </Link>
+              <Link
+                href="/me"
+                className={
+                  pathname.startsWith("/me") ||
+                  pathname.startsWith(`/u/${user.username}`)
+                    ? styles.navActive
+                    : undefined
+                }
+              >
+                我
               </Link>
               <div className={styles.avatarWrap} ref={menuRef}>
                 <button
@@ -232,6 +243,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                       <strong>{user.displayName}</strong>
                       <span>@{user.username}</span>
                     </div>
+                    <Link href="/me" className={styles.menuLink} role="menuitem">
+                      个人资料
+                    </Link>
                     <button
                       type="button"
                       role="menuitem"

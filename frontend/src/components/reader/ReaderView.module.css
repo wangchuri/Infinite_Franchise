@@ -394,6 +394,16 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
+.authorText:hover {
+  text-decoration: none;
+}
+
+.authorText:hover strong {
+  color: var(--sea);
 }
 
 .authorText strong {

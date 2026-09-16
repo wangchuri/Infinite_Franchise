@@ -334,12 +334,29 @@
 }
 
 .menuItem {
+  display: block;
   width: 100%;
   text-align: left;
   border-radius: 4px !important;
   padding: 0.5rem 0.55rem !important;
   font-size: 0.9rem !important;
   color: var(--ink-soft) !important;
+}
+
+.menuLink {
+  display: block;
+  width: 100%;
+  border-radius: 4px;
+  padding: 0.5rem 0.55rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.menuLink:hover {
+  color: var(--sea);
+  background: rgba(31, 92, 90, 0.08);
+  text-decoration: none;
 }
 
 .menuItem:hover {

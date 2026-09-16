@@ -15,6 +15,7 @@ import {
   findUserByEmailOrUsername,
   toPublicUser,
   touchLastLogin,
+  updateUserProfile,
 } from "../services/users.js";
 
 function clientMeta(req: FastifyRequest): {
@@ -131,5 +132,35 @@ export async function registerAuthRoutes(app: FastifyInstance) {
     if (!user) return;
     const { raw: _raw, ...publicUser } = user;
     return { user: publicUser };
+  });
+
+  /** Update the signed-in user's public profile. */
+  app.patch("/api/auth/me", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : undefined);
+
+    const patch: Parameters<typeof updateUserProfile>[1] = {};
+
+    const displayName = str(body.displayName);
+    if (displayName !== undefined) {
+      if (!displayName) return reply.code(400).send({ error: "昵称不能为空" });
+      patch.displayName = displayName.slice(0, 64);
+    }
+    if (body.bio !== undefined) patch.bio = (str(body.bio) ?? "").slice(0, 500) || null;
+    if (body.contactEmail !== undefined) {
+      patch.contactEmail =
+        (str(body.contactEmail) ?? "").slice(0, 255) || null;
+    }
+    if (body.linkUrl !== undefined) {
+      patch.linkUrl = (str(body.linkUrl) ?? "").slice(0, 500) || null;
+    }
+    if (body.avatarUrl !== undefined) {
+      patch.avatarUrl = str(body.avatarUrl) || null;
+    }
+
+    const updated = await updateUserProfile(user.id, patch);
+    return { user: toPublicUser(updated) };
   });
 }

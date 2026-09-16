@@ -11,6 +11,8 @@ export type AuthUser = {
   displayName: string;
   avatarUrl: string | null;
   bio: string | null;
+  contactEmail: string | null;
+  linkUrl: string | null;
   emailVerified: boolean;
   createdAt: string;
 };
@@ -85,6 +87,30 @@ export async function fetchMe(): Promise<AuthUser> {
     if (res.status === 401) clearTokens();
     throw new Error(await parseError(res));
   }
+  const data = (await res.json()) as { user: AuthUser };
+  return data.user;
+}
+
+export async function updateMe(
+  patch: Partial<{
+    displayName: string;
+    bio: string | null;
+    contactEmail: string | null;
+    linkUrl: string | null;
+    avatarUrl: string | null;
+  }>,
+): Promise<AuthUser> {
+  const token = getAccessToken();
+  if (!token) throw new Error("未登录");
+  const res = await fetch(`${API_BASE}/api/auth/me`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(patch),
+  });
+  if (!res.ok) throw new Error(await parseError(res));
   const data = (await res.json()) as { user: AuthUser };
   return data.user;
 }
