@@ -180,6 +180,57 @@
   color: var(--sea);
 }
 
+.notice {
+  font-size: 0.78rem;
+  color: var(--sea);
+}
+
+.dialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1.5rem;
+  background: rgba(20, 33, 43, 0.42);
+}
+
+.dialog {
+  width: min(28rem, 100%);
+  padding: 1.25rem 1.35rem 1.15rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  box-shadow: 0 24px 60px rgba(20, 33, 43, 0.28);
+}
+
+.dialogText {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  color: var(--ink);
+  margin-bottom: 1rem;
+}
+
+.dialogActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+}
+
+.confirmBtn {
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.8rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.confirmBtn:hover {
+  background: var(--sea);
+  border-color: var(--sea);
+}
+
 .body {
   flex: 1;
   min-height: 0;

@@ -36,7 +36,7 @@ export default function RichTextEditor({
 
   function emit() {
     const el = ref.current;
-    if (el) onChange(el.innerHTML);
+    if (el) onChange(sanitizeRichHtml(el.innerHTML));
   }
 
   function exec(command: string, arg?: string) {

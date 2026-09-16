@@ -56,21 +56,28 @@ export default function WorldWikiPage() {
         if (cancelled) return;
         const preview = isPreviewMode();
         setWorld(data.world);
-        setEntries(
-          data.entries.length === 0 && preview
-            ? sampleEntries(data.world.id)
-            : data.entries,
-        );
-        setCollections(
-          data.collections.length === 0 && preview
-            ? sampleCollections()
-            : data.collections,
-        );
-        setTimeline(
-          data.timeline.length === 0 && preview
-            ? sampleTimeline(data.world.id)
-            : data.timeline,
-        );
+        if (preview) {
+          // Fill empty categories with samples so every region can be previewed.
+          const present = new Set(data.entries.map((e) => e.category));
+          const extra = sampleEntries(data.world.id).filter(
+            (s) => !present.has(s.category),
+          );
+          setEntries([...data.entries, ...extra]);
+          setCollections(
+            data.collections.length === 0
+              ? sampleCollections()
+              : data.collections,
+          );
+          setTimeline(
+            data.timeline.length === 0
+              ? sampleTimeline(data.world.id)
+              : data.timeline,
+          );
+        } else {
+          setEntries(data.entries);
+          setCollections(data.collections);
+          setTimeline(data.timeline);
+        }
         setIsOwner(data.isOwner);
         setPages(data.pages);
         try {

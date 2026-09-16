@@ -83,37 +83,54 @@ function safeUrl(value: string): boolean {
 
 function cleanElement(el: Element): void {
   for (const child of Array.from(el.children)) {
-    const tag = child.tagName.toLowerCase();
-    if (DANGEROUS.has(tag)) {
-      child.remove();
+    let node = child;
+    const rawTag = node.tagName.toLowerCase();
+    if (DANGEROUS.has(rawTag)) {
+      node.remove();
       continue;
     }
+    // Normalize execCommand output so source round-trips are stable.
+    if (rawTag === "b" || rawTag === "i") {
+      node = renameTag(node, rawTag === "b" ? "strong" : "em");
+    }
+    const tag = node.tagName.toLowerCase();
     if (!ALLOWED_TAGS.has(tag)) {
-      cleanElement(child);
-      const parent = child.parentNode;
+      cleanElement(node);
+      const parent = node.parentNode;
       if (parent) {
-        while (child.firstChild) parent.insertBefore(child.firstChild, child);
-        child.remove();
+        while (node.firstChild) parent.insertBefore(node.firstChild, node);
+        node.remove();
       }
       continue;
     }
-    for (const attr of Array.from(child.attributes)) {
+    for (const attr of Array.from(node.attributes)) {
       const name = attr.name.toLowerCase();
       const allowed =
         ALLOWED_ATTRS[tag]?.has(name) || ALLOWED_ATTRS["*"].has(name);
       if (!allowed || name.startsWith("on")) {
-        child.removeAttribute(attr.name);
+        node.removeAttribute(attr.name);
         continue;
       }
       if ((name === "href" || name === "src") && !safeUrl(attr.value)) {
-        child.removeAttribute(attr.name);
+        node.removeAttribute(attr.name);
       }
     }
-    if (tag === "a" && child.getAttribute("target") === "_blank") {
-      child.setAttribute("rel", "noopener noreferrer");
+    if (tag === "a" && node.getAttribute("target") === "_blank") {
+      node.setAttribute("rel", "noopener noreferrer");
     }
-    cleanElement(child);
+    cleanElement(node);
   }
+}
+
+/** Replace a node's tag name, keeping attributes and children. */
+function renameTag(el: Element, tag: string): Element {
+  const next = el.ownerDocument.createElement(tag);
+  for (const attr of Array.from(el.attributes)) {
+    next.setAttribute(attr.name, attr.value);
+  }
+  while (el.firstChild) next.appendChild(el.firstChild);
+  el.replaceWith(next);
+  return next;
 }
 
 /** Regex fallback for environments without DOM (SSR). */

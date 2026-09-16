@@ -11,10 +11,12 @@ import { collectionName, type WorldCollection } from "@/lib/collections";
 import {
   excerpt,
   fetchWorldBySlug,
+  type TimelineEvent,
   type WikiEntry,
   type World,
   type WorldPage,
 } from "@/lib/worlds";
+import { sampleEntries, sampleTimeline } from "@/lib/sample-world-data";
 import { decodeParam } from "@/lib/url";
 import styles from "../../pageview.module.css";
 
@@ -27,6 +29,7 @@ export default function WorldCategoryPage() {
   const [entries, setEntries] = useState<WikiEntry[]>([]);
   const [collections, setCollections] = useState<WorldCollection[]>([]);
   const [pages, setPages] = useState<WorldPage[]>([]);
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
 
@@ -36,10 +39,27 @@ export default function WorldCategoryPage() {
       try {
         const data = await fetchWorldBySlug(slug);
         if (cancelled) return;
+        const preview =
+          typeof window !== "undefined" &&
+          new URLSearchParams(window.location.search).get("preview") === "1";
         setWorld(data.world);
-        setEntries(data.entries);
         setCollections(data.collections);
         setPages(data.pages);
+        if (preview) {
+          const has = data.entries.some((e) => e.category === key);
+          const extra = has
+            ? []
+            : sampleEntries(data.world.id).filter((s) => s.category === key);
+          setEntries([...data.entries, ...extra]);
+          setTimeline(
+            data.timeline.length === 0
+              ? sampleTimeline(data.world.id)
+              : data.timeline,
+          );
+        } else {
+          setEntries(data.entries);
+          setTimeline([]);
+        }
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : "加载失败");
       } finally {
@@ -49,7 +69,7 @@ export default function WorldCategoryPage() {
     return () => {
       cancelled = true;
     };
-  }, [slug]);
+  }, [slug, key]);
 
   const list = useMemo(
     () => entries.filter((e) => e.category === key),
@@ -80,7 +100,7 @@ export default function WorldCategoryPage() {
           world={world}
           entries={entries}
           collections={collections}
-          timeline={[]}
+          timeline={timeline}
           works={[]}
           isOwner={false}
           config={config}

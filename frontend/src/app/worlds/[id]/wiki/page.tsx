@@ -255,6 +255,11 @@ export default function WikiLayoutEditorPage() {
   const [revisions, setRevisions] = useState<WorldPageRevision[]>([]);
   const [assets, setAssets] = useState<WorldAsset[]>([]);
   const [assetsOpen, setAssetsOpen] = useState(false);
+  const [confirmState, setConfirmState] = useState<{
+    message: string;
+    onConfirm: () => void;
+  } | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [device, setDevice] = useState<DeviceKey>("desktop");
   const [availW, setAvailW] = useState(0);
@@ -323,7 +328,13 @@ export default function WikiLayoutEditorPage() {
         setSaving(true);
         try {
           if (pageId) {
-            await updateWorldPage(world.id, pageId, { layout, css: pageCss });
+            const saved = await updateWorldPage(world.id, pageId, {
+              layout,
+              css: pageCss,
+            });
+            setPages((prev) =>
+              prev.map((p) => (p.id === saved.id ? saved : p)),
+            );
           } else {
             const created = await createWorldPage(world.id, {
               kind: activeKey === null ? "home" : "collection",
@@ -365,12 +376,23 @@ export default function WikiLayoutEditorPage() {
     };
   }, [world, pageId, savedAt]);
 
+  // Auto-dismiss the transient notice.
+  useEffect(() => {
+    if (!notice) return;
+    const t = window.setTimeout(() => setNotice(null), 4000);
+    return () => window.clearTimeout(t);
+  }, [notice]);
+
   /** Persist the current page (used before switching pages). */
   async function flushPage() {
     if (!world || !layout || !dirty) return;
     try {
       if (pageId) {
-        await updateWorldPage(world.id, pageId, { layout, css: pageCss });
+        const saved = await updateWorldPage(world.id, pageId, {
+          layout,
+          css: pageCss,
+        });
+        setPages((prev) => prev.map((p) => (p.id === saved.id ? saved : p)));
       } else {
         const created = await createWorldPage(world.id, {
           kind: activeKey === null ? "home" : "collection",
@@ -446,49 +468,62 @@ export default function WikiLayoutEditorPage() {
     downloadJson("wiki-world.json", exportWorldFile(list));
   }
 
+  function askConfirm(message: string, onConfirm: () => void) {
+    setConfirmState({ message, onConfirm });
+  }
+
   async function onImportFile(file: File | undefined) {
     if (!file) return;
     try {
       const { layout: nextLayout, css } = parsePageImport(await file.text());
-      if (!window.confirm("导入将替换当前页的布局与 CSS，确定？")) return;
-      mutate(nextLayout);
-      setPageCss(css);
-      setDirty(true);
-      setSelectedId("");
-      setEditingVariant(null);
-      setError(null);
+      askConfirm("导入将替换当前页的布局与 CSS，确定？", () => {
+        mutate(nextLayout);
+        setPageCss(css);
+        setDirty(true);
+        setSelectedId("");
+        setEditingVariant(null);
+        setError(null);
+        setNotice(`已导入 ${nextLayout.blocks.length} 个区块`);
+      });
     } catch (err) {
       setError(err instanceof Error ? err.message : "导入失败");
     }
   }
 
   function applyTemplate(template: LayoutTemplate) {
-    if (!window.confirm(`套用「${template.name}」会替换当前页的布局，确定？`)) {
-      return;
-    }
-    mutate(template.build());
-    setSelectedId("");
-    setEditingVariant(null);
-    setDirty(true);
-    setError(null);
+    askConfirm(`套用「${template.name}」会替换当前页的布局，确定？`, () => {
+      mutate(template.build());
+      setSelectedId("");
+      setEditingVariant(null);
+      setDirty(true);
+      setError(null);
+      setNotice(`已套用模板：${template.name}`);
+    });
   }
 
-  async function restoreRevision(revisionId: string) {
+  async function doRestore(revisionId: string) {
     if (!world || !pageId) return;
-    if (!window.confirm("还原到该版本？当前版本会先存入历史。")) return;
     try {
       const page = await restorePageRevision(world.id, pageId, revisionId);
       setLayout(page.layout);
       setPageCss(page.css);
+      setPages((prev) => prev.map((p) => (p.id === page.id ? page : p)));
       setDirty(false);
       setSelectedId("");
       setEditingVariant(null);
       setPreviewKey(previewStamp());
       setSavedAt(new Date());
       setError(null);
+      setNotice("已还原到该版本");
     } catch (err) {
       setError(err instanceof Error ? err.message : "还原失败");
     }
+  }
+
+  function restoreRevision(revisionId: string) {
+    askConfirm("还原到该版本？当前版本会先存入历史。", () => {
+      void doRestore(revisionId);
+    });
   }
 
   async function uploadAsset(file: File | undefined) {
@@ -785,7 +820,15 @@ export default function WikiLayoutEditorPage() {
     return <p className={styles.error}>{error ?? "世界观不存在"}</p>;
   }
 
-  const usingSample = entries.length === 0 || timeline.length === 0;
+  const usingSample =
+    timeline.length === 0 ||
+    collections.some((c) => !entries.some((e) => e.category === c.key));
+
+  const previewPath =
+    activeKey === null
+      ? `/w/${world.slug}/wiki`
+      : `/w/${world.slug}/c/${encodeURIComponent(activeKey)}`;
+  const previewSrc = `${previewPath}?preview=1&v=${previewKey}`;
   const frame = DEVICE_PRESETS[device];
   const fit = Math.min(
     (availW - FRAME_GUTTER) / frame.w,
@@ -1272,10 +1315,11 @@ export default function WikiLayoutEditorPage() {
             : collectionName(collections, activeKey)}
         </strong>
         {usingSample ? (
-          <span className={styles.sampleBadge} title="空区域以示例数据呈现">
+          <span className={styles.sampleBadge} title="空区域以示例数据填充">
             示例数据
           </span>
         ) : null}
+        {notice ? <span className={styles.notice}>{notice}</span> : null}
         <span className={styles.ioActions}>
           <button
             type="button"
@@ -1394,12 +1438,12 @@ export default function WikiLayoutEditorPage() {
                     <i />
                     <i />
                   </span>
-                  <span className={styles.deviceUrl}>/w/{world.slug}/wiki</span>
+                  <span className={styles.deviceUrl}>{previewPath}</span>
                 </div>
                 <iframe
                   ref={iframeRef}
                   className={styles.deviceFrame}
-                  src={`/w/${world.slug}/wiki?preview=1&v=${previewKey}`}
+                  src={previewSrc}
                   title="Wiki 预览"
                   onLoad={onFrameLoad}
                 />
@@ -1437,6 +1481,9 @@ export default function WikiLayoutEditorPage() {
           </details>
           <details className={styles.pageCss}>
             <summary>历史版本（{revisions.length}）</summary>
+            <p className={styles.muted}>
+              每条为保存前快照；还原会先保存当前版本。
+            </p>
             {revisions.length === 0 ? (
               <p className={styles.muted}>还没有历史版本。</p>
             ) : (
@@ -1515,6 +1562,39 @@ export default function WikiLayoutEditorPage() {
                 e.target.value = "";
               }}
             />
+          </div>
+        </div>
+      ) : null}
+
+      {confirmState ? (
+        <div
+          className={styles.dialogBackdrop}
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmState(null)}
+        >
+          <div className={styles.dialog} onClick={(e) => e.stopPropagation()}>
+            <p className={styles.dialogText}>{confirmState.message}</p>
+            <div className={styles.dialogActions}>
+              <button
+                type="button"
+                className={styles.ioBtn}
+                onClick={() => setConfirmState(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className={styles.confirmBtn}
+                onClick={() => {
+                  const run = confirmState.onConfirm;
+                  setConfirmState(null);
+                  run();
+                }}
+              >
+                确定
+              </button>
+            </div>
           </div>
         </div>
       ) : null}
