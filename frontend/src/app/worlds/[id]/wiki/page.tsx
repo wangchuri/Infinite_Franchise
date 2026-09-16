@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getAccessToken } from "@/lib/auth";
 import {
-  downloadJson,
+  downloadText,
   exportPageFile,
   exportWorldFile,
   parsePageImport,
@@ -259,6 +259,10 @@ export default function WikiLayoutEditorPage() {
     message: string;
     onConfirm: () => void;
   } | null>(null);
+  const [exportState, setExportState] = useState<{
+    filename: string;
+    json: string;
+  } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [previewKey, setPreviewKey] = useState(0);
   const [device, setDevice] = useState<DeviceKey>("desktop");
@@ -444,10 +448,10 @@ export default function WikiLayoutEditorPage() {
 
   function exportCurrentPage() {
     if (!layout) return;
-    downloadJson(
-      `wiki-${activeKey ?? "home"}.json`,
-      exportPageFile(snapshotPage()),
-    );
+    setExportState({
+      filename: `wiki-${activeKey ?? "home"}.json`,
+      json: JSON.stringify(exportPageFile(snapshotPage()), null, 2),
+    });
   }
 
   function exportWorld() {
@@ -465,7 +469,21 @@ export default function WikiLayoutEditorPage() {
       return isActive ? snapshotPage() : p;
     });
     if (!inPages) list.push(snapshotPage());
-    downloadJson("wiki-world.json", exportWorldFile(list));
+    setExportState({
+      filename: "wiki-world.json",
+      json: JSON.stringify(exportWorldFile(list), null, 2),
+    });
+  }
+
+  function copyExport() {
+    if (!exportState) return;
+    void navigator.clipboard?.writeText(exportState.json).catch(() => {});
+    setNotice("已复制 JSON");
+  }
+
+  function downloadExport() {
+    if (!exportState) return;
+    downloadText(exportState.filename, exportState.json);
   }
 
   function askConfirm(message: string, onConfirm: () => void) {
@@ -1595,6 +1613,45 @@ export default function WikiLayoutEditorPage() {
                 确定
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {exportState ? (
+        <div
+          className={styles.dialogBackdrop}
+          onClick={() => setExportState(null)}
+        >
+          <div
+            className={styles.exportDialog}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className={styles.exportHead}>
+              <strong>{exportState.filename}</strong>
+              <button type="button" className={styles.ioBtn} onClick={copyExport}>
+                复制
+              </button>
+              <button
+                type="button"
+                className={styles.ioBtn}
+                onClick={downloadExport}
+              >
+                下载文件
+              </button>
+              <button
+                type="button"
+                className={styles.confirmBtn}
+                onClick={() => setExportState(null)}
+              >
+                关闭
+              </button>
+            </div>
+            <textarea
+              className={styles.exportText}
+              readOnly
+              spellCheck={false}
+              value={exportState.json}
+            />
           </div>
         </div>
       ) : null}
