@@ -475,6 +475,7 @@ export default function WikiLayoutEditorPage() {
     setError(null);
     try {
       await updateWorld(world.id, { wikiBackgroundUrl: url });
+      setPreviewKey(Date.now());
     } catch (err) {
       setError(err instanceof Error ? err.message : "保存背景图失败");
     }
