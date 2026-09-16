@@ -297,19 +297,32 @@
   font-size: 0.92rem;
 }
 
-/* The rail flows with the page — no inner scrollbar, no oversized box. */
+/* The rail sticks to the right while the article scrolls; its own scrollbar
+   is hidden (it would float in the middle of the page). */
 .rail {
   border-left: 1px solid var(--line);
   padding-left: 1.5rem;
+  position: sticky;
+  top: 4.5rem;
+  max-height: calc(100vh - 6rem);
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
 }
 
 .railScroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.railScroll::-webkit-scrollbar {
+  display: none;
 }
 
 @media (max-width: 900px) {
