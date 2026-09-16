@@ -17,7 +17,13 @@
   overflow-x: hidden;
   overflow-y: auto;
   overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.left::-webkit-scrollbar,
+.feed::-webkit-scrollbar {
+  display: none;
 }
 
 .left {
