@@ -30,6 +30,8 @@ export type Work = {
   authorId: string;
   authorUsername: string;
   authorDisplayName: string;
+  authorAvatarUrl: string | null;
+  authorBio: string | null;
   type: WorkType;
   category: WorkCategory;
   kind: string;

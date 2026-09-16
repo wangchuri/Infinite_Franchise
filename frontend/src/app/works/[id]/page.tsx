@@ -10,13 +10,14 @@ import {
   type Work,
   type WorkReadPayload,
 } from "@/lib/works";
-import { fetchWorldBySlug, type WikiEntry } from "@/lib/worlds";
+import { fetchWorldBySlug, type WikiEntry, type World } from "@/lib/worlds";
 import type { WorldCollection } from "@/lib/collections";
 import styles from "./work.module.css";
 
 export default function WorkDetailPage() {
   const params = useParams<{ id: string }>();
   const [data, setData] = useState<WorkReadPayload | null>(null);
+  const [world, setWorld] = useState<World | null>(null);
   const [entries, setEntries] = useState<WikiEntry[]>([]);
   const [collections, setCollections] = useState<WorldCollection[]>([]);
   const [others, setOthers] = useState<Work[]>([]);
@@ -41,6 +42,7 @@ export default function WorkDetailPage() {
         if (cancelled) return;
         setEntries(world?.entries ?? []);
         setCollections(world?.collections ?? []);
+        setWorld(world?.world ?? null);
         setOthers(
           works
             .filter((w) => w.id !== payload.work.id && !w.parentId)
@@ -81,6 +83,7 @@ export default function WorkDetailPage() {
   return (
     <ReaderView
       data={data}
+      world={world}
       entries={entries}
       collections={collections}
       others={others}

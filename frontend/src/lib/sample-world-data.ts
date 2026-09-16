@@ -130,6 +130,8 @@ export function sampleWorks(world: { id: string; name: string; slug: string }): 
     authorId: "sample-author",
     authorUsername: "demo",
     authorDisplayName: "示例作者",
+    authorAvatarUrl: null,
+    authorBio: null,
     status: "published",
     parentId: null,
     content: null,

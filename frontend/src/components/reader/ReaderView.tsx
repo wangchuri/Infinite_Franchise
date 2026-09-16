@@ -28,13 +28,14 @@ import {
   type WorkAnnotation,
   type WorkReadPayload,
 } from "@/lib/works";
-import type { WikiEntry } from "@/lib/worlds";
+import type { WikiEntry, World } from "@/lib/worlds";
 import styles from "./ReaderView.module.css";
 
 export type ReadMode = "scroll" | "pages";
 
 type Props = {
   data: WorkReadPayload;
+  world?: World | null;
   entries?: WikiEntry[];
   collections?: WorldCollection[];
   others?: Work[];
@@ -87,6 +88,7 @@ function textStats(content: string | null): { chars: number; minutes: number } {
 
 export default function ReaderView({
   data,
+  world = null,
   entries = [],
   collections = [],
   others = [],
@@ -801,6 +803,7 @@ export default function ReaderView({
 
       {showNotes ? (
         <aside className={styles.rail} aria-label="作品信息">
+          <div className={styles.railScroll}>
           {work.summary ? (
             <section className={styles.railSection}>
               <h3 className={styles.railTitle}>简介</h3>
@@ -810,8 +813,27 @@ export default function ReaderView({
 
           <section className={styles.railSection}>
             <h3 className={styles.railTitle}>作者</h3>
-            <p className={styles.railAuthor}>
-              {work.authorDisplayName || work.authorUsername}
+            <div className={styles.authorCard}>
+              <span className={styles.authorAvatar} aria-hidden="true">
+                {work.authorAvatarUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={work.authorAvatarUrl} alt="" />
+                ) : (
+                  (work.authorDisplayName || work.authorUsername || "?").slice(
+                    0,
+                    1,
+                  )
+                )}
+              </span>
+              <span className={styles.authorText}>
+                <strong>{work.authorDisplayName || work.authorUsername}</strong>
+                <span className={styles.authorHandle}>
+                  @{work.authorUsername}
+                </span>
+              </span>
+            </div>
+            <p className={styles.authorBio}>
+              {work.authorBio || "这位作者还没有填写介绍。"}
             </p>
           </section>
 
@@ -895,6 +917,26 @@ export default function ReaderView({
               )
             ) : null}
           </section>
+          </div>
+
+          {world ? (
+            <Link href={`/w/${world.slug}`} className={styles.worldCard}>
+              <span className={styles.worldLogo} aria-hidden="true">
+                {world.logoUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={world.logoUrl} alt="" />
+                ) : (
+                  world.name.slice(0, 1)
+                )}
+              </span>
+              <span className={styles.worldText}>
+                <strong>{world.name}</strong>
+                <span className={styles.worldDesc}>
+                  {world.tagline || world.description}
+                </span>
+              </span>
+            </Link>
+          ) : null}
         </aside>
       ) : null}
 

@@ -52,6 +52,8 @@ export type WorkFeedRow = WorkRow & {
   world_slug: string;
   author_username: string;
   author_display_name: string;
+  author_avatar_url: string | null;
+  author_bio: string | null;
   /** Populated by attachReactionCounts; not a DB column. */
   reaction_counts?: Record<string, number>;
 };
@@ -64,6 +66,8 @@ export type PublicWork = {
   authorId: string;
   authorUsername: string;
   authorDisplayName: string;
+  authorAvatarUrl: string | null;
+  authorBio: string | null;
   type: WorkType;
   category: WorkCategory;
   kind: string;
@@ -111,6 +115,8 @@ export function toPublicWork(row: WorkFeedRow): PublicWork {
     authorId: row.author_id,
     authorUsername: row.author_username,
     authorDisplayName: row.author_display_name,
+    authorAvatarUrl: row.author_avatar_url,
+    authorBio: row.author_bio,
     type: row.type,
     category: row.category,
     kind: row.kind ?? "",
@@ -161,7 +167,9 @@ const FEED_SELECT = `
          worlds.name AS world_name,
          worlds.slug AS world_slug,
          u.username AS author_username,
-         u.display_name AS author_display_name
+         u.display_name AS author_display_name,
+         u.avatar_url AS author_avatar_url,
+         u.bio AS author_bio
     FROM works w
     JOIN worlds ON worlds.id = w.world_id
     JOIN users u ON u.id = w.author_id
