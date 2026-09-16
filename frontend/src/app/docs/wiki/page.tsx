@@ -57,6 +57,31 @@ export default function WikiDocsPage() {
       </section>
 
       <section className={styles.section}>
+        <h2>布局 JSON（导入 / 导出）</h2>
+        <p>
+          编辑器顶部有「导出本页 / 导出世界 / 导入」。页文件结构：
+        </p>
+        <Code>{`{
+  "format": "infinite-franchise/wiki-page",
+  "version": 1,
+  "kind": "home" | "collection" | "custom",
+  "collectionKey": string | null,
+  "title": string, "slug": string,
+  "css": string,
+  "layout": { "version": 2, "theme": {…}, "blocks": [Block, …] }
+}
+
+// Block
+{ "id": string, "type": string, "props": {…}, "slots": { [槽名]: [Block, …] } }`}</Code>
+        <p className={styles.note}>
+          常用 <code>type</code>：<code>topBar / hero / columns / bgRegion / footer</code>、
+          <code>nav / navGrid / prose / entryGrid / glossary / timeline / workList / infoBox</code>、
+          <code>heading / text / richText / image / gallery / quote / divider / button / linkList / relatedEntries</code>、
+          <code>customHtml</code>。导入时会重新校验：未知 type 与非法属性会被丢弃。
+        </p>
+      </section>
+
+      <section className={styles.section}>
         <h2>页面 CSS</h2>
         <p>
           每页可写自定义 CSS，已做安全过滤（禁 <code>@import</code>、<code>expression</code>、

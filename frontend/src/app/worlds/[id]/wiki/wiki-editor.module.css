@@ -46,6 +46,27 @@
   color: var(--ink-soft);
 }
 
+.ioActions {
+  margin-left: auto;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.ioBtn {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  padding: 0.22rem 0.55rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.ioBtn:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
 .body {
   flex: 1;
   min-height: 0;

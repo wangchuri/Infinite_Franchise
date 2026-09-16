@@ -11,6 +11,12 @@ import {
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getAccessToken } from "@/lib/auth";
+import {
+  downloadJson,
+  exportPageFile,
+  exportWorldFile,
+  parsePageImport,
+} from "@/lib/layout-io";
 import { BLOCK_META, SLOT_LABELS, SLOT_ORDER } from "@/lib/block-meta";
 import { entryAttributeFields } from "@/lib/entry-schema";
 import BlockFields from "@/components/world-blocks/BlockFields";
@@ -223,6 +229,7 @@ export default function WikiLayoutEditorPage() {
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const iframeRef = useRef<HTMLIFrameElement>(null);
+  const importRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -342,6 +349,60 @@ export default function WikiLayoutEditorPage() {
       setPageCss(page?.css ?? "");
       setLayout(layoutFor(key, collections));
       setDirty(true);
+    }
+  }
+
+  function snapshotPage() {
+    const current: WorldLayout = layout ?? { version: 2, blocks: [] };
+    return {
+      kind: (activeKey === null ? "home" : "collection") as "home" | "collection",
+      collectionKey: activeKey,
+      title: "",
+      slug: "",
+      css: pageCss,
+      layout: current,
+    };
+  }
+
+  function exportCurrentPage() {
+    if (!layout) return;
+    downloadJson(
+      `wiki-${activeKey ?? "home"}.json`,
+      exportPageFile(snapshotPage()),
+    );
+  }
+
+  function exportWorld() {
+    const key = activeKey;
+    const inPages = pages.some((p) =>
+      key === null
+        ? p.kind === "home"
+        : p.kind === "collection" && p.collectionKey === key,
+    );
+    const list = pages.map((p) => {
+      const isActive =
+        key === null
+          ? p.kind === "home"
+          : p.kind === "collection" && p.collectionKey === key;
+      return isActive ? snapshotPage() : p;
+    });
+    if (!inPages) list.push(snapshotPage());
+    downloadJson("wiki-world.json", exportWorldFile(list));
+  }
+
+  async function onImportFile(file: File | undefined) {
+    if (!file) return;
+    try {
+      const { layout: nextLayout, css } = parsePageImport(await file.text());
+      if (!window.confirm("导入将替换当前页的布局与 CSS，确定？")) return;
+      mutate(nextLayout);
+      setPageCss(css);
+      setDirty(true);
+      setSelectedId("");
+      setEditingVariant(null);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "导入失败");
     }
   }
 
@@ -1089,6 +1150,35 @@ export default function WikiLayoutEditorPage() {
             示例数据
           </span>
         ) : null}
+        <span className={styles.ioActions}>
+          <button
+            type="button"
+            className={styles.ioBtn}
+            onClick={exportCurrentPage}
+          >
+            导出本页
+          </button>
+          <button type="button" className={styles.ioBtn} onClick={exportWorld}>
+            导出世界
+          </button>
+          <button
+            type="button"
+            className={styles.ioBtn}
+            onClick={() => importRef.current?.click()}
+          >
+            导入
+          </button>
+        </span>
+        <input
+          ref={importRef}
+          type="file"
+          accept=".json,application/json"
+          hidden
+          onChange={(e) => {
+            void onImportFile(e.target.files?.[0]);
+            e.target.value = "";
+          }}
+        />
         <span className={styles.saveState}>
           {saving ? "保存中…" : dirty ? "未保存" : savedAt ? "已保存" : ""}
         </span>
