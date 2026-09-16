@@ -32,12 +32,31 @@
   font-size: 1rem;
 }
 
-.sampleBadge {
-  font-size: 0.72rem;
-  padding: 0.15rem 0.55rem;
+/* Floating hint over the preview canvas: the layout is filled with sample data. */
+.sampleFloat {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.28rem 0.7rem;
   border-radius: 999px;
-  background: rgba(196, 92, 38, 0.14);
+  font-size: 0.74rem;
+  background: rgba(255, 254, 249, 0.92);
   color: var(--ember);
+  border: 1px solid rgba(196, 92, 38, 0.35);
+  box-shadow: 0 4px 14px rgba(20, 33, 43, 0.12);
+  pointer-events: none;
+}
+
+.sampleFloat::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ember);
 }
 
 .saveState {
@@ -610,6 +629,7 @@
 }
 
 .canvasViewport {
+  position: relative;
   flex: 1;
   min-height: 0;
   display: flex;

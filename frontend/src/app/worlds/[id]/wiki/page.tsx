@@ -1332,11 +1332,6 @@ export default function WikiLayoutEditorPage() {
             ? "Wiki 界面"
             : collectionName(collections, activeKey)}
         </strong>
-        {usingSample ? (
-          <span className={styles.sampleBadge} title="空区域以示例数据填充">
-            示例数据
-          </span>
-        ) : null}
         {notice ? <span className={styles.notice}>{notice}</span> : null}
         <span className={styles.ioActions}>
           <button
@@ -1446,6 +1441,9 @@ export default function WikiLayoutEditorPage() {
             </button>
           </div>
           <div className={styles.canvasViewport} ref={viewportRef}>
+            {usingSample ? (
+              <span className={styles.sampleFloat}>正在使用示例数据</span>
+            ) : null}
             <div
               className={styles.deviceWrap}
               style={{ width: frame.w * scale, height: frame.h * scale }}
