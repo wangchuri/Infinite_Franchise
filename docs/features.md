@@ -2,7 +2,7 @@
 
 > 更新：v0.2 · 2026-09-15  
 > 状态：**已进入开发**（前一版 `design.md` 标注的「尚未开发」已过期）  
-> 依据：当前代码现状整理。产品愿景与设计原则见 [`design.md`](./design.md)，视觉见 [`visual.md`](./visual.md)，数据表见 [`database/`](./database/)。
+> 依据：当前代码现状整理。产品愿景与设计原则见 [`design.md`](./design.md)，视觉见 [`visual.md`](./visual.md)，数据表见 [`database/`](./database/)，Wiki 界面重做规划见 [`wiki-plan.md`](./wiki-plan.md)。
 
 ---
 
@@ -15,7 +15,7 @@
 - 写作时自动关联世界词条，**设定与故事互相反哺**；
 - Web 端负责建造与管理，手机端负责发现与阅读。
 
-**核心闭环**：世界观 → Wiki 词条/时间线 → 共创作品 → 作品内 `[[词条]]` 关联 → 反哺 Wiki 与作品流。
+**核心闭环**：世界观 → 世界观内容（词条/时间线）→ 共创作品 → 作品内 `[[词条]]` 关联 → 反哺 Wiki 与作品流。
 
 ---
 
@@ -31,7 +31,7 @@
 | `/create/[type]` | 创作工作台（小说/美术/程序/音频/视频，全宽工具页） |
 | `/works/[id]` | 作品阅读页 |
 | `/works/[id]/edit` | 作品编辑（同一工作台，编辑模式，自动保存） |
-| `/worlds` · `/worlds/new` · `/worlds/[id]/edit` | 我参与/创建的世界、新建世界、世界设置 |
+| `/worlds` · `/worlds/new` · `/worlds/[id]/edit` | 我参与/创建的世界、新建世界、编辑世界观（设置） |
 | `/login` · `/register` | 账号 |
 
 ### 世界观层
@@ -47,7 +47,7 @@
 
 ### 编辑器（全宽工具页）
 
-`/worlds/[id]/wiki`（区块布局编辑器）、`/worlds/[id]/entries`（词条库 + 预览）、`/worlds/[id]/wiki-hub`（Wiki 入口分页）。
+`/worlds/[id]/wiki`（Wiki 界面 / 区块布局编辑器）、`/worlds/[id]/entries`（词条库 + 预览）、`/worlds/[id]/wiki-hub`（编辑世界观入口分页）。
 
 ---
 
@@ -150,6 +150,9 @@
 | 012 | `world_collections` | 归属系统（替代写死分类） |
 | 013 | `entry_content_layout` | 词条正文区块 |
 | 014 | `work_position` | 章节排序 |
+| 015 | `user_profile_social` | 个人资料扩展 + 关注 |
+| 016 | `user_cover` | 主页背景图 |
+| 017 | `world_pages` | 多页面（home/归属/自定义）+ 从 `world_layout` 回填 home |
 
 应用：`cd backend && npm run db:migrate`。
 
@@ -163,7 +166,8 @@
   - 成员：`GET/POST /api/worlds/:id/members`、`DELETE .../:userId`
   - 反应类型：`GET/POST /api/worlds/:id/reaction-types`、`PATCH/DELETE .../:typeId`
   - **归属**：`GET/POST /api/worlds/:id/collections`、`PATCH/DELETE .../:collectionId`
-  - **词条**：`GET/POST /api/worlds/:id/entries`、`PATCH/DELETE .../:entryId`
+   - **词条**：`GET/POST /api/worlds/:id/entries`、`PATCH/DELETE .../:entryId`
+   - **页面**：`GET/POST /api/worlds/:id/pages`、`PATCH/DELETE .../:pageId`
   - 时间线：`GET/POST /api/worlds/:id/timeline`、`PATCH/DELETE .../:eventId`
 - **works**：`GET /api/works`、`GET /api/works/mine`、`POST /api/works`、`GET /api/works/:id`、`GET /api/works/:id/read`、`PATCH/DELETE /api/works/:id`
   - 章节：`GET /api/works/:id/chapters`、`PATCH /api/works/:id/chapters/order`
@@ -178,7 +182,7 @@
 
 ## 6. 已实现 vs 规划
 
-**已实现（本文档范围）**：世界观与成员权限、Wiki 归属 + 词条 + 区块编辑器、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
+**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面区块编辑器、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
 
 **规划中 / 待补**（`feasibility-analysis.md` 为远期路线）：
 
@@ -190,3 +194,4 @@
 6. **搜索完善**：站内搜索目前覆盖作品/世界标题。
 7. **相关词条自动模式**：按同归属/同属性自动生成。
 8. **隐藏归属的公开页 404**。
+9. **Wiki 界面重做**：多背景区域、元组件内置属性（背景/尺寸/默认图）+ 优先级链、世界级 CSS、富文本块、对 Agent/HTML 友好的数据接口、归属页可编辑 —— 见 [`wiki-plan.md`](./wiki-plan.md)。

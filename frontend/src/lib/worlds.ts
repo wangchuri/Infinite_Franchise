@@ -91,6 +91,25 @@ export type TimelineEvent = {
   updatedAt: string;
 };
 
+export type WorldPageKind = "home" | "collection" | "custom";
+
+export type WorldPage = {
+  id: string;
+  kind: WorldPageKind;
+  collectionKey: string | null;
+  title: string;
+  slug: string;
+  sortOrder: number;
+  layout: WorldLayout;
+  css: string;
+  status: "draft" | "published";
+  updatedAt: string;
+};
+
+function withPage(page: WorldPage): WorldPage {
+  return { ...page, layout: normalizeWorldLayout(page.layout) };
+}
+
 export async function createWorld(name?: string): Promise<World> {
   const data = await apiFetch<{ world: World }>("/api/worlds", {
     method: "POST",
@@ -125,6 +144,7 @@ export async function fetchWorldBySlug(slug: string): Promise<{
   entries: WikiEntry[];
   timeline: TimelineEvent[];
   collections: WorldCollection[];
+  pages: WorldPage[];
   isOwner: boolean;
   canEdit: boolean;
 }> {
@@ -133,6 +153,7 @@ export async function fetchWorldBySlug(slug: string): Promise<{
     entries: WikiEntry[];
     timeline: TimelineEvent[];
     collections: WorldCollection[];
+    pages?: WorldPage[];
     isOwner: boolean;
     canEdit: boolean;
   }>(`/api/worlds/${encodeURIComponent(slug)}`, {}, { auth: true });
@@ -141,6 +162,7 @@ export async function fetchWorldBySlug(slug: string): Promise<{
     world: withConfig(data.world),
     entries: data.entries.map(withEntry),
     collections: normalizeCollections(data.collections),
+    pages: (data.pages ?? []).map(withPage),
   };
 }
 
@@ -149,6 +171,7 @@ export async function fetchWorldById(id: string): Promise<{
   entries: WikiEntry[];
   timeline: TimelineEvent[];
   collections: WorldCollection[];
+  pages: WorldPage[];
   isOwner: boolean;
   canEdit: boolean;
 }> {
@@ -157,6 +180,7 @@ export async function fetchWorldById(id: string): Promise<{
     entries: WikiEntry[];
     timeline: TimelineEvent[];
     collections: WorldCollection[];
+    pages?: WorldPage[];
     isOwner: boolean;
     canEdit: boolean;
   }>(`/api/worlds/id/${encodeURIComponent(id)}`);
@@ -165,7 +189,61 @@ export async function fetchWorldById(id: string): Promise<{
     world: withConfig(data.world),
     entries: data.entries.map(withEntry),
     collections: normalizeCollections(data.collections),
+    pages: (data.pages ?? []).map(withPage),
   };
+}
+
+export async function fetchWorldPages(worldId: string): Promise<WorldPage[]> {
+  const data = await apiFetch<{ pages: WorldPage[] }>(
+    `/api/worlds/${worldId}/pages`,
+  );
+  return (data.pages ?? []).map(withPage);
+}
+
+export async function createWorldPage(
+  worldId: string,
+  input: {
+    kind?: WorldPageKind;
+    collectionKey?: string | null;
+    title?: string;
+    slug?: string;
+    layout?: WorldLayout;
+    css?: string;
+  },
+): Promise<WorldPage> {
+  const data = await apiFetch<{ page: WorldPage }>(
+    `/api/worlds/${worldId}/pages`,
+    { method: "POST", body: JSON.stringify(input) },
+  );
+  return withPage(data.page);
+}
+
+export async function updateWorldPage(
+  worldId: string,
+  pageId: string,
+  patch: Partial<{
+    title: string;
+    slug: string;
+    layout: WorldLayout;
+    css: string;
+    status: "draft" | "published";
+    sortOrder: number;
+  }>,
+): Promise<WorldPage> {
+  const data = await apiFetch<{ page: WorldPage }>(
+    `/api/worlds/${worldId}/pages/${pageId}`,
+    { method: "PATCH", body: JSON.stringify(patch) },
+  );
+  return withPage(data.page);
+}
+
+export async function deleteWorldPage(
+  worldId: string,
+  pageId: string,
+): Promise<void> {
+  await apiFetch(`/api/worlds/${worldId}/pages/${pageId}`, {
+    method: "DELETE",
+  });
 }
 
 export async function updateWorld(

@@ -38,8 +38,10 @@ import {
   type WorldLayout,
 } from "@/lib/world-layout";
 import {
+  createWorldPage,
   fetchWorldById,
   updateWorld,
+  updateWorldPage,
   uploadFont,
   uploadImage,
   type TimelineEvent,
@@ -156,6 +158,7 @@ export default function WikiLayoutEditorPage() {
   const [collections, setCollections] = useState<WorldCollection[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [layout, setLayout] = useState<WorldLayout | null>(null);
+  const [pageId, setPageId] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string>("");
   const [dragId, setDragId] = useState<string>("");
   const [dropTarget, setDropTarget] = useState<{
@@ -189,8 +192,15 @@ export default function WikiLayoutEditorPage() {
         setEntries(data.entries);
         setCollections(data.collections);
         setTimeline(data.timeline);
-        if (data.world.layout.blocks.length) {
-          setLayout(data.world.layout);
+        const home = data.pages.find((p) => p.kind === "home");
+        if (home) {
+          setPageId(home.id);
+          if (home.layout.blocks.length) {
+            setLayout(home.layout);
+          } else {
+            setLayout(buildDefaultLayout());
+            setDirty(true);
+          }
         } else {
           setLayout(buildDefaultLayout());
           setDirty(true);
@@ -222,7 +232,15 @@ export default function WikiLayoutEditorPage() {
       void (async () => {
         setSaving(true);
         try {
-          await updateWorld(world.id, { layout });
+          if (pageId) {
+            await updateWorldPage(world.id, pageId, { layout });
+          } else {
+            const created = await createWorldPage(world.id, {
+              kind: "home",
+              layout,
+            });
+            setPageId(created.id);
+          }
           setSavedAt(new Date());
           setDirty(false);
           setError(null);
@@ -235,7 +253,7 @@ export default function WikiLayoutEditorPage() {
       })();
     }, 700);
     return () => window.clearTimeout(t);
-  }, [dirty, layout, world]);
+  }, [dirty, layout, world, pageId]);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -883,7 +901,7 @@ export default function WikiLayoutEditorPage() {
         <Link href={`/worlds/${world.id}/edit`} className={styles.back}>
           ← 返回编辑器
         </Link>
-        <strong className={styles.docName}>{world.name} · Wiki 排版</strong>
+        <strong className={styles.docName}>{world.name} · Wiki 界面</strong>
         {usingSample ? (
           <span className={styles.sampleBadge} title="空区域以示例数据呈现">
             示例数据

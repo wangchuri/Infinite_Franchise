@@ -15,6 +15,7 @@ import {
   type TimelineEvent,
   type WikiEntry,
   type World,
+  type WorldPage,
 } from "@/lib/worlds";
 import type { WorldCollection } from "@/lib/collections";
 import { fetchWorldWorks, type Work } from "@/lib/works";
@@ -41,6 +42,7 @@ export default function WorldWikiPage() {
   const [collections, setCollections] = useState<WorldCollection[]>([]);
   const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [works, setWorks] = useState<Work[]>([]);
+  const [pages, setPages] = useState<WorldPage[]>([]);
   const [isOwner, setIsOwner] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
@@ -69,6 +71,7 @@ export default function WorldWikiPage() {
             : data.timeline,
         );
         setIsOwner(data.isOwner);
+        setPages(data.pages);
         try {
           const list = await fetchWorldWorks(data.world.id, 30);
           if (!cancelled) {
@@ -98,12 +101,14 @@ export default function WorldWikiPage() {
     [world?.homepageConfig],
   );
 
-  /** Prefer an explicit block layout; otherwise adapt the legacy v1 config. */
+  /** Prefer the home page's block layout, then the legacy world fields. */
   const layout = useMemo(() => {
+    const home = pages.find((p) => p.kind === "home");
+    if (home && home.layout.blocks.length > 0) return home.layout;
     if (!world) return EMPTY_LAYOUT;
     if (world.layout.blocks.length > 0) return world.layout;
     return normalizeWorldLayout(world.homepageConfig);
-  }, [world]);
+  }, [pages, world]);
 
   if (!ready) {
     return <p className={styles.loading}>加载 Wiki…</p>;

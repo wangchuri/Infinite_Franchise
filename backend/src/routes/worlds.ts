@@ -9,7 +9,7 @@ import {
   removeMember,
 } from "../services/collab.js";
 import { normalizeHomepageConfig } from "../config/homepage-config.js";
-import { normalizeWorldLayout } from "../config/world-layout.js";
+import { normalizeWorldLayout, type WorldLayout } from "../config/world-layout.js";
 import { findUserByEmailOrUsername } from "../services/users.js";
 import {
   canViewWorld,
@@ -61,6 +61,15 @@ import {
   toPublicCollection,
   updateCollection,
 } from "../services/collections.js";
+import {
+  createWorldPage,
+  listWorldPages,
+  softDeleteWorldPage,
+  toPublicWorldPage,
+  updateWorldPage,
+  PAGE_KINDS,
+  type PageKind,
+} from "../services/pages.js";
 import { sanitizeAttrFields } from "../config/collections.js";
 
 function asString(v: unknown): string | undefined {
@@ -338,10 +347,11 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
     const canEdit =
       viewerId != null && canReviewWorks({ world, role, userId: viewerId });
-    const [entries, timeline, collections] = await Promise.all([
+    const [entries, timeline, collections, pages] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
       listCollections(world.id, { includeHidden: isOwner }),
+      listWorldPages(world.id, { includeDrafts: canEdit }),
     ]);
 
     return {
@@ -349,6 +359,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       entries: entries.map(toPublicEntry),
       timeline: timeline.map(toPublicTimeline),
       collections: collections.map(toPublicCollection),
+      pages: pages.map(toPublicWorldPage),
       isOwner,
       canEdit,
     };
@@ -369,10 +380,11 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
     const canEdit =
       viewerId != null && canReviewWorks({ world, role, userId: viewerId });
-    const [entries, timeline, collections] = await Promise.all([
+    const [entries, timeline, collections, pages] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
       listCollections(world.id, { includeHidden: isOwner }),
+      listWorldPages(world.id, { includeDrafts: canEdit }),
     ]);
 
     return {
@@ -380,6 +392,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       entries: entries.map(toPublicEntry),
       timeline: timeline.map(toPublicTimeline),
       collections: collections.map(toPublicCollection),
+      pages: pages.map(toPublicWorldPage),
       isOwner,
       canEdit,
     };
@@ -565,6 +578,103 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       };
       const [code, message] = errors[result.reason];
       return reply.code(code).send({ error: message });
+    }
+    return reply.code(204).send();
+  });
+
+  // —— Pages (Wiki 界面) ——
+  app.get("/api/worlds/:id/pages", async (req, reply) => {
+    const { id } = req.params as { id: string };
+    const world = await findWorldById(id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const viewerId = req.authUser?.id ?? null;
+    if (!canViewWorld(world, viewerId)) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const isOwner = viewerId != null && isWorldCreator(world, viewerId);
+    const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
+    const canEdit =
+      viewerId != null && canReviewWorks({ world, role, userId: viewerId });
+    const rows = await listWorldPages(id, { includeDrafts: canEdit });
+    return { pages: rows.map(toPublicWorldPage), isOwner, canEdit };
+  });
+
+  app.post("/api/worlds/:id/pages", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const kind =
+      typeof body.kind === "string" &&
+      (PAGE_KINDS as readonly string[]).includes(body.kind)
+        ? (body.kind as PageKind)
+        : "custom";
+    if (kind === "home") {
+      const existing = await listWorldPages(id);
+      if (existing.some((p) => p.kind === "home")) {
+        return reply.code(409).send({ error: "home page already exists" });
+      }
+    }
+    const created = await createWorldPage({
+      worldId: id,
+      kind,
+      collectionKey: asString(body.collectionKey) ?? null,
+      title: asString(body.title) ?? "",
+      slug: asString(body.slug) ?? "",
+      layout: body.layout as WorldLayout | undefined,
+      css: asString(body.css) ?? "",
+      status: "published",
+      sortOrder: typeof body.sortOrder === "number" ? body.sortOrder : 0,
+    });
+    return reply.code(201).send({ page: toPublicWorldPage(created) });
+  });
+
+  app.patch("/api/worlds/:id/pages/:pageId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, pageId } = req.params as { id: string; pageId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const body = (req.body ?? {}) as Record<string, unknown>;
+    const patch: Parameters<typeof updateWorldPage>[2] = {};
+    if (body.title !== undefined) patch.title = asString(body.title) ?? "";
+    if (body.slug !== undefined) patch.slug = asString(body.slug) ?? "";
+    if (body.css !== undefined) patch.css = asString(body.css) ?? "";
+    if (body.status === "draft" || body.status === "published") {
+      patch.status = body.status;
+    }
+    if (typeof body.sortOrder === "number") patch.sortOrder = body.sortOrder;
+    if (body.layout !== undefined) {
+      patch.layout = body.layout as WorldLayout;
+    }
+    const updated = await updateWorldPage(pageId, id, patch);
+    if (!updated) {
+      return reply.code(404).send({ error: "page not found" });
+    }
+    return { page: toPublicWorldPage(updated) };
+  });
+
+  app.delete("/api/worlds/:id/pages/:pageId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, pageId } = req.params as { id: string; pageId: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const ok = await softDeleteWorldPage(pageId, id);
+    if (!ok) {
+      return reply
+        .code(400)
+        .send({ error: "page not found or home page cannot be deleted" });
     }
     return reply.code(204).send();
   });
