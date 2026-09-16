@@ -14,6 +14,7 @@ import { getAccessToken } from "@/lib/auth";
 import { BLOCK_META, SLOT_LABELS, SLOT_ORDER } from "@/lib/block-meta";
 import { entryAttributeFields } from "@/lib/entry-schema";
 import BlockFields from "@/components/world-blocks/BlockFields";
+import ImageUpload from "@/components/world-editor/ImageUpload";
 import {
   createCollection,
   type WorldCollection,
@@ -447,6 +448,17 @@ export default function WikiLayoutEditorPage() {
       apply(url);
     } catch (err) {
       setError(err instanceof Error ? err.message : "上传失败");
+    }
+  }
+
+  async function setWikiBackground(url: string | null) {
+    if (!world) return;
+    setWorld({ ...world, wikiBackgroundUrl: url });
+    setError(null);
+    try {
+      await updateWorld(world.id, { wikiBackgroundUrl: url });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "保存背景图失败");
     }
   }
 
@@ -929,6 +941,14 @@ export default function WikiLayoutEditorPage() {
 
         <aside className={styles.paneRight}>
           <p className={styles.paneTitle}>属性 / Inspector</p>
+          <div className={styles.bgUpload}>
+            <ImageUpload
+              label="Wiki 背景图"
+              value={world.wikiBackgroundUrl}
+              onChange={(url) => void setWikiBackground(url)}
+              aspect="wide"
+            />
+          </div>
           {renderInspector()}
           {error ? <p className={styles.error}>{error}</p> : null}
         </aside>

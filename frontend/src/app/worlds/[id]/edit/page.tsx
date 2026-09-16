@@ -1,47 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import WikiTiles from "@/components/WikiTiles";
+import CollabPanel from "@/components/world-editor/CollabPanel";
+import ImageUpload from "@/components/world-editor/ImageUpload";
 import { getAccessToken } from "@/lib/auth";
+import { usePageLabel } from "@/lib/nav-trail";
 import {
-  createEntry,
-  createTimelineEvent,
-  deleteEntry,
-  deleteTimelineEvent,
   excerpt,
   fetchTagPresets,
   fetchWorldById,
   publishWorld,
   updateEntry,
   updateWorld,
-  type TimelineEvent,
   type WikiEntry,
   type World,
 } from "@/lib/worlds";
-import { createWork } from "@/lib/works";
-import {
-  WORK_CATEGORIES,
-  WORK_KINDS,
-  type WorkCategory,
-} from "@/lib/work-taxonomy";
-import EntrySlidePanel, {
-  type EntryFormValue,
-} from "@/components/world-editor/EntrySlidePanel";
-import CollabPanel from "@/components/world-editor/CollabPanel";
-import ImageUpload from "@/components/world-editor/ImageUpload";
-import ReactionManager from "@/components/world-editor/ReactionManager";
-import StylePanel from "@/components/world-editor/StylePanel";
-import TimelineEditor from "@/components/world-editor/TimelineEditor";
-import {
-  normalizeHomepageConfig,
-  type HomepageConfig,
-} from "@/lib/homepage-config";
 import styles from "./edit.module.css";
-
-type SlideState =
-  | { kind: "character" | "item"; entry?: WikiEntry }
-  | null;
 
 export default function EditWorldPage() {
   const params = useParams<{ id: string }>();
@@ -50,9 +26,7 @@ export default function EditWorldPage() {
 
   const [world, setWorld] = useState<World | null>(null);
   const [entries, setEntries] = useState<WikiEntry[]>([]);
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [presets, setPresets] = useState<string[]>([]);
-  const [slide, setSlide] = useState<SlideState>(null);
   const [customTag, setCustomTag] = useState("");
   const [nameDraft, setNameDraft] = useState("");
   const [taglineDraft, setTaglineDraft] = useState("");
@@ -60,22 +34,11 @@ export default function EditWorldPage() {
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
-  const [workTitle, setWorkTitle] = useState("");
-  const [workSummary, setWorkSummary] = useState("");
-  const [workContent, setWorkContent] = useState("");
-  const [workCategory, setWorkCategory] = useState<WorkCategory>("novel");
-  const [workKind, setWorkKind] = useState("short");
-  const [workBusy, setWorkBusy] = useState(false);
-  const [workMsg, setWorkMsg] = useState<string | null>(null);
+  /** Set while a Wiki tile is waiting for the unsaved-changes prompt. */
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
 
-  const characters = useMemo(
-    () => entries.filter((e) => e.category === "character"),
-    [entries],
-  );
-  const items = useMemo(
-    () => entries.filter((e) => e.category === "item"),
-    [entries],
-  );
+  usePageLabel(world?.name ?? null);
+
   const intro = useMemo(
     () => entries.find((e) => e.category === "intro"),
     [entries],
@@ -90,7 +53,6 @@ export default function EditWorldPage() {
     setNameDraft(data.world.name);
     setTaglineDraft(data.world.tagline);
     setEntries(data.entries);
-    setTimeline(data.timeline);
   }, [worldId]);
 
   useEffect(() => {
@@ -208,29 +170,6 @@ export default function EditWorldPage() {
     setCustomTag("");
   }
 
-  async function onSaveEntry(value: EntryFormValue) {
-    if (!world || !slide) return;
-    if (slide.entry) {
-      const updated = await updateEntry(world.id, slide.entry.id, value);
-      setEntries((prev) =>
-        prev.map((e) => (e.id === updated.id ? updated : e)),
-      );
-    } else {
-      const created = await createEntry(world.id, {
-        category: slide.kind,
-        ...value,
-      });
-      setEntries((prev) => [...prev, created]);
-    }
-  }
-
-  async function onDeleteEntry(entryId: string) {
-    if (!world) return;
-    await deleteEntry(world.id, entryId);
-    setEntries((prev) => prev.filter((e) => e.id !== entryId));
-    if (slide?.entry?.id === entryId) setSlide(null);
-  }
-
   async function onPublish() {
     if (!world) return;
     setPublishing(true);
@@ -244,38 +183,30 @@ export default function EditWorldPage() {
     }
   }
 
-  async function onPublishWork() {
-    if (!world) return;
-    const title = workTitle.trim();
-    if (!title) {
-      setWorkMsg("请填写作品标题");
-      return;
-    }
-    setWorkBusy(true);
-    setWorkMsg(null);
-    try {
-      const work = await createWork({
-        worldId: world.id,
-        category: workCategory,
-        kind: workKind,
-        title,
-        summary: workSummary.trim() || undefined,
-        content: workContent.trim() || undefined,
-        publish: true,
-      });
-      setWorkTitle("");
-      setWorkSummary("");
-      setWorkContent("");
-      setWorkMsg(
-        world.status === "published"
-          ? `已发布到广场：「${work.title}」`
-          : `已创建「${work.title}」（世界观发布后才会出现在广场）`,
-      );
-    } catch (err) {
-      setWorkMsg(err instanceof Error ? err.message : "发布作品失败");
-    } finally {
-      setWorkBusy(false);
-    }
+  const hasUnsaved = world
+    ? nameDraft.trim() !== world.name || taglineDraft.trim() !== world.tagline
+    : false;
+
+  function handleTileNavigate(href: string): boolean {
+    if (!hasUnsaved) return true;
+    setPendingHref(href);
+    return false;
+  }
+
+  async function saveAndGo() {
+    const href = pendingHref;
+    if (!href) return;
+    const ok = await saveName();
+    if (!ok) return;
+    await saveTagline();
+    setPendingHref(null);
+    router.push(href);
+  }
+
+  function goWithoutSaving() {
+    const href = pendingHref;
+    setPendingHref(null);
+    if (href) router.push(href);
   }
 
   if (!ready) {
@@ -287,7 +218,7 @@ export default function EditWorldPage() {
   }
 
   return (
-    <div className={`${styles.layout} ${slide ? styles.compressed : ""}`}>
+    <div className={styles.layout}>
       <div className={styles.main}>
         <section className={styles.hero}>
           <ImageUpload
@@ -375,245 +306,16 @@ export default function EditWorldPage() {
           </div>
         </section>
 
-        <div className={styles.bgRow}>
-          <ImageUpload
-            label="Wiki 背景图"
-            value={world.wikiBackgroundUrl}
-            onChange={(url) => void patchWorld({ wikiBackgroundUrl: url })}
-            aspect="wide"
-          />
-        </div>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2>人物</h2>
-            <button
-              type="button"
-              className={styles.plus}
-              aria-label="添加人物"
-              onClick={() => setSlide({ kind: "character" })}
-            >
-              +
-            </button>
-          </div>
-          {characters.length === 0 ? (
-            <p className={styles.emptyHint}>点击 + 添加人物</p>
-          ) : (
-            <div className={styles.grid}>
-              {characters.map((c) => (
-                <article key={c.id} className={styles.card}>
-                  <button
-                    type="button"
-                    className={styles.cardHit}
-                    onClick={() => setSlide({ kind: "character", entry: c })}
-                  >
-                    {c.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={c.imageUrl} alt="" className={styles.thumb} />
-                    ) : (
-                      <div className={styles.thumbEmpty}>无立绘</div>
-                    )}
-                    <div className={styles.cardBody}>
-                      <strong>{c.title}</strong>
-                      <p>{excerpt(c.content) || "暂无介绍"}</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.cardDel}
-                    onClick={() => void onDeleteEntry(c.id)}
-                  >
-                    删除
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <h2>物品</h2>
-            <button
-              type="button"
-              className={styles.plus}
-              aria-label="添加物品"
-              onClick={() => setSlide({ kind: "item" })}
-            >
-              +
-            </button>
-          </div>
-          {items.length === 0 ? (
-            <p className={styles.emptyHint}>点击 + 添加物品</p>
-          ) : (
-            <div className={styles.grid}>
-              {items.map((it) => (
-                <article key={it.id} className={styles.card}>
-                  <button
-                    type="button"
-                    className={styles.cardHit}
-                    onClick={() => setSlide({ kind: "item", entry: it })}
-                  >
-                    {it.imageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={it.imageUrl} alt="" className={styles.thumb} />
-                    ) : (
-                      <div className={styles.thumbEmpty}>无图片</div>
-                    )}
-                    <div className={styles.cardBody}>
-                      <strong>{it.title}</strong>
-                      <p>{excerpt(it.content) || "暂无介绍"}</p>
-                    </div>
-                  </button>
-                  <button
-                    type="button"
-                    className={styles.cardDel}
-                    onClick={() => void onDeleteEntry(it.id)}
-                  >
-                    删除
-                  </button>
-                </article>
-              ))}
-            </div>
-          )}
-        </section>
-
-        <section className={styles.section}>
-          <TimelineEditor
-            events={timeline}
-            onCreate={async (input) => {
-              if (!world) return;
-              const ev = await createTimelineEvent(world.id, input);
-              setTimeline((prev) => [...prev, ev]);
-            }}
-            onDelete={async (eventId) => {
-              if (!world) return;
-              await deleteTimelineEvent(world.id, eventId);
-              setTimeline((prev) => prev.filter((e) => e.id !== eventId));
-            }}
-          />
-        </section>
-
         <section className={styles.section}>
           <div className={styles.sectionHead}>
             <div>
-              <h2>发布作品</h2>
+              <h2>Wiki 内容</h2>
               <p className={styles.sectionLead}>
-                作品会出现在广场流中（需世界观已公开发布）。
+                归属与词条、Wiki 主页排版各自独立维护。
               </p>
             </div>
           </div>
-          <div className={styles.workForm}>
-            <label className={styles.field}>
-              <span>分类</span>
-              <select
-                value={workCategory}
-                onChange={(e) => {
-                  const c = e.target.value as WorkCategory;
-                  setWorkCategory(c);
-                  setWorkKind(WORK_KINDS[c][0]?.key ?? "");
-                }}
-              >
-                {WORK_CATEGORIES.map((c) => (
-                  <option key={c.key} value={c.key}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span>子类型</span>
-              <select
-                value={workKind}
-                onChange={(e) => setWorkKind(e.target.value)}
-                disabled={WORK_KINDS[workCategory].length === 0}
-              >
-                {WORK_KINDS[workCategory].length === 0 ? (
-                  <option value="">—</option>
-                ) : (
-                  WORK_KINDS[workCategory].map((k) => (
-                    <option key={k.key} value={k.key}>
-                      {k.label}
-                    </option>
-                  ))
-                )}
-              </select>
-            </label>
-            <label className={styles.field}>
-              <span>标题</span>
-              <input
-                value={workTitle}
-                onChange={(e) => setWorkTitle(e.target.value)}
-                maxLength={200}
-                placeholder="作品名称"
-              />
-            </label>
-            <label className={styles.field}>
-              <span>摘要</span>
-              <input
-                value={workSummary}
-                onChange={(e) => setWorkSummary(e.target.value)}
-                maxLength={500}
-                placeholder="列表里显示的一句话"
-              />
-            </label>
-            <label className={styles.field}>
-              <span>正文（Markdown）</span>
-              <textarea
-                rows={6}
-                value={workContent}
-                onChange={(e) => setWorkContent(e.target.value)}
-                placeholder="故事正文…"
-              />
-            </label>
-            <div className={styles.workActions}>
-              <button
-                type="button"
-                className={styles.publish}
-                disabled={workBusy}
-                onClick={() => void onPublishWork()}
-              >
-                {workBusy ? "发布中…" : "发布到广场"}
-              </button>
-              {workMsg ? <span className={styles.workMsg}>{workMsg}</span> : null}
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <StylePanel
-            value={normalizeHomepageConfig(world.homepageConfig)}
-            onChange={(homepageConfig: HomepageConfig) => {
-              setWorld({ ...world, homepageConfig });
-              void patchWorld({ homepageConfig });
-            }}
-          />
-        </section>
-
-        <section className={styles.section}>
-          <div className={styles.sectionHead}>
-            <div>
-              <h2>Wiki 排版</h2>
-              <p className={styles.sectionLead}>
-                用可视化编辑器安排 Wiki 主页的区域与内容，预览示例数据。
-              </p>
-            </div>
-            <div className={styles.footerActions}>
-              <Link
-                href={`/worlds/${world.id}/entries`}
-                className={styles.saveExit}
-              >
-                词条库
-              </Link>
-              <Link href={`/worlds/${world.id}/wiki`} className={styles.publish}>
-                打开排版编辑器
-              </Link>
-            </div>
-          </div>
-        </section>
-
-        <section className={styles.section}>
-          <ReactionManager worldId={world.id} />
+          <WikiTiles worldId={world.id} onNavigate={handleTileNavigate} />
         </section>
 
         <section className={styles.section}>
@@ -662,21 +364,42 @@ export default function EditWorldPage() {
         </div>
       </div>
 
-      {slide ? (
-        <EntrySlidePanel
-          kind={slide.kind}
-          initial={
-            slide.entry
-              ? {
-                  title: slide.entry.title,
-                  content: slide.entry.content,
-                  imageUrl: slide.entry.imageUrl,
-                }
-              : undefined
-          }
-          onSave={onSaveEntry}
-          onClose={() => setSlide(null)}
-        />
+      {pendingHref ? (
+        <div
+          className={styles.modalBackdrop}
+          role="dialog"
+          aria-modal="true"
+          aria-label="未保存的修改"
+          onClick={() => setPendingHref(null)}
+        >
+          <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
+            <h2>有未保存的修改</h2>
+            <p>进入 Wiki 编辑前，是否先保存当前进度？</p>
+            <div className={styles.modalActions}>
+              <button
+                type="button"
+                className={styles.saveExit}
+                onClick={() => setPendingHref(null)}
+              >
+                取消
+              </button>
+              <button
+                type="button"
+                className={styles.saveExit}
+                onClick={goWithoutSaving}
+              >
+                不保存，直接进入
+              </button>
+              <button
+                type="button"
+                className={styles.publish}
+                onClick={() => void saveAndGo()}
+              >
+                保存并进入
+              </button>
+            </div>
+          </div>
+        </div>
       ) : null}
     </div>
   );

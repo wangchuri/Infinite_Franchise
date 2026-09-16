@@ -83,6 +83,12 @@
   margin-bottom: 0.6rem;
 }
 
+.bgUpload {
+  padding-bottom: 0.9rem;
+  margin-bottom: 0.9rem;
+  border-bottom: 1px solid var(--line);
+}
+
 .tree {
   display: flex;
   flex-direction: column;
