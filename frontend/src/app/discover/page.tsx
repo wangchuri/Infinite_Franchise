@@ -121,6 +121,9 @@ function DiscoverInner() {
             名称
           </button>
         </div>
+        <Link href="/worlds" className={styles.createCta}>
+          ＋ 创建世界观
+        </Link>
       </div>
 
       {availableTags.length > 0 ? (

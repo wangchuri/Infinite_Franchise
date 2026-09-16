@@ -98,6 +98,26 @@
   color: var(--sea);
 }
 
+.createCta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1.05rem;
+  border: 1px solid var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 0.88rem;
+  white-space: nowrap;
+  text-decoration: none;
+}
+
+.createCta:hover {
+  border-color: var(--sea);
+  background: var(--sea);
+  color: #fff;
+  text-decoration: none;
+}
+
 .filters {
   display: flex;
   flex-wrap: wrap;
