@@ -1,6 +1,6 @@
 # Wiki 界面的规划（排版编辑器重做）
 
-> 状态：Phase 0 完成 · Phase 1 完成 · Phase 2/3 待做
+> 状态：Phase 0/1/2 完成 · Phase 3 待做
 > 相关：`docs/features.md`、`docs/design.md`
 
 ## 1. 三层模型与术语
@@ -49,10 +49,11 @@
 - 多背景区域块 `bgRegion`（背景图/渐变/暗色遮罩/最小高度/内边距/固定视差，含 content 子槽）。
 - 归属页可编辑：编辑器页面切换（首页 + 各归属），公开 `/w/[slug]/c/[key]` 渲染归属页布局。
 
-### Phase 2（富文本 / HTML）
-- `richText` 块（图文混排 + HTML 源码切换，存 HTML 并 sanitize）。
-- 上传 HTML → `customHtml` 块。
-- `window.WORLD` 补全 + 文档页（JSON Schema）。
+### Phase 2（富文本 / HTML）— ✅ 已完成
+- `richText` 块：所见即所得工具栏（粗/斜/下划线/标题/列表/引用/链接/图片）+ HTML 源码双模式。
+- 安全：渲染端 DOMParser 白名单（标签/属性/URL），后端正则兜底；`customHtml` 仍原样跑在沙箱里。
+- `customHtml` 支持上传 `.html` / `.css` 文件。
+- `window.WORLD` 补全（词条 `aliases`/`attributes`、`collections` 元数据）+ 文档页 `/docs/wiki`。
 
 ### Phase 3（生态）
 - layout 导入/导出（Agent 友好）、模板/一键套用、版本回滚、响应式、素材库。

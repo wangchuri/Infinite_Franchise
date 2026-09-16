@@ -77,7 +77,9 @@
   `nav / navGrid / prose / entryGrid / glossary / timeline / eventAxis / workList / infoBox / stats / tagCloud`（数据区域），
   `platformButton`（平台按钮）、`customHtml`（**沙箱 iframe** 内渲染，注入世界数据）。
 - **多页面**：`world_pages`（迁移 017）分 `home / collection / custom`；排版编辑器顶部页签在「首页 + 各归属」间切换，归属页首次保存自动创建。公开侧 `/w/[slug]/c/[key]` 有页面布局就渲染布局，否则回退词条列表。
-- **内容区块**（词条正文与世界页通用）：`heading / text(Markdown) / image / gallery / quote / divider / button / linkList / relatedEntries`。
+- **内容区块**（词条正文与世界页通用）：`heading / text(Markdown) / richText(所见即所得 + HTML 源码) / image / gallery / quote / divider / button / linkList / relatedEntries`。
+- **富文本 `richText`**：工具栏（加粗/斜体/下划线/H2/H3/列表/引用/链接/插入图片）+ **HTML 源码模式**；渲染端用 DOMParser 白名单 sanitize（内联渲染）。
+- **自定义 HTML**：`customHtml` 在沙箱 iframe 中运行、注入 `window.WORLD`，支持上传 `.html` / `.css`；接口文档见 `/docs/wiki`。
 - **背景区域 `bgRegion`**：每个块可设背景图 / 渐变 / 背景色 / 暗色遮罩 / 最小高度 / 内边距 / 固定视差，并可嵌套内容区——一页可放多个背景带。
 - **元组件（卡片变体）内置属性**：`box`（宽 / 高 / 背景图 / 背景色 / 圆角 / 透明度）+ `defaultImage`（词条无图时的默认图）；可按词条属性匹配不同变体。CSS 优先级：内置 box < 页面 CSS < 变体 CSS。
 - **页面级 CSS**：每页可写自定义 CSS（前后端 sanitize，禁 `@import`/`expression`/`javascript:`/`@scope`），公开页以 `@scope (#wiki-root)` 注入，不泄漏到平台 UI；同时下发到区域沙箱 iframe。
@@ -186,7 +188,7 @@
 
 ## 6. 已实现 vs 规划
 
-**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
+**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性 / 富文本 / 自定义 HTML）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
 
 **规划中 / 待补**（`feasibility-analysis.md` 为远期路线）：
 
@@ -198,4 +200,4 @@
 6. **搜索完善**：站内搜索目前覆盖作品/世界标题。
 7. **相关词条自动模式**：按同归属/同属性自动生成。
 8. **隐藏归属的公开页 404**。
-9. **Wiki 界面 Phase 2/3**：富文本块（所见即所得 + HTML 源码）、上传 HTML→`customHtml`、`window.WORLD` 补全 + 文档、layout 导入/导出（Agent 友好）、版本回滚、响应式、素材库 —— 见 [`wiki-plan.md`](./wiki-plan.md)。
+9. **Wiki 界面 Phase 3**：layout 导入/导出（Agent 友好）、模板/一键套用、版本回滚、响应式、素材库 —— 见 [`wiki-plan.md`](./wiki-plan.md)。
