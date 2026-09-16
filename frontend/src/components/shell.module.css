@@ -11,10 +11,6 @@
   overflow: hidden;
 }
 
-.shellPlaza .footer {
-  flex-shrink: 0;
-}
-
 /* Create page: full-bleed dark "tarot table" theme */
 .shellLab {
   background:
@@ -80,11 +76,6 @@
 
 .shellLab .avatarFallback {
   color: var(--paper);
-}
-
-.shellLab .footer {
-  color: rgba(243, 239, 230, 0.5);
-  border-top-color: rgba(243, 239, 230, 0.1);
 }
 
 @media (max-width: 1024px) {
@@ -384,18 +375,7 @@
   padding: 0;
 }
 
-/* World home: hide the platform footer so the page fills the viewport. */
+/* World home fills the viewport. */
 .shellWorld {
   min-height: 100vh;
-}
-
-.shellWorld .footer {
-  display: none;
-}
-
-.footer {
-  padding: 1.25rem 4vw 1.75rem;
-  border-top: 1px solid var(--line);
-  font-size: 0.85rem;
-  color: var(--ink-soft);
 }

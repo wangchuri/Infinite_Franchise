@@ -266,7 +266,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         {children}
       </div>
       <RouteSwipe />
-      <footer className={styles.footer}>无限企划 · Web · 本地开发</footer>
     </div>
   );
 }
