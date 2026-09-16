@@ -34,6 +34,7 @@ import {
   type BlockVariant,
   type ComponentField,
   type ComponentFieldType,
+  type VariantBox,
   type VariantMatchOp,
   type WorldLayout,
 } from "@/lib/world-layout";
@@ -368,6 +369,24 @@ export default function WikiLayoutEditorPage() {
     );
   }
 
+  function patchBox(
+    blockId: string,
+    variantId: string,
+    patch: Partial<VariantBox>,
+  ) {
+    if (!layout) return;
+    const block = findBlock(layout.blocks, blockId);
+    if (!block) return;
+    const variant = variantsOf(block).find((v) => v.id === variantId);
+    if (!variant) return;
+    const next: VariantBox = { ...(variant.box ?? {}), ...patch };
+    for (const key of Object.keys(next) as (keyof VariantBox)[]) {
+      const value = next[key];
+      if (value === undefined || value === "") delete next[key];
+    }
+    patchVariant(blockId, variantId, { box: next });
+  }
+
   function removeVariant(blockId: string, variantId: string) {
     if (!layout) return;
     const block = findBlock(layout.blocks, blockId);
@@ -672,6 +691,70 @@ export default function WikiLayoutEditorPage() {
             onChange={(e) => patchVariant(block.id, v.id, { name: e.target.value })}
           />
         </label>
+
+        <div className={styles.subHead}>外观（可被下方 CSS 覆盖）</div>
+        <ImageUpload
+          label="默认图片（词条无图时）"
+          value={v.defaultImage ?? ""}
+          onChange={(url) =>
+            patchVariant(block.id, v.id, { defaultImage: url ?? "" })
+          }
+          aspect="wide"
+        />
+        <ImageUpload
+          label="背景图"
+          value={v.box?.bgImage ?? ""}
+          onChange={(url) => patchBox(block.id, v.id, { bgImage: url ?? "" })}
+          aspect="wide"
+        />
+        <div className={styles.fieldRow}>
+          <input
+            className={styles.mini}
+            value={v.box?.width ?? ""}
+            placeholder="宽 220px"
+            onChange={(e) => patchBox(block.id, v.id, { width: e.target.value })}
+          />
+          <input
+            className={styles.mini}
+            value={v.box?.height ?? ""}
+            placeholder="高 260px"
+            onChange={(e) => patchBox(block.id, v.id, { height: e.target.value })}
+          />
+          <input
+            className={styles.mini}
+            value={v.box?.radius ?? ""}
+            placeholder="圆角 12px"
+            onChange={(e) => patchBox(block.id, v.id, { radius: e.target.value })}
+          />
+        </div>
+        <div className={styles.fieldRow}>
+          <label className={styles.mini}>
+            背景色
+            <input
+              type="color"
+              value={v.box?.bgColor ?? "#ffffff"}
+              onChange={(e) =>
+                patchBox(block.id, v.id, { bgColor: e.target.value })
+              }
+            />
+          </label>
+          <label className={styles.mini}>
+            透明度
+            <input
+              type="number"
+              min={0}
+              max={1}
+              step={0.05}
+              value={v.box?.opacity ?? ""}
+              onChange={(e) =>
+                patchBox(block.id, v.id, {
+                  opacity:
+                    e.target.value === "" ? undefined : Number(e.target.value),
+                })
+              }
+            />
+          </label>
+        </div>
 
         {v.isDefault ? (
           <p className={styles.muted}>默认卡片：其他条件未命中时使用。</p>

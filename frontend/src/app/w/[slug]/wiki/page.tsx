@@ -138,6 +138,7 @@ export default function WorldWikiPage() {
         isOwner={isOwner}
         config={config}
         layout={layout}
+        pageCss={homeCss}
       >
         <BlockRenderer blocks={layout.blocks} />
       </WorldBlocksProvider>

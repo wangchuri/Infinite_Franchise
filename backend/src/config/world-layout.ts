@@ -76,6 +76,16 @@ export type VariantMatch = {
   value: string;
 };
 
+/** Built-in presentation of a card variant (overridable by author CSS). */
+export type VariantBox = {
+  width?: string;
+  height?: string;
+  bgImage?: string;
+  bgColor?: string;
+  radius?: string;
+  opacity?: number;
+};
+
 /**
  * A card variant for a region: how each item in the region is rendered.
  * Regions may define several; the first whose `match` passes wins, else the
@@ -90,6 +100,10 @@ export type BlockVariant = {
   values: Record<string, string>;
   html: string;
   css: string;
+  /** Fallback image when an item has none ({{imageUrl}}). */
+  defaultImage?: string;
+  /** Built-in box settings; page/variant CSS override these. */
+  box?: VariantBox;
 };
 
 export type WorldLayout = {
@@ -279,6 +293,36 @@ const VARIANT_MATCH_OPS = new Set<VariantMatchOp>(["eq", "neq", "contains"]);
 const MAX_VARIANTS = 12;
 const MAX_COMPONENT_FIELDS = 12;
 
+/** A single CSS length/keyword; reject anything that could break the rule. */
+function sanitizeCssValue(raw: unknown): string | undefined {
+  if (typeof raw !== "string") return undefined;
+  const value = raw.trim().slice(0, 40);
+  if (!value || /[;{}<>]/.test(value)) return undefined;
+  return value;
+}
+
+function sanitizeVariantBox(raw: unknown): VariantBox | undefined {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return undefined;
+  const s = raw as Record<string, unknown>;
+  const box: VariantBox = {};
+  const width = sanitizeCssValue(s.width);
+  if (width) box.width = width;
+  const height = sanitizeCssValue(s.height);
+  if (height) box.height = height;
+  const radius = sanitizeCssValue(s.radius);
+  if (radius) box.radius = radius;
+  if (typeof s.bgImage === "string" && s.bgImage) {
+    box.bgImage = s.bgImage.slice(0, 2000);
+  }
+  if (typeof s.bgColor === "string" && /^#[0-9A-Fa-f]{3,8}$/.test(s.bgColor)) {
+    box.bgColor = s.bgColor;
+  }
+  if (typeof s.opacity === "number" && s.opacity >= 0 && s.opacity <= 1) {
+    box.opacity = s.opacity;
+  }
+  return Object.keys(box).length ? box : undefined;
+}
+
 function sanitizeComponentField(raw: unknown): ComponentField | null {
   if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
   const s = raw as Record<string, unknown>;
@@ -360,6 +404,11 @@ function sanitizeVariant(
     css: typeof s.css === "string" ? s.css.slice(0, 20000) : "",
   };
   if (isDefault) variant.isDefault = true;
+  if (typeof s.defaultImage === "string" && s.defaultImage) {
+    variant.defaultImage = s.defaultImage.slice(0, 2000);
+  }
+  const box = sanitizeVariantBox(s.box);
+  if (box) variant.box = box;
   return variant;
 }
 

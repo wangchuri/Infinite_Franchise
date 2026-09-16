@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { excerpt } from "@/lib/worlds";
 import type { WikiEntry } from "@/lib/worlds";
-import type { Block, BlockVariant } from "@/lib/world-layout";
+import type { Block, BlockVariant, VariantBox } from "@/lib/world-layout";
 import { useWorldBlocks } from "../WorldBlocksProvider";
 import { SANDBOX, buildWorldData, safeJson } from "./world-data";
 import styles from "../blocks.module.css";
@@ -19,6 +19,31 @@ type ItemData = {
   excerpt: string;
   attributes: Record<string, string>;
 };
+
+/** Strip characters that could break out of a CSS url()/rule. */
+function safeUrl(url: string): string {
+  return url.replace(/["'()\\<>\s]/g, "");
+}
+
+/** Built-in box settings for a variant (lowest priority in the cascade). */
+function boxRule(id: string, box: VariantBox | null | undefined): string {
+  if (!box) return "";
+  const decl: string[] = [];
+  if (box.width) decl.push(`width:${box.width}`);
+  if (box.height) decl.push(`height:${box.height}`);
+  if (box.bgColor) decl.push(`background-color:${box.bgColor}`);
+  if (box.bgImage) {
+    decl.push(
+      `background-image:url("${safeUrl(box.bgImage)}")`,
+      "background-size:cover",
+      "background-position:center",
+    );
+  }
+  if (box.radius) decl.push(`border-radius:${box.radius}`);
+  if (typeof box.opacity === "number") decl.push(`opacity:${box.opacity}`);
+  if (decl.length === 0) return "";
+  return `[data-variant="${id}"]{${decl.join(";")};}`;
+}
 
 /** Platform loop injected into the sandbox; authors only write one item template. */
 const RUNTIME = `
@@ -44,6 +69,7 @@ const RUNTIME = `
       var out="";
       if(k.indexOf("attr.")===0) out=(item.attributes&&item.attributes[k.slice(5)])||"";
       else if(k.indexOf("prop.")===0) out=props[k.slice(5)]||"";
+      else if(k==="imageUrl") out=item.imageUrl||props.__defaultImage||"";
       else out=item[k]!=null?item[k]:"";
       return css?String(out):esc(out);
     });
@@ -89,8 +115,14 @@ export function VariantGrid({
   variants: BlockVariant[];
   entries: WikiEntry[];
 }) {
-  const { world, entries: allEntries, byCategory, timeline, works } =
-    useWorldBlocks();
+  const {
+    world,
+    entries: allEntries,
+    byCategory,
+    timeline,
+    works,
+    pageCss,
+  } = useWorldBlocks();
   const [height, setHeight] = useState(260);
 
   useEffect(() => {
@@ -132,6 +164,7 @@ export function VariantGrid({
     }));
 
     const fontCss: string[] = [];
+    const boxCss: string[] = [];
     const payload = variants.map((v) => {
       const props: Record<string, string> = {};
       for (const f of v.fields) {
@@ -150,6 +183,8 @@ export function VariantGrid({
           props[f.key] = raw;
         }
       }
+      props.__defaultImage = v.defaultImage ?? "";
+      boxCss.push(boxRule(v.id, v.box));
       return {
         id: v.id,
         match: v.match ?? null,
@@ -174,12 +209,26 @@ export function VariantGrid({
       "font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;color:#14212b;}",
       "#items{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px;}",
       fontCss.join(""),
-      "</style></head><body>",
+      boxCss.join(""),
+      "</style>",
+      // Page-level CSS sits between the built-in box and the variant CSS.
+      pageCss ? `<style>${pageCss}</style>` : "",
+      "</head><body>",
       '<div id="items"></div>',
       `<script>window.WORLD=${safeJson(data)};window.ITEMS=${safeJson(items)};window.VARIANTS=${safeJson(payload)};window.BLOCK_ID=${safeJson(block.id)};${RUNTIME}</script>`,
       "</body></html>",
     ].join("");
-  }, [block.id, variants, entries, world, allEntries, byCategory, timeline, works]);
+  }, [
+    block.id,
+    variants,
+    entries,
+    world,
+    allEntries,
+    byCategory,
+    timeline,
+    works,
+    pageCss,
+  ]);
 
   return (
     <iframe

@@ -30,6 +30,8 @@ export type WorldBlocksData = {
   layout: WorldLayout;
   sections: LayoutSection[];
   activeId: string;
+  /** Page-level custom CSS (sanitized), inherited by region sandboxes. */
+  pageCss: string;
 };
 
 const WorldBlocksContext = createContext<WorldBlocksData | null>(null);
@@ -51,6 +53,7 @@ export default function WorldBlocksProvider({
   isOwner,
   config,
   layout,
+  pageCss = "",
   children,
 }: {
   world: World;
@@ -61,6 +64,7 @@ export default function WorldBlocksProvider({
   isOwner: boolean;
   config: HomepageConfig;
   layout: WorldLayout;
+  pageCss?: string;
   children: ReactNode;
 }) {
   const byCategory = useMemo(() => {
@@ -105,6 +109,7 @@ export default function WorldBlocksProvider({
     layout,
     sections,
     activeId,
+    pageCss,
   };
 
   return (

@@ -14,7 +14,8 @@ import styles from "../blocks.module.css";
  *   WORLD.timeline, WORLD.works
  */
 export function CustomHtml({ block }: { block: Block }) {
-  const { world, entries, byCategory, timeline, works } = useWorldBlocks();
+  const { world, entries, byCategory, timeline, works, pageCss } =
+    useWorldBlocks();
 
   const html = typeof block.props?.html === "string" ? block.props.html : "";
   const css = typeof block.props?.css === "string" ? block.props.css : "";
@@ -34,12 +35,14 @@ export function CustomHtml({ block }: { block: Block }) {
       "font-family:system-ui,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;",
       "color:#14212b;}",
       css,
-      "</style></head><body>",
+      "</style>",
+      pageCss ? `<style>${pageCss}</style>` : "",
+      "</head><body>",
       `<script>window.WORLD=${safeJson(data)};</script>`,
       html,
       "</body></html>",
     ].join("");
-  }, [world, entries, byCategory, timeline, works, html, css]);
+  }, [world, entries, byCategory, timeline, works, html, css, pageCss]);
 
   return (
     <section id={block.id} className={styles.section}>
