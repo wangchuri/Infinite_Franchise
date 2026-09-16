@@ -78,6 +78,7 @@ export default function WikiDocsPage() {
           <code>nav / navGrid / prose / entryGrid / glossary / timeline / workList / infoBox</code>、
           <code>heading / text / richText / image / gallery / quote / divider / button / linkList / relatedEntries</code>、
           <code>customHtml</code>。导入时会重新校验：未知 type 与非法属性会被丢弃。
+          任何区块都支持 <code>props.hideOnMobile = true</code>，在窄屏（≤640px）隐藏。
         </p>
       </section>
 

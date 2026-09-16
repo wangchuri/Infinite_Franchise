@@ -67,6 +67,42 @@
   color: var(--sea);
 }
 
+.devices {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+
+.deviceBtn,
+.deviceOn {
+  border: 1px solid var(--line);
+  background: #fffef9;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.deviceBtn:hover {
+  border-color: var(--sea);
+  color: var(--sea);
+}
+
+.deviceOn {
+  border-color: var(--sea);
+  background: rgba(31, 92, 90, 0.1);
+  color: var(--sea);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  color: var(--ink-soft);
+  margin-bottom: 0.6rem;
+}
+
 .body {
   flex: 1;
   min-height: 0;

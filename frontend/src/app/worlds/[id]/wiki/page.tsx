@@ -66,9 +66,14 @@ import {
 } from "@/lib/worlds";
 import styles from "./wiki-editor.module.css";
 
-const FRAME_W = 1280;
-const FRAME_H = 800;
 const FRAME_GUTTER = 32;
+
+const DEVICE_PRESETS = {
+  desktop: { w: 1280, h: 800, label: "桌面" },
+  tablet: { w: 834, h: 1112, label: "平板" },
+  mobile: { w: 390, h: 844, label: "手机" },
+} as const;
+type DeviceKey = keyof typeof DEVICE_PRESETS;
 
 const VARIANT_BLOCKS = new Set<BlockType>(["entryGrid", "glossary"]);
 
@@ -245,6 +250,7 @@ export default function WikiLayoutEditorPage() {
   const [savedAt, setSavedAt] = useState<Date | null>(null);
   const [revisions, setRevisions] = useState<WorldPageRevision[]>([]);
   const [previewKey, setPreviewKey] = useState(0);
+  const [device, setDevice] = useState<DeviceKey>("desktop");
   const [availW, setAvailW] = useState(0);
   const [availH, setAvailH] = useState(0);
 
@@ -738,9 +744,10 @@ export default function WikiLayoutEditorPage() {
   }
 
   const usingSample = entries.length === 0 || timeline.length === 0;
+  const frame = DEVICE_PRESETS[device];
   const fit = Math.min(
-    (availW - FRAME_GUTTER) / FRAME_W,
-    (availH - FRAME_GUTTER) / FRAME_H,
+    (availW - FRAME_GUTTER) / frame.w,
+    (availH - FRAME_GUTTER) / frame.h,
   );
   const scale = availW > 0 && availH > 0 ? Math.max(0.1, Math.min(1, fit)) : 1;
   const selected = selectedId ? findBlock(layout.blocks, selectedId) : null;
@@ -1154,6 +1161,16 @@ export default function WikiLayoutEditorPage() {
     return (
       <div className={styles.inspector}>
         <div className={styles.inspectorHead}>{meta?.label ?? selected.type}</div>
+        <label className={styles.check}>
+          <input
+            type="checkbox"
+            checked={selected.props?.hideOnMobile === true}
+            onChange={(e) =>
+              onProp(selected.id, "hideOnMobile", e.target.checked)
+            }
+          />
+          手机端隐藏
+        </label>
         <BlockFields
           block={selected}
           onChange={(key, value) => onProp(selected.id, key, value)}
@@ -1294,20 +1311,31 @@ export default function WikiLayoutEditorPage() {
 
         <div className={styles.paneCenter}>
           <div className={styles.canvasBar}>
-            <span>预览 · 标准 Web 视图</span>
-            <span className={styles.canvasHint}>点击预览或左侧结构选中区域</span>
+            <span>预览</span>
+            <span className={styles.devices}>
+              {(Object.keys(DEVICE_PRESETS) as DeviceKey[]).map((k) => (
+                <button
+                  key={k}
+                  type="button"
+                  className={device === k ? styles.deviceOn : styles.deviceBtn}
+                  onClick={() => setDevice(k)}
+                >
+                  {DEVICE_PRESETS[k].label}
+                </button>
+              ))}
+            </span>
             <span className={styles.zoom}>{Math.round(scale * 100)}%</span>
           </div>
           <div className={styles.canvasViewport} ref={viewportRef}>
             <div
               className={styles.deviceWrap}
-              style={{ width: FRAME_W * scale, height: FRAME_H * scale }}
+              style={{ width: frame.w * scale, height: frame.h * scale }}
             >
               <div
                 className={styles.device}
                 style={{
-                  width: FRAME_W,
-                  height: FRAME_H,
+                  width: frame.w,
+                  height: frame.h,
                   transform: `scale(${scale})`,
                 }}
               >

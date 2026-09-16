@@ -1021,6 +1021,18 @@
   text-decoration: underline;
 }
 
+/* —— block shell: transparent wrapper so hideOnMobile works without breaking
+   grid/flex participation (display: contents). —— */
+.blockShell {
+  display: contents;
+}
+
+@media (max-width: 640px) {
+  .blockShell[data-hide-mobile="1"] {
+    display: none !important;
+  }
+}
+
 /* —— background region (multi background image bands) —— */
 .bgRegion {
   position: relative;
