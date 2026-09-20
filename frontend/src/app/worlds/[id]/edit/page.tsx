@@ -328,9 +328,52 @@ export default function EditWorldPage() {
           />
         </section>
 
+        <section className={styles.section}>
+          <div className={styles.sectionHead}>
+            <div>
+              <h2>可见性</h2>
+              <p className={styles.sectionLead}>
+                {world.visibility === "public"
+                  ? "公开：发布后出现在广场，任何人都能访问。"
+                  : "私密：仅你与被邀请的成员可以访问，不会出现在广场。"}
+              </p>
+            </div>
+          </div>
+          <div className={styles.visibilityOptions}>
+            <button
+              type="button"
+              className={
+                world.visibility === "public"
+                  ? styles.visibilityOn
+                  : styles.visibility
+              }
+              disabled={saving}
+              onClick={() => void patchWorld({ visibility: "public" })}
+            >
+              公开
+            </button>
+            <button
+              type="button"
+              className={
+                world.visibility === "private"
+                  ? styles.visibilityOn
+                  : styles.visibility
+              }
+              disabled={saving}
+              onClick={() => void patchWorld({ visibility: "private" })}
+            >
+              私密
+            </button>
+          </div>
+        </section>
+
         <div className={styles.footerBar}>
           <span className={styles.status}>
-            {saving ? "保存中…" : world.status === "draft" ? "草稿已自动保存" : "已发布"}
+            {saving
+              ? "保存中…"
+              : world.status === "draft"
+                ? "草稿已自动保存"
+                : `已发布${world.visibility === "private" ? " · 私密" : ""}`}
             {error ? ` · ${error}` : null}
           </span>
           <div className={styles.footerActions}>
@@ -358,7 +401,11 @@ export default function EditWorldPage() {
                 })();
               }}
             >
-              {publishing ? "发布中…" : "发布世界观"}
+              {publishing
+                ? "发布中…"
+                : world.visibility === "private"
+                  ? "发布（私密）"
+                  : "发布世界观"}
             </button>
           </div>
         </div>

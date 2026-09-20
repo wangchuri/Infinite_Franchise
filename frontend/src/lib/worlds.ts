@@ -338,6 +338,7 @@ export async function updateWorld(
     homepageConfig: HomepageConfig;
     layout: WorldLayout;
     workSubmitMode: WorkSubmitMode;
+    visibility: "public" | "private";
   }>,
 ): Promise<World> {
   const data = await apiFetch<{ world: World }>(`/api/worlds/${id}`, {

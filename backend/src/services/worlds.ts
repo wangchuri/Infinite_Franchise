@@ -311,6 +311,7 @@ export async function listFollowedWorlds(
        LEFT JOIN users u ON u.id = w.creator_id
       WHERE wf0.user_id = $1
         AND w.deleted_at IS NULL
+        AND w.visibility = 'public'
       ORDER BY wf0.created_at DESC
       LIMIT $2`,
     [userId, safeLimit],
@@ -333,6 +334,7 @@ export async function updateWorld(
     homepageConfig?: HomepageConfig;
     layout?: WorldLayout;
     workSubmitMode?: WorkSubmitMode;
+    visibility?: "public" | "private";
   },
 ): Promise<WorldRow | null> {
   const fields: string[] = [];
@@ -348,6 +350,7 @@ export async function updateWorld(
     ["coverUrl", "cover_url"],
     ["tags", "tags"],
     ["welcomeMessage", "welcome_message"],
+    ["visibility", "visibility"],
   ];
 
   for (const [key, col] of map) {
@@ -398,7 +401,7 @@ export async function updateWorld(
 export async function publishWorld(id: string): Promise<WorldRow | null> {
   const result = await pool.query<WorldRow>(
     `UPDATE worlds
-     SET status = 'published', visibility = 'public', updated_at = now()
+     SET status = 'published', updated_at = now()
      WHERE id = $1 AND deleted_at IS NULL
      RETURNING *`,
     [id],
@@ -417,15 +420,26 @@ export async function softDeleteWorld(id: string): Promise<boolean> {
   return (result.rowCount ?? 0) > 0;
 }
 
-export function canViewWorld(
+/**
+ * Whether a viewer may read a world. Public + published worlds are open to
+ * everyone; otherwise only the creator and invited members can see it.
+ */
+export async function canViewWorld(
   world: WorldRow,
   viewerId: string | null,
-): boolean {
+): Promise<boolean> {
   if (world.deleted_at) return false;
   if (world.status === "published" && world.visibility === "public") {
     return true;
   }
-  return viewerId != null && world.creator_id === viewerId;
+  if (viewerId == null) return false;
+  if (world.creator_id === viewerId) return true;
+  const result = await pool.query(
+    `SELECT 1 FROM world_members
+      WHERE world_id = $1 AND user_id = $2 LIMIT 1`,
+    [world.id, viewerId],
+  );
+  return (result.rowCount ?? 0) > 0;
 }
 
 export function isWorldCreator(world: WorldRow, userId: string): boolean {

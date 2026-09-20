@@ -354,7 +354,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
 
@@ -387,7 +387,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
 
@@ -444,6 +444,14 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       workSubmitMode = body.workSubmitMode as WorkSubmitMode;
     }
 
+    let visibility: "public" | "private" | undefined;
+    if (body.visibility !== undefined) {
+      if (body.visibility !== "public" && body.visibility !== "private") {
+        return reply.code(400).send({ error: "invalid visibility" });
+      }
+      visibility = body.visibility;
+    }
+
     const updated = await updateWorld(id, {
       name: name?.trim().slice(0, 80),
       tagline: asString(body.tagline)?.slice(0, 140),
@@ -456,6 +464,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       homepageConfig,
       layout,
       workSubmitMode,
+      visibility,
     });
 
     return { world: toPublicWorld(updated!) };
@@ -497,7 +506,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
     const isOwner = viewerId != null && isWorldCreator(world, viewerId);
@@ -605,7 +614,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
     const isOwner = viewerId != null && isWorldCreator(world, viewerId);
@@ -738,7 +747,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
     const rows = await listWorldAssets(id);
@@ -794,7 +803,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
     const q = req.query as { category?: string };
@@ -902,7 +911,7 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       return reply.code(404).send({ error: "world not found" });
     }
     const viewerId = req.authUser?.id ?? null;
-    if (!canViewWorld(world, viewerId)) {
+    if (!(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "world not found" });
     }
     const rows = await listTimeline(id);

@@ -36,7 +36,7 @@ async function loadViewableWorldBySlug(
   viewerId: string | null,
 ) {
   const world = await findWorldBySlug(slug);
-  if (!world || !canViewWorld(world, viewerId)) return null;
+  if (!world || !(await canViewWorld(world, viewerId))) return null;
   return world;
 }
 
@@ -65,7 +65,7 @@ export async function registerTopicRoutes(app: FastifyInstance) {
 
     const { slug } = req.params as { slug: string };
     const world = await findWorldBySlug(slug);
-    if (!world || !canViewWorld(world, user.id)) {
+    if (!world || !(await canViewWorld(world, user.id))) {
       return reply.code(404).send({ error: "world not found" });
     }
 
@@ -100,7 +100,7 @@ export async function registerTopicRoutes(app: FastifyInstance) {
     if (!topic) return reply.code(404).send({ error: "topic not found" });
     const viewerId = req.authUser?.id ?? null;
     const world = await findWorldById(topic.worldId);
-    if (!world || !canViewWorld(world, viewerId)) {
+    if (!world || !(await canViewWorld(world, viewerId))) {
       return reply.code(404).send({ error: "topic not found" });
     }
     let canModerate = false;
