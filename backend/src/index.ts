@@ -9,6 +9,7 @@ import { pool, checkDatabase } from "./db.js";
 import { syncReactionTypes } from "./config/reaction-config.js";
 import { registerAuthRoutes } from "./routes/auth.js";
 import { registerCommentRoutes } from "./routes/comments.js";
+import { registerInboxRoutes } from "./routes/inbox.js";
 import { registerReactionRoutes } from "./routes/reactions.js";
 import { registerTopicRoutes } from "./routes/topics.js";
 import { registerUploadRoutes } from "./routes/uploads.js";
@@ -114,6 +115,7 @@ async function main() {
   await registerReactionRoutes(app);
   await registerCommentRoutes(app);
   await registerTopicRoutes(app);
+  await registerInboxRoutes(app);
 
   app.addHook("onClose", async () => {
     await pool.end();

@@ -57,7 +57,7 @@
 ### 3.1 账号与权限
 
 - 邮箱/用户名注册、登录、JWT 会话、`GET /api/auth/me`。
-- **世界角色**：创建者（creator）/ 编辑（editor）/ 成员；成员由创建者邀请。
+- **世界角色**：创建者（creator）/ 编辑（editor）/ 成员；成员由创建者邀请，被邀请人在**信箱**中接受后才正式加入。
 - **投稿策略** `workSubmitMode`：
   - `open`：任何人投稿即发布；
   - `review`：进入「待审核」，创建者/编辑审核通过后发布；
@@ -145,6 +145,13 @@
 - **图标**：`frontend/src/app/icon.png`。
 - **视觉**：单一 paper 主题（`--ink #14212b` / `--paper #f3efe6` / `--sea #1f5c5a` / `--ember #c45c26`），衬线标题 + 1px 细线 + 强调色竖条。
 
+### 3.8 信箱与通知
+
+- **入口**：顶栏铃铛（未读角标，45s 轮询 + 聚焦刷新）+ 独立页 `/inbox`；铃铛下拉预览待处理项。
+- **邀请 / 申请**（`world_invites`，`direction = invite | request`）：邀请创建后为 `pending`，被邀请人在信箱接受/拒绝；接受才写入 `world_members`。世界侧编辑器（`CollabPanel`）展示「待接受邀请」可撤回，以及他人对世界的「加入申请」可通过/拒绝。
+- **通知**（`notifications`）：投稿进入待审核通知创建者/编辑（`work_pending`）；审核通过/驳回通知作者（`work_approved` / `work_rejected`）；邀请被接受/拒绝通知发起人（`invite_accepted` / `invite_declined`）。支持单条/全部标记已读。
+- 未读角标 = 未读通知 + 待响应邀请/申请。
+
 ---
 
 ## 4. 数据模型（迁移清单）
@@ -170,6 +177,7 @@
 | 017 | `world_pages` | 多页面（home/归属/自定义）+ 从 `world_layout` 回填 home |
 | 018 | `world_page_revisions` | 页面版本历史（每页留 20 版） |
 | 019 | `world_assets` | 世界素材库 |
+| 020 | `inbox` | 世界观邀请/申请（`world_invites`）+ 通知（`notifications`） |
 
 应用：`cd backend && npm run db:migrate`。
 
@@ -188,6 +196,8 @@
     - 版本：`GET .../pages/:pageId/revisions`、`POST .../revisions/:revId/restore`
   - **素材库**：`GET/POST /api/worlds/:id/assets`、`DELETE .../:assetId`
   - 时间线：`GET/POST /api/worlds/:id/timeline`、`PATCH/DELETE .../:eventId`
+  - 邀请/申请：`GET /api/worlds/:id/invites`、`DELETE .../invites/:inviteId`（`POST /members` 现在创建待接受邀请）
+- **inbox**：`GET /api/inbox`、`GET /api/inbox/count`、`POST /api/inbox/invites/:id/accept|decline`、`POST /api/inbox/read`
 - **works**：`GET /api/works`、`GET /api/works/mine`、`POST /api/works`、`GET /api/works/:id`、`GET /api/works/:id/read`、`PATCH/DELETE /api/works/:id`
   - 章节：`GET /api/works/:id/chapters`、`PATCH /api/works/:id/chapters/order`
   - 审核：`GET /api/worlds/:id/works/pending`、`POST /api/works/:id/review`
@@ -201,7 +211,7 @@
 
 ## 6. 已实现 vs 规划
 
-**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性 / 富文本 / 自定义 HTML / 导入导出 / 版本历史 / 模板 / 响应式 / 素材库）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、页面转场。
+**已实现（本文档范围）**：世界观与成员权限、世界观内容（归属 + 词条）+ Wiki 界面（多页面 / 背景区域 / 页面 CSS / 元组件内置属性 / 富文本 / 自定义 HTML / 导入导出 / 版本历史 / 模板 / 响应式 / 素材库）、`[[词条]]` 关联与悬浮卡、公开词条/归属页、作品分类与长篇章节、创作工作台（自动保存 + 章节大纲）、阅读器（进度/设置/标注/灯箱/反应盖章）、反应（内置 + 世界自定义 + 作品当表情）、评论、话题、时间线、投稿审核、信箱（邀请/申请 + 通知）、页面转场。
 
 **规划中 / 待补**（`feasibility-analysis.md` 为远期路线）：
 

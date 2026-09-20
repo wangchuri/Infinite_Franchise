@@ -2,13 +2,21 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import {
-  addMember,
   fetchMembers,
   removeMember,
   type MemberRole,
   type WorldMember,
   type WorkSubmitMode,
 } from "@/lib/worlds";
+import {
+  fetchWorldInvites,
+  inviteMember,
+  memberRoleLabel,
+  respondToInvite,
+  revokeWorldInvite,
+  type InboxInvite,
+  type SentInvite,
+} from "@/lib/inbox";
 import {
   fetchPendingWorks,
   reviewWork,
@@ -53,6 +61,8 @@ type Props = {
 export default function CollabPanel({ worldId, currentMode, onModeChange }: Props) {
   const [members, setMembers] = useState<WorldMember[]>([]);
   const [pending, setPending] = useState<Work[]>([]);
+  const [sent, setSent] = useState<SentInvite[]>([]);
+  const [requests, setRequests] = useState<InboxInvite[]>([]);
   const [inviteName, setInviteName] = useState("");
   const [inviteRole, setInviteRole] = useState<MemberRole>("contributor");
   const [busy, setBusy] = useState<string | null>(null);
@@ -62,13 +72,16 @@ export default function CollabPanel({ worldId, currentMode, onModeChange }: Prop
     let cancelled = false;
     void (async () => {
       try {
-        const [m, p] = await Promise.all([
+        const [m, p, inv] = await Promise.all([
           fetchMembers(worldId),
           fetchPendingWorks(worldId),
+          fetchWorldInvites(worldId),
         ]);
         if (cancelled) return;
         setMembers(m);
         setPending(p);
+        setSent(inv.sent);
+        setRequests(inv.requests);
         setError(null);
       } catch (err) {
         if (!cancelled) {
@@ -88,14 +101,43 @@ export default function CollabPanel({ worldId, currentMode, onModeChange }: Prop
     setBusy("invite");
     setError(null);
     try {
-      const member = await addMember(worldId, username, inviteRole);
-      setMembers((prev) => [
-        ...prev.filter((m) => m.userId !== member.userId),
-        member,
+      const invite = await inviteMember(worldId, username, inviteRole);
+      setSent((prev) => [
+        invite,
+        ...prev.filter((i) => i.inviteeId !== invite.inviteeId),
       ]);
       setInviteName("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "邀请失败");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onRevokeInvite(inviteId: string) {
+    if (busy) return;
+    setBusy(`iv-${inviteId}`);
+    setError(null);
+    try {
+      await revokeWorldInvite(worldId, inviteId);
+      setSent((prev) => prev.filter((i) => i.id !== inviteId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function onRespondRequest(inviteId: string, accept: boolean) {
+    if (busy) return;
+    setBusy(`rq-${inviteId}`);
+    setError(null);
+    try {
+      await respondToInvite(inviteId, accept);
+      setRequests((prev) => prev.filter((i) => i.id !== inviteId));
+      if (accept) setMembers(await fetchMembers(worldId));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "操作失败");
     } finally {
       setBusy(null);
     }
@@ -161,6 +203,41 @@ export default function CollabPanel({ worldId, currentMode, onModeChange }: Prop
         </div>
       </section>
 
+      {requests.length > 0 ? (
+        <section className={styles.section}>
+          <h3>加入申请 · {requests.length}</h3>
+          <ul className={styles.memberList}>
+            {requests.map((r) => (
+              <li key={r.id} className={styles.member}>
+                <div>
+                  <strong>{r.actorDisplayName || r.actorUsername}</strong>
+                  <span className={styles.memberName}>@{r.actorUsername}</span>
+                  <span className={styles.roleTag}>{memberRoleLabel(r.role)}</span>
+                </div>
+                <div className={styles.pendingActions}>
+                  <button
+                    type="button"
+                    className={styles.approve}
+                    disabled={busy === `rq-${r.id}`}
+                    onClick={() => void onRespondRequest(r.id, true)}
+                  >
+                    通过
+                  </button>
+                  <button
+                    type="button"
+                    className={styles.reject}
+                    disabled={busy === `rq-${r.id}`}
+                    onClick={() => void onRespondRequest(r.id, false)}
+                  >
+                    拒绝
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
       <section className={styles.section}>
         <h3>成员管理</h3>
         {members.length === 0 ? (
@@ -218,6 +295,33 @@ export default function CollabPanel({ worldId, currentMode, onModeChange }: Prop
             {busy === "invite" ? "邀请中…" : "邀请"}
           </button>
         </form>
+
+        {sent.length > 0 ? (
+          <>
+            <p className={styles.muted}>待接受邀请 · {sent.length}</p>
+            <ul className={styles.memberList}>
+              {sent.map((s) => (
+                <li key={s.id} className={styles.member}>
+                  <div>
+                    <strong>{s.inviteeDisplayName || s.inviteeUsername}</strong>
+                    <span className={styles.memberName}>@{s.inviteeUsername}</span>
+                    <span className={styles.roleTag}>
+                      {memberRoleLabel(s.role)}
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.removeBtn}
+                    disabled={busy === `iv-${s.id}`}
+                    onClick={() => void onRevokeInvite(s.id)}
+                  >
+                    {busy === `iv-${s.id}` ? "撤回中…" : "撤回"}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </>
+        ) : null}
       </section>
 
       <section className={styles.section}>

@@ -380,18 +380,6 @@ export async function fetchMembers(worldId: string): Promise<WorldMember[]> {
   return data.members;
 }
 
-export async function addMember(
-  worldId: string,
-  username: string,
-  role: MemberRole,
-): Promise<WorldMember> {
-  const data = await apiFetch<{ member: WorldMember }>(
-    `/api/worlds/${worldId}/members`,
-    { method: "POST", body: JSON.stringify({ username, role }) },
-  );
-  return data.member;
-}
-
 export async function removeMember(
   worldId: string,
   userId: string,

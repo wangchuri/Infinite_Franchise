@@ -11,6 +11,7 @@ import {
 } from "@/lib/auth";
 import TopSearch from "./TopSearch";
 import RouteSwipe from "./RouteSwipe";
+import InboxBell from "./InboxBell";
 import {
   defaultLabel,
   parentHref,
@@ -268,6 +269,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               >
                 我
               </Link>
+              <InboxBell />
               <div className={styles.avatarWrap} ref={menuRef}>
                 <button
                   type="button"

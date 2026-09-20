@@ -2,6 +2,7 @@ import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth/auth-guard.js";
 import type { WorkCategory } from "../config/work-taxonomy.js";
 import { canReviewWorks, getMemberRole } from "../services/collab.js";
+import { createNotification, notifyWorldReviewers } from "../services/inbox.js";
 import { findWorldById, type WorldRow } from "../services/worlds.js";
 import {
   canEditWork,
@@ -111,6 +112,19 @@ export async function registerWorkRoutes(app: FastifyInstance) {
       action,
       reason: asString(body.reason),
     });
+    if (updated && updated.author_id !== user.id) {
+      await createNotification({
+        userId: updated.author_id,
+        type: action === "approve" ? "work_approved" : "work_rejected",
+        actorId: user.id,
+        worldId: updated.world_id,
+        workId: updated.id,
+        payload: {
+          title: updated.title,
+          reason: action === "reject" ? asString(body.reason) ?? null : null,
+        },
+      });
+    }
     return { work: toPublicWork(updated!) };
   });
 
@@ -291,6 +305,15 @@ export async function registerWorkRoutes(app: FastifyInstance) {
         parentId: asNullableString(body.parentId),
         publish: body.publish === true,
       });
+      if (row.status === "pending") {
+        await notifyWorldReviewers({
+          worldId: row.world_id,
+          actorId: user.id,
+          type: "work_pending",
+          workId: row.id,
+          payload: { title: row.title },
+        });
+      }
       return reply.code(201).send({ work: toPublicWork(row) });
     } catch (err) {
       const e = err as Error & { statusCode?: number };

@@ -1,13 +1,18 @@
 import type { FastifyInstance } from "fastify";
 import { requireAuth } from "../auth/auth-guard.js";
 import {
-  addMember,
   canReviewWorks,
   getMemberRole,
   listContributableWorlds,
   listMembers,
   removeMember,
 } from "../services/collab.js";
+import {
+  createInvite,
+  listSentInvites,
+  listWorldRequests,
+  revokeInvite,
+} from "../services/inbox.js";
 import { normalizeHomepageConfig } from "../config/homepage-config.js";
 import { normalizeWorldLayout, type WorldLayout } from "../config/world-layout.js";
 import { findUserByEmailOrUsername } from "../services/users.js";
@@ -212,7 +217,10 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     return { members: await listMembers(id) };
   });
 
-  /** Invite a member (creator only). */
+  /**
+   * Invite a member (creator only). Creates a pending invitation the invitee
+   * must accept from their inbox; membership is only granted on acceptance.
+   */
   app.post("/api/worlds/:id/members", async (req, reply) => {
     const user = await requireAuth(req, reply);
     if (!user) return;
@@ -237,8 +245,63 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     if (!target || target.status !== "active") {
       return reply.code(404).send({ error: "用户不存在" });
     }
-    const member = await addMember(id, target.id, roleRaw as MemberRole);
-    return reply.code(201).send({ member });
+    if (await getMemberRole(id, target.id)) {
+      return reply.code(409).send({ error: "该用户已是成员" });
+    }
+
+    const invite = await createInvite({
+      worldId: id,
+      inviterId: user.id,
+      inviteeId: target.id,
+      role: roleRaw as MemberRole,
+      direction: "invite",
+      message: asString(body.message) ?? null,
+    });
+    if (!invite) {
+      return reply.code(500).send({ error: "邀请失败" });
+    }
+
+    return reply.code(201).send({
+      invite: {
+        id: invite.id,
+        role: roleRaw,
+        createdAt: new Date().toISOString(),
+        inviteeId: target.id,
+        inviteeUsername: target.username,
+        inviteeDisplayName: target.display_name,
+        inviteeAvatarUrl: target.avatar_url,
+      },
+    });
+  });
+
+  /** Pending invites + join requests for a world (owner/editor). */
+  app.get("/api/worlds/:id/invites", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await loadManageableWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found or no permission" });
+    }
+    const [sent, requests] = await Promise.all([
+      listSentInvites(id),
+      listWorldRequests(id),
+    ]);
+    return { sent, requests };
+  });
+
+  /** Revoke a pending invite the world sent (owner only). */
+  app.delete("/api/worlds/:id/invites/:inviteId", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id, inviteId } = req.params as { id: string; inviteId: string };
+    const world = await loadOwnedWorld(id, user.id);
+    if (!world) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    const ok = await revokeInvite({ inviteId, worldId: id });
+    if (!ok) return reply.code(404).send({ error: "邀请不存在或已处理" });
+    return reply.code(204).send();
   });
 
   /** Remove a member (creator only, cannot remove creator/self). */

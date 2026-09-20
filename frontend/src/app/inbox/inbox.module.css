@@ -1,0 +1,159 @@
+.page {
+  max-width: 760px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 4rem;
+}
+
+.head {
+  margin-bottom: 1.5rem;
+}
+
+.head h1 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+}
+
+.lead {
+  margin-top: 0.3rem;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.section {
+  border-top: 1px solid var(--line);
+  padding-top: 1.25rem;
+  margin-top: 1.25rem;
+}
+
+.section h2 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+}
+
+.sectionHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.readAll {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.readAll:hover {
+  color: var(--sea);
+  border-color: var(--sea);
+}
+
+.list {
+  list-style: none;
+  margin-top: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.invite,
+.note,
+.noteUnread {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.75rem 0.9rem;
+  background: #fffef9;
+}
+
+.invite {
+  border-color: rgba(196, 92, 38, 0.35);
+  background: rgba(196, 92, 38, 0.05);
+}
+
+.noteUnread {
+  border-color: rgba(31, 92, 90, 0.35);
+  background: rgba(31, 92, 90, 0.05);
+}
+
+.info {
+  min-width: 0;
+}
+
+.text {
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.time {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.72rem;
+  color: var(--ink-soft);
+  opacity: 0.75;
+}
+
+.actions {
+  display: flex;
+  gap: 0.45rem;
+  flex-shrink: 0;
+}
+
+.accept,
+.decline {
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.accept {
+  border: 1px solid var(--sea);
+  background: rgba(31, 92, 90, 0.08);
+  color: var(--sea);
+}
+
+.decline {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.accept:disabled,
+.decline:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.noteLink {
+  flex: 1;
+  min-width: 0;
+  color: inherit;
+}
+
+.empty {
+  margin-top: 0.75rem;
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.loading,
+.error {
+  max-width: 760px;
+  margin: 2rem auto;
+  padding: 0 1.25rem;
+  color: var(--ink-soft);
+}
+
+.error {
+  color: var(--danger);
+  font-size: 0.9rem;
+}

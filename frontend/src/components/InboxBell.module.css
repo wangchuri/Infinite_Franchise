@@ -1,0 +1,160 @@
+.wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+
+.bell:hover {
+  color: var(--ink);
+}
+
+.bell svg {
+  width: 19px;
+  height: 19px;
+}
+
+.badge {
+  position: absolute;
+  top: -1px;
+  right: -2px;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  background: var(--ember);
+  color: var(--paper);
+  font-size: 0.62rem;
+  line-height: 15px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  max-width: calc(100vw - 2rem);
+  max-height: min(70vh, 520px);
+  overflow: auto;
+  background: #fffef9;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  box-shadow: 0 16px 40px rgba(20, 33, 43, 0.16);
+  z-index: 60;
+}
+
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  position: sticky;
+  top: 0;
+  background: #fffef9;
+}
+
+.panelHead strong {
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.allLink {
+  font-size: 0.78rem;
+  color: var(--sea);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+}
+
+.invite {
+  padding: 0.7rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  background: rgba(196, 92, 38, 0.05);
+}
+
+.actions {
+  display: flex;
+  gap: 0.45rem;
+  margin-top: 0.5rem;
+}
+
+.accept,
+.decline {
+  padding: 0.25rem 0.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  border-radius: 3px;
+}
+
+.accept {
+  border: 1px solid var(--sea);
+  background: rgba(31, 92, 90, 0.08);
+  color: var(--sea);
+}
+
+.decline {
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+}
+
+.accept:disabled,
+.decline:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.note,
+.noteUnread {
+  padding: 0.65rem 0.9rem;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.83rem;
+  color: var(--ink-soft);
+}
+
+.noteUnread {
+  color: var(--ink);
+  background: rgba(31, 92, 90, 0.05);
+}
+
+.noteLink {
+  display: block;
+  color: inherit;
+}
+
+.text {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.empty {
+  padding: 1.1rem 0.9rem;
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  opacity: 0.8;
+}
+
+.error {
+  margin: 0;
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  color: var(--danger);
+}
