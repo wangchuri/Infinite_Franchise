@@ -41,6 +41,7 @@ export type InboxNotification = {
   worldSlug: string | null;
   workId: string | null;
   workTitle: string | null;
+  inviteId: string | null;
   actorId: string | null;
   actorUsername: string | null;
   actorDisplayName: string | null;
@@ -257,8 +258,22 @@ export async function respondToInvite(input: {
   return { ok: true, accepted: input.accept };
 }
 
-/** Owner cancels a pending invite they sent. */
-export async function revokeInvite(input: {
+/** Whether the user already has a live join request for the world. */
+export async function hasPendingRequest(
+  worldId: string,
+  userId: string,
+): Promise<boolean> {
+  const res = await pool.query(
+    `SELECT 1 FROM world_invites
+      WHERE world_id = $1 AND invitee_id = $2
+        AND direction = 'request' AND status = 'pending'
+      LIMIT 1`,
+    [worldId, userId],
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+/** Owner cancels a pending invite they sent. */export async function revokeInvite(input: {
   inviteId: string;
   worldId: string;
 }): Promise<boolean> {
@@ -334,7 +349,7 @@ export async function listNotifications(
 ): Promise<InboxNotification[]> {
   const safeLimit = Math.min(Math.max(limit, 1), 100);
   const res = await pool.query(
-    `SELECT n.id, n.type, n.payload, n.read_at, n.created_at,
+    `SELECT n.id, n.type, n.payload, n.read_at, n.created_at, n.invite_id,
             w.id AS world_id, w.name AS world_name, w.slug AS world_slug,
             k.id AS work_id, k.title AS work_title,
             u.id AS actor_id, u.username AS actor_username,
@@ -359,6 +374,7 @@ export async function listNotifications(
     worldSlug: (row.world_slug as string | null) ?? null,
     workId: (row.work_id as string | null) ?? null,
     workTitle: (row.work_title as string | null) ?? null,
+    inviteId: (row.invite_id as string | null) ?? null,
     actorId: (row.actor_id as string | null) ?? null,
     actorUsername: (row.actor_username as string | null) ?? null,
     actorDisplayName: (row.actor_display_name as string | null) ?? null,

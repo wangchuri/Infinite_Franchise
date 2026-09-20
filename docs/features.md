@@ -149,6 +149,7 @@
 
 - **入口**：顶栏铃铛（未读角标，45s 轮询 + 聚焦刷新）+ 独立页 `/inbox`；铃铛下拉预览待处理项。
 - **邀请 / 申请**（`world_invites`，`direction = invite | request`）：邀请创建后为 `pending`，被邀请人在信箱接受/拒绝；接受才写入 `world_members`。世界侧编辑器（`CollabPanel`）展示「待接受邀请」可撤回，以及他人对世界的「加入申请」可通过/拒绝。
+- **申请加入**：任何登录用户在可访问的世界页点「申请加入」（`POST /api/worlds/:id/join`）发起 `request`，向创建者发通知；已申请显示「已申请加入」。世界 payload 带 `isMember` / `joinRequestPending` 驱动按钮状态。
 - **通知**（`notifications`）：投稿进入待审核通知创建者/编辑（`work_pending`）；审核通过/驳回通知作者（`work_approved` / `work_rejected`）；邀请被接受/拒绝通知发起人（`invite_accepted` / `invite_declined`）。支持单条/全部标记已读。
 - 未读角标 = 未读通知 + 待响应邀请/申请。
 
@@ -196,7 +197,7 @@
     - 版本：`GET .../pages/:pageId/revisions`、`POST .../revisions/:revId/restore`
   - **素材库**：`GET/POST /api/worlds/:id/assets`、`DELETE .../:assetId`
   - 时间线：`GET/POST /api/worlds/:id/timeline`、`PATCH/DELETE .../:eventId`
-  - 邀请/申请：`GET /api/worlds/:id/invites`、`DELETE .../invites/:inviteId`（`POST /members` 现在创建待接受邀请）
+  - 邀请/申请：`GET /api/worlds/:id/invites`、`DELETE .../invites/:inviteId`、`POST /api/worlds/:id/join`（`POST /members` 现在创建待接受邀请）
 - **inbox**：`GET /api/inbox`、`GET /api/inbox/count`、`POST /api/inbox/invites/:id/accept|decline`、`POST /api/inbox/read`
 - **works**：`GET /api/works`、`GET /api/works/mine`、`POST /api/works`、`GET /api/works/:id`、`GET /api/works/:id/read`、`PATCH/DELETE /api/works/:id`
   - 章节：`GET /api/works/:id/chapters`、`PATCH /api/works/:id/chapters/order`

@@ -147,6 +147,8 @@ export async function fetchWorldBySlug(slug: string): Promise<{
   pages: WorldPage[];
   isOwner: boolean;
   canEdit: boolean;
+  isMember: boolean;
+  joinRequestPending: boolean;
 }> {
   const data = await apiFetch<{
     world: World;
@@ -156,6 +158,8 @@ export async function fetchWorldBySlug(slug: string): Promise<{
     pages?: WorldPage[];
     isOwner: boolean;
     canEdit: boolean;
+    isMember?: boolean;
+    joinRequestPending?: boolean;
   }>(`/api/worlds/${encodeURIComponent(slug)}`, {}, { auth: true });
   return {
     ...data,
@@ -163,6 +167,8 @@ export async function fetchWorldBySlug(slug: string): Promise<{
     entries: data.entries.map(withEntry),
     collections: normalizeCollections(data.collections),
     pages: (data.pages ?? []).map(withPage),
+    isMember: data.isMember ?? data.isOwner,
+    joinRequestPending: data.joinRequestPending ?? false,
   };
 }
 
@@ -174,6 +180,8 @@ export async function fetchWorldById(id: string): Promise<{
   pages: WorldPage[];
   isOwner: boolean;
   canEdit: boolean;
+  isMember: boolean;
+  joinRequestPending: boolean;
 }> {
   const data = await apiFetch<{
     world: World;
@@ -183,6 +191,8 @@ export async function fetchWorldById(id: string): Promise<{
     pages?: WorldPage[];
     isOwner: boolean;
     canEdit: boolean;
+    isMember?: boolean;
+    joinRequestPending?: boolean;
   }>(`/api/worlds/id/${encodeURIComponent(id)}`);
   return {
     ...data,
@@ -190,7 +200,13 @@ export async function fetchWorldById(id: string): Promise<{
     entries: data.entries.map(withEntry),
     collections: normalizeCollections(data.collections),
     pages: (data.pages ?? []).map(withPage),
+    isMember: data.isMember ?? data.isOwner,
+    joinRequestPending: data.joinRequestPending ?? false,
   };
+}
+
+export async function requestToJoin(worldId: string): Promise<void> {
+  await apiFetch(`/api/worlds/${worldId}/join`, { method: "POST" });
 }
 
 export async function fetchWorldPages(worldId: string): Promise<WorldPage[]> {

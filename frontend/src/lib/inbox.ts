@@ -42,6 +42,7 @@ export type InboxNotification = {
   worldSlug: string | null;
   workId: string | null;
   workTitle: string | null;
+  inviteId: string | null;
   actorId: string | null;
   actorUsername: string | null;
   actorDisplayName: string | null;
@@ -139,6 +140,8 @@ export function notificationText(n: InboxNotification): string {
   switch (n.type) {
     case "world_invite":
       return `${who} 邀请你加入《${n.worldName ?? "一个世界"}》`;
+    case "world_request":
+      return `${who} 申请加入《${n.worldName ?? ""}》`;
     case "invite_accepted":
       return `${who} 接受了加入《${n.worldName ?? ""}》的邀请`;
     case "invite_declined":
@@ -157,6 +160,8 @@ export function notificationText(n: InboxNotification): string {
 export function notificationHref(n: InboxNotification): string | null {
   switch (n.type) {
     case "work_pending":
+      return n.worldId ? `/worlds/${n.worldId}/edit` : null;
+    case "world_request":
       return n.worldId ? `/worlds/${n.worldId}/edit` : null;
     case "work_approved":
     case "work_rejected":

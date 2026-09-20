@@ -9,6 +9,8 @@ import {
 } from "../services/collab.js";
 import {
   createInvite,
+  createNotification,
+  hasPendingRequest,
   listSentInvites,
   listWorldRequests,
   revokeInvite,
@@ -304,6 +306,46 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     return reply.code(204).send();
   });
 
+  /** Ask to join a world (any signed-in viewer who is not already a member). */
+  app.post("/api/worlds/:id/join", async (req, reply) => {
+    const user = await requireAuth(req, reply);
+    if (!user) return;
+    const { id } = req.params as { id: string };
+    const world = await findWorldById(id);
+    if (!world || !(await canViewWorld(world, user.id))) {
+      return reply.code(404).send({ error: "world not found" });
+    }
+    if (world.creator_id === user.id) {
+      return reply.code(400).send({ error: "你是这个世界的创建者" });
+    }
+    if (await getMemberRole(id, user.id)) {
+      return reply.code(409).send({ error: "你已经是成员" });
+    }
+
+    const already = await hasPendingRequest(id, user.id);
+    const invite = await createInvite({
+      worldId: id,
+      inviterId: user.id,
+      inviteeId: user.id,
+      role: "contributor",
+      direction: "request",
+      message: asString((req.body as Record<string, unknown>)?.message) ?? null,
+    });
+    if (!invite) {
+      return reply.code(500).send({ error: "申请失败" });
+    }
+    if (!already) {
+      await createNotification({
+        userId: world.creator_id,
+        type: "world_request",
+        actorId: user.id,
+        worldId: id,
+        inviteId: invite.id,
+      });
+    }
+    return reply.code(201).send({ pending: true });
+  });
+
   /** Remove a member (creator only, cannot remove creator/self). */
   app.delete("/api/worlds/:id/members/:userId", async (req, reply) => {
     const user = await requireAuth(req, reply);
@@ -425,6 +467,11 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
     const canEdit =
       viewerId != null && canReviewWorks({ world, role, userId: viewerId });
+    const isMember = isOwner || role != null;
+    const joinRequestPending =
+      viewerId != null && !isMember
+        ? await hasPendingRequest(world.id, viewerId)
+        : false;
     const [entries, timeline, collections, pages] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
@@ -440,6 +487,8 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       pages: pages.map(toPublicWorldPage),
       isOwner,
       canEdit,
+      isMember,
+      joinRequestPending,
     };
   });
 
@@ -458,6 +507,11 @@ export async function registerWorldRoutes(app: FastifyInstance) {
     const role = viewerId ? await getMemberRole(world.id, viewerId) : null;
     const canEdit =
       viewerId != null && canReviewWorks({ world, role, userId: viewerId });
+    const isMember = isOwner || role != null;
+    const joinRequestPending =
+      viewerId != null && !isMember
+        ? await hasPendingRequest(world.id, viewerId)
+        : false;
     const [entries, timeline, collections, pages] = await Promise.all([
       listEntries(world.id),
       listTimeline(world.id),
@@ -473,6 +527,8 @@ export async function registerWorldRoutes(app: FastifyInstance) {
       pages: pages.map(toPublicWorldPage),
       isOwner,
       canEdit,
+      isMember,
+      joinRequestPending,
     };
   });
 

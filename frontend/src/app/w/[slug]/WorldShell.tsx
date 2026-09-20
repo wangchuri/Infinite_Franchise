@@ -8,10 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import MarkdownView from "@/components/MarkdownView";
 import PrivateLock from "@/components/PrivateLock";
+import { getAccessToken } from "@/lib/auth";
 import { coverGradientFor, worldCoverImage } from "@/lib/world-cover";
-import { fetchWorldBySlug, type World } from "@/lib/worlds";
+import { fetchWorldBySlug, requestToJoin, type World } from "@/lib/worlds";
 import { usePageLabel } from "@/lib/nav-trail";
 import styles from "./world.module.css";
 
@@ -32,11 +34,16 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
   const [world, setWorld] = useState<World | null>(null);
   const [isOwner, setIsOwner] = useState(false);
   const [canEdit, setCanEdit] = useState(false);
+  const [isMember, setIsMember] = useState(false);
+  const [joinPending, setJoinPending] = useState(false);
+  const [joining, setJoining] = useState(false);
+  const [joinError, setJoinError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [headH, setHeadH] = useState(0);
 
   const headRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
 
   usePageLabel(world?.name ?? null);
 
@@ -49,6 +56,8 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
         setWorld(data.world);
         setIsOwner(data.isOwner);
         setCanEdit(data.canEdit);
+        setIsMember(data.isMember);
+        setJoinPending(data.joinRequestPending);
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "加载失败");
@@ -62,6 +71,24 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
       cancelled = true;
     };
   }, [slug]);
+
+  async function onJoin() {
+    if (joining || !world) return;
+    if (!getAccessToken()) {
+      router.push("/login");
+      return;
+    }
+    setJoining(true);
+    setJoinError(null);
+    try {
+      await requestToJoin(world.id);
+      setJoinPending(true);
+    } catch (err) {
+      setJoinError(err instanceof Error ? err.message : "申请失败");
+    } finally {
+      setJoining(false);
+    }
+  }
 
   useEffect(() => {
     const el = headRef.current;
@@ -126,9 +153,26 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
                 ) : null}
               </div>
             </div>
-            <Link href={wikiHref} className={styles.wikiBtn}>
-              进入 Wiki
-            </Link>
+            <div className={styles.coverActions}>
+              {!isMember ? (
+                joinPending ? (
+                  <span className={styles.joinDone}>已申请加入</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.joinBtn}
+                    disabled={joining}
+                    onClick={() => void onJoin()}
+                  >
+                    {joining ? "申请中…" : "申请加入"}
+                  </button>
+                )
+              ) : null}
+              <Link href={wikiHref} className={styles.wikiBtn}>
+                进入 Wiki
+              </Link>
+            </div>
+            {joinError ? <p className={styles.joinError}>{joinError}</p> : null}
           </div>
         </header>
 
