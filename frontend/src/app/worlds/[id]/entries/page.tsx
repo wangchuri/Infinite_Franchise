@@ -21,6 +21,7 @@ import {
 } from "@/lib/layout-edit";
 import BlockFields from "@/components/world-blocks/BlockFields";
 import ImageUpload from "@/components/world-editor/ImageUpload";
+import PrivateLock from "@/components/PrivateLock";
 import {
   createEntry,
   deleteEntry,
@@ -445,7 +446,10 @@ export default function EntryLibraryPage() {
         <Link href={`/worlds/${world.id}/edit`} className={styles.back}>
           ← 返回编辑器
         </Link>
-        <strong className={styles.docName}>{world.name} · 词条库</strong>
+          <strong className={styles.docName}>
+            {world.name}
+            {world.visibility === "private" ? <PrivateLock /> : null} · 词条库
+          </strong>
         <span className={styles.saveState}>
           {saving ? "保存中…" : dirty ? "未保存" : savedAt ? "已保存" : ""}
         </span>

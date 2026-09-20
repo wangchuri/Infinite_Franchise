@@ -1,0 +1,9 @@
+.lock {
+  display: inline-block;
+  width: 0.82em;
+  height: 0.82em;
+  margin-left: 0.4em;
+  vertical-align: -0.05em;
+  opacity: 0.72;
+  flex-shrink: 0;
+}

@@ -25,6 +25,7 @@ import { BLOCK_META, SLOT_LABELS, SLOT_ORDER } from "@/lib/block-meta";
 import { entryAttributeFields } from "@/lib/entry-schema";
 import BlockFields from "@/components/world-blocks/BlockFields";
 import ImageUpload from "@/components/world-editor/ImageUpload";
+import PrivateLock from "@/components/PrivateLock";
 import {
   createCollection,
   collectionName,
@@ -1327,7 +1328,8 @@ export default function WikiLayoutEditorPage() {
           ← 返回编辑器
         </Link>
         <strong className={styles.docName}>
-          {world.name} ·{" "}
+          {world.name}
+          {world.visibility === "private" ? <PrivateLock /> : null} ·{" "}
           {activeKey === null
             ? "Wiki 界面"
             : collectionName(collections, activeKey)}

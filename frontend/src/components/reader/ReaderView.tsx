@@ -29,6 +29,7 @@ import {
   type WorkReadPayload,
 } from "@/lib/works";
 import type { WikiEntry, World } from "@/lib/worlds";
+import PrivateLock from "@/components/PrivateLock";
 import styles from "./ReaderView.module.css";
 
 export type ReadMode = "scroll" | "pages";
@@ -406,6 +407,7 @@ export default function ReaderView({
             </Link>
             <Link href={`/w/${work.worldSlug}`} className={styles.world}>
               {work.worldName}
+              {world?.visibility === "private" ? <PrivateLock /> : null}
             </Link>
           </div>
           <div className={styles.toolbarRight}>
@@ -874,7 +876,10 @@ export default function ReaderView({
                   )}
                 </span>
                 <span className={styles.worldText}>
-                  <strong>{world.name}</strong>
+                  <strong>
+                    {world.name}
+                    {world.visibility === "private" ? <PrivateLock /> : null}
+                  </strong>
                   <span className={styles.worldDesc}>
                     {world.tagline || world.description}
                   </span>

@@ -1,6 +1,7 @@
 "use client";
 
 import type { Block } from "@/lib/world-layout";
+import PrivateLock from "@/components/PrivateLock";
 import { useWorldBlocks } from "../WorldBlocksProvider";
 import { cx, unique } from "../shared";
 import styles from "../blocks.module.css";
@@ -30,7 +31,10 @@ export function Hero({ block }: { block: Block }) {
           <div className={styles.logoEmpty}>{world.name.slice(0, 1)}</div>
         )}
         <div className={styles.heroText}>
-          <h1>{world.name}</h1>
+          <h1>
+            {world.name}
+            {world.visibility === "private" ? <PrivateLock /> : null}
+          </h1>
           {world.tagline ? (
             <p className={styles.tagline}>{world.tagline}</p>
           ) : null}

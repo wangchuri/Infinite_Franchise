@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import BlockRenderer from "@/components/world-blocks/BlockRenderer";
 import WorldBlocksProvider from "@/components/world-blocks/WorldBlocksProvider";
+import PrivateLock from "@/components/PrivateLock";
 import { normalizeHomepageConfig, themeCssVars } from "@/lib/homepage-config";
 import { PAGE_ROOT_ID, scopePageCss } from "@/lib/page-css";
 import { collectionName, type WorldCollection } from "@/lib/collections";
@@ -116,7 +117,10 @@ export default function WorldCategoryPage() {
   return (
     <div className={styles.page}>
       <nav className={styles.crumb}>
-        <Link href={`/w/${world.slug}`}>{world.name}</Link>
+        <Link href={`/w/${world.slug}`}>
+          {world.name}
+          {world.visibility === "private" ? <PrivateLock /> : null}
+        </Link>
         <span>/</span>
         <Link href={`/w/${world.slug}/wiki`}>Wiki</Link>
         <span>/</span>

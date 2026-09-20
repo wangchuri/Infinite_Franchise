@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import MarkdownView from "@/components/MarkdownView";
 import BlockRenderer from "@/components/world-blocks/BlockRenderer";
 import WorldBlocksProvider from "@/components/world-blocks/WorldBlocksProvider";
+import PrivateLock from "@/components/PrivateLock";
 import { collectionName, type WorldCollection } from "@/lib/collections";
 import { entryAttributeFields } from "@/lib/entry-schema";
 import { normalizeHomepageConfig } from "@/lib/homepage-config";
@@ -165,7 +166,10 @@ export default function WorldEntryPage() {
   return (
     <div className={styles.page}>
       <nav className={styles.crumb}>
-        <Link href={`/w/${world.slug}`}>{world.name}</Link>
+        <Link href={`/w/${world.slug}`}>
+          {world.name}
+          {world.visibility === "private" ? <PrivateLock /> : null}
+        </Link>
         <span>/</span>
         <Link href={`/w/${world.slug}/c/${entry.category}`}>{categoryName}</Link>
         <span>/</span>

@@ -7,6 +7,7 @@ import {
   worldCoverImage,
 } from "@/lib/world-cover";
 import type { World } from "@/lib/worlds";
+import PrivateLock from "./PrivateLock";
 import styles from "./WorldCard.module.css";
 
 type Props = {
@@ -59,7 +60,10 @@ export default function WorldCard({
           }
         />
         <div className={styles.body}>
-          <h3>{world.name || "未命名世界观"}</h3>
+          <h3>
+            {world.name || "未命名世界观"}
+            {world.visibility === "private" ? <PrivateLock /> : null}
+          </h3>
           <p className={styles.desc}>{world.description || "尚无简介"}</p>
           {uniqueTags.length > 0 ? (
             <div className={styles.tags}>

@@ -9,6 +9,7 @@ import {
 } from "react";
 import Link from "next/link";
 import MarkdownView from "@/components/MarkdownView";
+import PrivateLock from "@/components/PrivateLock";
 import { coverGradientFor, worldCoverImage } from "@/lib/world-cover";
 import { fetchWorldBySlug, type World } from "@/lib/worlds";
 import { usePageLabel } from "@/lib/nav-trail";
@@ -107,7 +108,10 @@ export default function WorldShell({ slug, activeTab, children }: Props) {
                 <div className={styles.logoEmpty}>{world.name.slice(0, 1)}</div>
               )}
               <div>
-                <h1>{world.name}</h1>
+                <h1>
+                  {world.name}
+                  {world.visibility === "private" ? <PrivateLock /> : null}
+                </h1>
                 {world.tagline ? (
                   <p className={styles.tagline}>{world.tagline}</p>
                 ) : null}

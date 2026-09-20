@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import WikiTiles from "@/components/WikiTiles";
+import PrivateLock from "@/components/PrivateLock";
 import CollabPanel from "@/components/world-editor/CollabPanel";
 import ImageUpload from "@/components/world-editor/ImageUpload";
 import { getAccessToken } from "@/lib/auth";
@@ -229,7 +230,10 @@ export default function EditWorldPage() {
           />
           <div className={styles.heroFields}>
             <label className={styles.field}>
-              <span>世界观名称</span>
+              <span>
+                世界观名称
+                {world.visibility === "private" ? <PrivateLock /> : null}
+              </span>
               <input
                 className={styles.nameInput}
                 value={nameDraft}

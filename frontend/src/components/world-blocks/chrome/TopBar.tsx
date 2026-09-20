@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import type { Block } from "@/lib/world-layout";
+import PrivateLock from "@/components/PrivateLock";
 import { useWorldBlocks } from "../WorldBlocksProvider";
 import styles from "../blocks.module.css";
 
@@ -13,6 +14,7 @@ export function TopBar({ block }: { block: Block }) {
       <div className={styles.topbarInner}>
         <Link href={`/w/${world.slug}`} className={styles.topbarName}>
           {world.name}
+          {world.visibility === "private" ? <PrivateLock /> : null}
         </Link>
         <div className={styles.topbarActions}>
           {isOwner ? (

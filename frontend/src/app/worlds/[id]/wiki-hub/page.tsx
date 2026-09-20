@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import WikiTiles from "@/components/WikiTiles";
+import PrivateLock from "@/components/PrivateLock";
 import { getAccessToken } from "@/lib/auth";
 import { fetchWorldById, type World } from "@/lib/worlds";
 import styles from "./wiki-hub.module.css";
@@ -52,6 +53,7 @@ export default function WikiHubPage() {
       <header className={styles.head}>
         <Link href={`/w/${world.slug}`} className={styles.back}>
           ← {world.name}
+          {world.visibility === "private" ? <PrivateLock /> : null}
         </Link>
         <h1 className={styles.title}>编辑世界观</h1>
         <p className={styles.lead}>选择要编辑的部分。</p>
